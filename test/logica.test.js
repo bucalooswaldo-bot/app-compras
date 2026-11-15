@@ -135,3 +135,14 @@ test('sugerir lo que se compra a menudo y no hay', () => {
   assert.deepEqual(sugerirCompra(d, new Set()), ['huevos']);
   assert.deepEqual(sugerirCompra(d, new Set(['huevos'])), []);
 });
+
+test('al llegar justo al mínimo también avisa ("avísame cuando quede 1")', () => {
+  const d = base();
+  d.despensa.push({ articulo_id: 'tomate', cantidad: 1, minimo: 1 });
+  const f = faltas(d, HOY, HOY);
+  assert.equal(f.length, 1);
+  assert.equal(f[0].bajoMinimo, true);
+  assert.equal(f[0].cantidad, null);
+  d.lista.push({ id: 'l', articulo_id: 'tomate', cantidad: null, origen: 'manual', comprado: false });
+  assert.equal(faltas(d, HOY, HOY).length, 0, 'si ya está apuntado no se repite');
+});

@@ -150,7 +150,7 @@ export function faltas(datos, desde, hasta) {
     const hay = d?.cantidad ?? 0;
     const minimo = d?.minimo ?? 0;
     const pide = necesita.get(id) ?? 0;
-    const bajoMinimo = minimo > 0 && hay < minimo;
+    const bajoMinimo = minimo > 0 && hay <= minimo;
     if (pide === 0 && !bajoMinimo) {
       // Solo lo pide una receta sin cantidad: si no hay nada en casa ni está ya en la lista, se apunta sin cantidad.
       if (sinCantidad.has(id) && hay <= 0 && !enLista.has(id)) {
@@ -161,7 +161,11 @@ export function faltas(datos, desde, hasta) {
     let falta = pide + minimo - hay - (enLista.get(id) ?? 0);
     if (articulo.unidad === 'ud') falta = Math.ceil(falta - 1e-9);
     falta = redondear(falta, 3);
-    if (falta <= 0) continue;
+    if (falta <= 0) {
+      // Justo en el mínimo ("avísame cuando quede 1"): se apunta sin cantidad, si no está ya en la lista.
+      if (bajoMinimo && !enLista.has(id)) resultado.push({ articulo_id: id, cantidad: null, recetas: [...(porReceta.get(id) ?? [])], bajoMinimo });
+      continue;
+    }
     resultado.push({ articulo_id: id, cantidad: falta, recetas: [...(porReceta.get(id) ?? [])], bajoMinimo });
   }
   return ordenarPorPasillo(resultado, datos.articulos);
@@ -193,6 +197,9 @@ export function sugerirCompra(datos, yaEnLista, max = 8) {
     .slice(0, max)
     .map(([id]) => id);
 }
+
+/** ¿Ha llegado al mínimo que se puso para avisar? */
+export const estaBajo = (d) => d.minimo > 0 && d.cantidad <= d.minimo;
 
 export const MOMENTOS = [['comida', 'Comida'], ['cena', 'Cena'], ['postre', 'Postre'], ['tentempie', 'Tentempié']];
 export const nombreMomento = (m) => MOMENTOS.find((x) => x[0] === m)?.[1] ?? m;
