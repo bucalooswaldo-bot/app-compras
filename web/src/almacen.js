@@ -10,6 +10,8 @@ export const TABLAS = {
   ingredientes: 'receta_ingredientes',
   plan: 'plan_comidas',
   lista: 'lista_compra',
+  equivalencias: 'equivalencias',
+  preferencias: 'preferencias',
 };
 
 export const nuevoId = () =>
@@ -145,7 +147,9 @@ export function motorPrueba() {
         copia.plan = copia.plan.filter((p) => !s.has(p.receta_id));
       }
       if (k === 'articulos') {
-        for (const t of ['despensa', 'ingredientes', 'lista']) copia[t] = copia[t].filter((f) => !s.has(f.articulo_id));
+        for (const t of ['despensa', 'ingredientes', 'lista', 'equivalencias', 'preferencias']) {
+          copia[t] = copia[t].filter((f) => !s.has(f.articulo_id));
+        }
       }
       guardar();
     },

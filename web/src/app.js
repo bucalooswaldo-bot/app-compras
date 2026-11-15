@@ -5,6 +5,11 @@ import {
   escalar, ingredientesDeComida, faltas, agruparPorCategoria, buscarArticulo, normalizar,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
+import {
+  SUPERS, nombreSuper, entenderDictado, cantidadParaArticulo, unidadNueva, textoBusqueda, sugerir, calcularCesta,
+  encaja, palabrasClave, precioUnidad, etiquetaUnidad, euros, AHORRO_MINIMO_PARA_REPARTIR,
+} from './comparar.js';
+import { crearCatalogo } from './catalogo.js';
 import * as config from '../config.js';
 
 // ---------------------------------------------------------------------------
@@ -494,12 +499,14 @@ function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
 const PLAZOS = [[3, '3 días'], [7, '1 semana'], [14, '2 semanas']];
 const leerPlazo = () => { try { return Number(localStorage.getItem('plazo-lista')) || 7; } catch { return 7; } };
 
-function PantallaLista({ almacen, datos }) {
+function PantallaLista({ almacen, datos, sesion }) {
   const hoy = fechaISO();
   const [plazo, setPlazo] = useState(leerPlazo());
   const [texto, setTexto] = useState('');
   const [verComprado, setVerComprado] = useState(true);
   const [editar, setEditar] = useState(null);
+  const [comparar, setComparar] = useState(false);
+  const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
   const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
   const manual = datos.lista.filter((l) => !l.comprado);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
@@ -511,11 +518,21 @@ function PantallaLista({ almacen, datos }) {
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
   const anadir = async (e) => {
-    e.preventDefault();
-    if (!texto.trim()) return;
-    const a = await obtenerArticulo(almacen, texto, 'ud', 'Otros');
-    await almacen.insertar('lista', { articulo_id: a.id, cantidad: null, origen: 'manual', comprado: false });
+    e?.preventDefault();
+    const frase = texto.trim();
+    if (!frase) return;
+    // "Necesito aceite, sal, tomate triturado y 2 kilos de papas" -> cinco cosas
+    const cosas = entenderDictado(frase, datos.articulos, marcasConocidas());
+    if (!cosas.length) return;
+    const nombres = [];
+    for (const c of cosas) {
+      const a = c.articulo ?? await obtenerArticulo(almacen, c.nombre, unidadNueva(c), 'Otros');
+      await almacen.insertar('lista', { articulo_id: a.id, cantidad: cantidadParaArticulo(c, a.unidad),
+        marca: c.detalle, origen: 'manual', comprado: false });
+      nombres.push(c.detalle ? `${a.nombre} (${c.detalle})` : a.nombre);
+    }
     setTexto('');
+    if (cosas.length > 1) mostrarAviso(`Añadido: ${nombres.join(', ')}`);
   };
 
   const comprar = async (f) => {
@@ -543,9 +560,13 @@ function PantallaLista({ almacen, datos }) {
     <section>
       <form class="fila-campo" onSubmit=${anadir}>
         <datalist id="articulos-compra">${datos.articulos.map((a) => html`<option value=${a.nombre} />`)}</datalist>
-        <input list="articulos-compra" placeholder="Añadir algo a mano" value=${texto} onInput=${(e) => setTexto(e.target.value)} />
+        <input list="articulos-compra" placeholder="Añadir (o dictar: leche, 2 kg de papas…)" value=${texto}
+          onInput=${(e) => setTexto(e.target.value)} />
+        <${BotonDictar} onTexto=${(t) => setTexto((x) => (x ? `${x}, ${t}` : t))} />
         <button class="boton" type="submit">Añadir</button>
       </form>
+      ${previa.length > 1 && html`<p class="previa">Se añadirán ${previa.length}: ${previa.map((c) => c.detalle ? `${c.nombre} (${c.detalle})` : c.nombre).join(' · ')}</p>`}
+      ${pendientes.length > 0 && html`<button class="boton grande comparar" onClick=${() => setComparar(true)}>💶 ¿Dónde sale más barato?</button>`}
       <div class="chips">
         <span class="chips-label">Recetas de:</span>
         ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
@@ -562,7 +583,7 @@ function PantallaLista({ almacen, datos }) {
             return html`<li key=${f.clave}>
               <button class="marcar" aria-label=${`Comprado: ${a?.nombre}`} onClick=${() => comprar(f)}></button>
               <button class="enlace nombre" onClick=${() => f.tipo === 'manual' && setEditar(f)}>
-                ${a?.nombre}<small>${motivo}</small>
+                ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${motivo}</small>
               </button>
               <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
               ${f.tipo === 'manual' && html`<button class="icono peq" aria-label="Quitar de la lista" onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`}
@@ -587,18 +608,25 @@ function PantallaLista({ almacen, datos }) {
             <p class="pie"><button class="enlace" onClick=${vaciarComprado}>Vaciar comprados</button></p>`}
         </div>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
+      ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(false)}
+        items=${pendientes.map((f) => {
+          const a = articulo(datos, f.articulo_id);
+          return { clave: f.clave, articulo_id: f.articulo_id, nombre: a?.nombre ?? '¿?', unidad: a?.unidad ?? 'ud',
+            cantidad: f.cantidad ?? null, detalle: f.marca ?? null };
+        })} />`}
     </section>`;
 }
 
 function CantidadLista({ almacen, datos, fila, onCerrar }) {
   const a = articulo(datos, fila.articulo_id);
   const [cantidad, setCantidad] = useState(fila.cantidad);
+  const [marca, setMarca] = useState(fila.marca ?? '');
   const guardar = async () => {
     if (fila.comprado) {
       const delta = (cantidad ?? 0) - (fila.cantidad ?? 0);
       if (delta) await almacen.sumarDespensa(fila.articulo_id, delta);
     }
-    await almacen.actualizar('lista', fila.id, { cantidad });
+    await almacen.actualizar('lista', fila.id, { cantidad, marca: marca.trim() || null });
     onCerrar();
   };
   return html`
@@ -606,7 +634,305 @@ function CantidadLista({ almacen, datos, fila, onCerrar }) {
       <label>${fila.comprado ? 'Cantidad comprada' : 'Cantidad'}</label>
       <${CampoCantidad} unidad=${a?.unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Sin indicar" autoFocus />
       ${fila.comprado && html`<p><small>La despensa se ajusta con la diferencia.</small></p>`}
+      ${!fila.comprado && html`<label>Marca o tipo (opcional)
+        <input placeholder="Por ejemplo: Puleva, sin lactosa…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
+        <p><small>Al comparar precios solo se buscará eso. Vacío = la más barata.</small></p>`}
       <button class="boton grande" onClick=${guardar}>Guardar</button>
+    </${Hoja}>`;
+}
+
+// ---------------------------------------------------------------------------
+// Dictar y comparar precios
+// ---------------------------------------------------------------------------
+const Reconocer = globalThis.SpeechRecognition ?? globalThis.webkitSpeechRecognition;
+
+/** Botón de micrófono (Chrome en Android lo permite). Lo dicho se pasa al campo de texto. */
+function BotonDictar({ onTexto }) {
+  const [oyendo, setOyendo] = useState(false);
+  const rec = useRef(null);
+  if (!Reconocer) return null;
+  const pulsar = () => {
+    if (oyendo) { rec.current?.stop(); return; }
+    const r = new Reconocer();
+    r.lang = 'es-ES';
+    r.interimResults = false;
+    r.onresult = (e) => onTexto(e.results[0][0].transcript);
+    r.onerror = (e) => {
+      if (e.error === 'not-allowed') mostrarAviso('Hay que permitir el micrófono para dictar.');
+      else if (e.error !== 'no-speech' && e.error !== 'aborted') mostrarAviso('No se pudo dictar. Prueba con el micrófono del teclado.');
+    };
+    r.onend = () => setOyendo(false);
+    rec.current = r;
+    try { r.start(); setOyendo(true); } catch { setOyendo(false); }
+  };
+  return html`<button type="button" class="icono microfono ${oyendo ? 'oyendo' : ''}" aria-label=${oyendo ? 'Parar' : 'Dictar'}
+    onClick=${pulsar}>${oyendo ? '⏹' : '🎤'}</button>`;
+}
+
+// HiperDino ya pone el tamaño en el nombre ("leche entera 1 l"); Mercadona lo da aparte ("Brik 1 l").
+const formatoDe = (p) => (p.supermercado_id === 'hiperdino' ? null : p.formato);
+
+let catalogoGlobal = null;
+const obtenerCatalogo = (sesion) => (catalogoGlobal ??= crearCatalogo(sesion.cliente));
+
+/** Marcas que ya conoce la app (para entender "leche puleva" al dictar). */
+function marcasConocidas() {
+  if (!catalogoGlobal) return [];
+  return [...new Set([...catalogoGlobal.productos.values()].map((p) => p.marca).filter(Boolean))];
+}
+
+/** Filtro de "no me gusta" (un producto o una marca entera). */
+function filtroGustos(datos) {
+  const fuera = datos.preferencias.filter((p) => p.tipo === 'no_gusta');
+  return (p) => !fuera.some((x) => (x.producto_id && x.producto_id === p.id)
+    || (x.marca && p.marca && normalizar(x.marca) === normalizar(p.marca)));
+}
+
+/** Productos de un súper que valen para una cosa de la lista. */
+function candidatosDe(datos, catalogo, item, s) {
+  const vale = filtroGustos(datos);
+  let enlaces = datos.equivalencias
+    .filter((e) => e.articulo_id === item.articulo_id)
+    .map((e) => ({ e, p: catalogo.productos.get(e.producto_id) }))
+    .filter(({ p }) => p && p.supermercado_id === s && p.activo !== false && Number.isFinite(p.precio) && vale(p));
+  if (item.detalle) {
+    const claves = palabrasClave(item.detalle);
+    enlaces = enlaces.filter(({ p }) => encaja(p, claves));
+  } else {
+    // Si ella eligió uno a mano, manda lo suyo.
+    const aMano = enlaces.filter(({ e }) => !e.auto);
+    if (aMano.length) enlaces = aMano;
+  }
+  return enlaces.map(({ p }) => p);
+}
+
+function Comparar({ almacen, datos, sesion, items, onCerrar }) {
+  const [estado, setEstado] = useState(sesion ? 'cargando' : 'prueba');
+  const [mensaje, setMensaje] = useState('');
+  const [vista, setVista] = useState('productos');
+  const [elegir, setElegir] = useState(null);
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+
+  /** Carga los productos enlazados y busca en las webs lo que aún no tenga producto. */
+  const completar = async () => {
+    try {
+      setEstado('cargando');
+      await catalogo.cargar(almacen.datos.equivalencias.map((e) => e.producto_id));
+      const tareas = [];
+      for (const item of items) {
+        for (const [s] of SUPERS) {
+          if (candidatosDe(almacen.datos, catalogo, item, s).length) continue;
+          tareas.push({ item, s, texto: textoBusqueda(item.nombre, item.detalle, s) });
+        }
+      }
+      const enlazar = async (lista) => {
+        const nuevos = [];
+        for (const t of lista) {
+          const sug = sugerir(catalogo.buscado(t.s, t.texto) ?? [], t.item, filtroGustos(almacen.datos));
+          const ya = (x) => x.articulo_id === t.item.articulo_id && x.producto_id === sug.id;
+          if (sug && !almacen.datos.equivalencias.some(ya) && !nuevos.some(ya)) {
+            nuevos.push({ articulo_id: t.item.articulo_id, producto_id: sug.id, auto: true });
+          }
+        }
+        if (nuevos.length) await almacen.insertar('equivalencias', nuevos);
+      };
+      // Lo ya buscado en esta sesión no se vuelve a pedir a los súper.
+      await enlazar(tareas.filter((t) => catalogo.buscado(t.s, t.texto)));
+      const porTexto = new Map();
+      for (const t of tareas.filter((t) => !catalogo.buscado(t.s, t.texto))) {
+        const k = t.texto.toLowerCase();
+        if (!porTexto.has(k)) porTexto.set(k, { texto: t.texto, supers: [], tareas: [] });
+        const c = porTexto.get(k);
+        if (!c.supers.includes(t.s)) c.supers.push(t.s);
+        c.tareas.push(t);
+      }
+      const consultas = [...porTexto.values()];
+      for (let i = 0; i < consultas.length; i += 4) {
+        setEstado('buscando');
+        setMensaje(`Buscando en Mercadona e HiperDino… ${i} de ${consultas.length}`);
+        const tanda = consultas.slice(i, i + 4);
+        await catalogo.buscar(tanda.map(({ texto, supers }) => ({ texto, supers })));
+        await enlazar(tanda.flatMap((c) => c.tareas));
+      }
+      setEstado('listo');
+    } catch (e) {
+      console.error(e);
+      setMensaje(e.message ?? String(e));
+      setEstado('error');
+    }
+  };
+  useEffect(() => { if (sesion) completar(); }, []);
+
+  if (!sesion) {
+    return html`<${Hoja} titulo="Comparar precios" onCerrar=${onCerrar}>
+      <p>Comparar precios solo funciona en la versión compartida (con cuenta), porque hay que consultar las webs de los súper.</p>
+    </${Hoja}>`;
+  }
+
+  const cesta = calcularCesta(items.map((item) => ({
+    ...item,
+    candidatos: Object.fromEntries(SUPERS.map(([s]) => [s, candidatosDe(datos, catalogo, item, s)])),
+  })));
+  const elegidos = cesta.lineas.flatMap((l) => Object.values(l.porSuper).map((o) => o.producto));
+  const masViejo = elegidos.reduce((m, p) => (p.visto_en && (!m || p.visto_en < m) ? p.visto_en : m), null);
+  const dias = masViejo ? Math.floor((Date.now() - new Date(masViejo).getTime()) / 86_400_000) : null;
+  const r = cesta.recomendacion;
+  const ocupado = estado === 'cargando' || estado === 'buscando';
+  const lineaDe = (item) => cesta.lineas.find((l) => l.item.clave === item.clave);
+
+  return html`
+    <${Hoja} titulo="¿Dónde sale más barato?" onCerrar=${onCerrar}>
+      ${ocupado && html`<p class="cargando">${estado === 'cargando' ? 'Cargando precios…' : mensaje}</p>`}
+      ${estado === 'error' && html`<p class="mensaje">No se pudo completar la búsqueda: ${mensaje}
+        <br /><button class="enlace" onClick=${completar}>Reintentar</button></p>`}
+
+      ${r.tipo !== 'sin_datos' && html`
+        <div class="veredicto ${r.tipo}">
+          ${r.tipo === 'repartir'
+            ? html`<b>Conviene repartir: ahorras ${euros(cesta.ahorro)}</b>
+                <span>${SUPERS.map(([s, n]) => `${n}: ${euros(cesta.totalReparto[s])}`).join(' + ')}</span>`
+            : html`<b>Mejor en ${nombreSuper(r.supermercado)}: ${euros(cesta.totales[r.supermercado])}</b>
+                <span>${SUPERS.filter(([s]) => s !== r.supermercado).map(([s, n]) => `${n}: ${euros(cesta.totales[s])}`).join(' · ')}
+                  ${r.diferencia > 0 && ` (${euros(r.diferencia)} más)`}</span>
+                <span>${cesta.ahorro > 0
+                  ? `Repartiendo entre los dos ahorrarías ${euros(cesta.ahorro)}: no compensa ir a dos (menos de ${AHORRO_MINIMO_PARA_REPARTIR} €).`
+                  : 'Repartiendo no se ahorra nada.'}</span>`}
+          <small>Comparando ${cesta.comunes} de ${items.length} cosas, las que están en los dos.</small>
+        </div>`}
+      ${r.tipo === 'sin_datos' && !ocupado && html`<p class="vacio">Aún no hay precios para comparar. Toca una cosa para elegir su producto.</p>`}
+
+      <div class="chips">
+        <button class="chip ${vista === 'productos' ? 'activo' : ''}" onClick=${() => setVista('productos')}>Por producto</button>
+        <button class="chip ${vista === 'reparto' ? 'activo' : ''}" onClick=${() => setVista('reparto')}>Si repartes</button>
+      </div>
+
+      ${vista === 'productos' ? html`
+        <div class="tabla-precios">
+          <div class="tp-cab"><span></span>${SUPERS.map(([, n]) => html`<span>${n}</span>`)}</div>
+          ${cesta.lineas.map((l) => html`
+            <button class="tp-fila" onClick=${() => setElegir(l.item)}>
+              <span class="tp-nombre">${l.item.nombre}${l.item.detalle && html` <span class="detalle">${l.item.detalle}</span>`}
+                ${l.item.cantidad != null && html`<small>${formatoCantidad(l.item.cantidad, l.item.unidad)}</small>`}</span>
+              ${SUPERS.map(([s]) => {
+                const o = l.porSuper[s];
+                if (!o) return html`<span class="tp-precio nada">${ocupado ? '…' : 'no está'}</span>`;
+                return html`<span class="tp-precio ${l.mejor === s && Object.keys(l.porSuper).length > 1 ? 'mejor' : ''}">
+                  <b>${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>
+                  <small>${o.envases > 1 ? `${o.envases} × ` : ''}${o.producto.nombre}${formatoDe(o.producto) ? `, ${formatoDe(o.producto)}` : ''}</small>
+                </span>`;
+              })}
+            </button>`)}
+        </div>
+        <p class="pie"><small>Toca una fila para cambiar el producto o la marca. ≈ = calculado por unidades, puede variar.</small></p>
+      ` : html`
+        ${SUPERS.map(([s, n]) => cesta.reparto[s].length > 0 && html`
+          <h3 class="categoria">En ${n}: ${euros(cesta.totalReparto[s])}</h3>
+          <ul class="filas">
+            ${cesta.reparto[s].map((l) => html`<li>
+              <button class="enlace nombre" onClick=${() => setElegir(l.item)}>${l.item.nombre}
+                <small>${l.porSuper[s].envases > 1 ? `${l.porSuper[s].envases} × ` : ''}${l.porSuper[s].producto.nombre}</small></button>
+              <span class="cant">${l.porSuper[s].aprox ? '≈ ' : ''}${euros(l.porSuper[s].total)}</span>
+            </li>`)}
+          </ul>`)}
+      `}
+
+      ${cesta.sinPrecio.length > 0 && !ocupado && html`<p class="nota">Sin producto todavía: ${cesta.sinPrecio.map((l) => l.item.nombre).join(', ')}. Tócalo para buscarlo con otras palabras.</p>`}
+      <p class="meta">Precios de las webs de Mercadona e HiperDino para Gran Canaria${dias != null ? (dias < 1 ? ', de hoy' : `, de hace ${dias} día${dias === 1 ? '' : 's'} como mucho`) : ''}.
+        Se actualizan solos cada semana. Lidl llegará con los tiques.</p>
+
+      ${elegir && html`<${ElegirProducto} almacen=${almacen} datos=${datos} catalogo=${catalogo} item=${elegir}
+        linea=${lineaDe(elegir)} onCerrar=${() => setElegir(null)}
+        onCambio=${(rebuscar) => { setElegir(null); if (rebuscar) completar(); }} />`}
+    </${Hoja}>`;
+}
+
+function ElegirProducto({ almacen, datos, catalogo, item, linea, onCerrar, onCambio }) {
+  const [s, setS] = useState(linea?.mejor ?? SUPERS[0][0]);
+  const [texto, setTexto] = useState(() => textoBusqueda(item.nombre, item.detalle, s));
+  const [buscado, setBuscado] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+  useEffect(() => { setTexto(textoBusqueda(item.nombre, item.detalle, s)); setBuscado(null); }, [s]);
+
+  const vale = filtroGustos(datos);
+  const enlaces = datos.equivalencias.filter((e) => e.articulo_id === item.articulo_id)
+    .filter((e) => catalogo.productos.get(e.producto_id)?.supermercado_id === s);
+  const elegidoAMano = enlaces.some((e) => !e.auto);
+  const actual = linea?.porSuper[s]?.producto;
+  const resultados = (buscado ?? catalogo.buscado(s, texto) ?? enlaces.map((e) => catalogo.productos.get(e.producto_id)))
+    .filter(Boolean);
+
+  const buscar = async (e) => {
+    e?.preventDefault();
+    if (!texto.trim()) return;
+    setOcupado(true);
+    try {
+      await catalogo.buscar([{ texto: texto.trim(), supers: [s] }]);
+      setBuscado(catalogo.buscado(s, texto.trim()) ?? []);
+    } catch (err) {
+      mostrarAviso(`No se pudo buscar: ${err.message}`);
+    }
+    setOcupado(false);
+  };
+  const elegir = async (p) => {
+    await almacen.borrar('equivalencias', enlaces.map((e) => e.id));
+    await almacen.insertar('equivalencias', { articulo_id: item.articulo_id, producto_id: p.id, auto: false });
+    mostrarAviso(`${item.nombre} en ${nombreSuper(s)}: ${p.nombre}`);
+    onCambio(false);
+  };
+  const queElijaLaApp = async () => {
+    await almacen.borrar('equivalencias', enlaces.map((e) => e.id));
+    onCambio(true);
+  };
+  const noMeGusta = async (p) => {
+    await almacen.insertar('preferencias', p.marca
+      ? { tipo: 'no_gusta', marca: p.marca, producto_id: null, articulo_id: null }
+      : { tipo: 'no_gusta', producto_id: p.id, marca: null, articulo_id: null });
+    mostrarAviso(p.marca ? `No se propondrá nada de ${p.marca}` : 'No se propondrá este producto');
+    if (actual?.id === p.id) onCambio(true);
+  };
+  const disgustos = datos.preferencias.filter((x) => x.tipo === 'no_gusta');
+
+  return html`
+    <${Hoja} titulo=${item.detalle ? `${item.nombre} (${item.detalle})` : item.nombre} onCerrar=${onCerrar}>
+      <div class="chips">
+        ${SUPERS.map(([id, n]) => html`<button class="chip ${s === id ? 'activo' : ''}" onClick=${() => setS(id)}>${n}</button>`)}
+      </div>
+      <p>${actual
+        ? html`Ahora: <b>${actual.nombre}</b> ${formatoDe(actual) ? `(${formatoDe(actual)})` : ''} · ${euros(actual.precio)}
+            <br /><small>${elegidoAMano ? 'Elegido por ti.' : 'Elegido por la app: el más barato de los que encajan.'}</small>`
+        : 'Todavía no hay producto en este súper.'}</p>
+      ${elegidoAMano && html`<p><button class="enlace" onClick=${queElijaLaApp}>Que elija la app (el más barato)</button></p>`}
+      <form class="fila-campo" onSubmit=${buscar}>
+        <input type="search" value=${texto} onInput=${(e) => { setTexto(e.target.value); setBuscado(null); }} />
+        <button class="boton" disabled=${ocupado}>${ocupado ? '…' : 'Buscar'}</button>
+      </form>
+      <ul class="productos">
+        ${resultados.map((p) => {
+          const gusta = vale(p);
+          return html`<li class=${gusta ? '' : 'descartado'}>
+            ${p.imagen_url ? html`<img src=${p.imagen_url} alt="" loading="lazy" referrerpolicy="no-referrer" />` : html`<span class="sin-foto"></span>`}
+            <div class="info">
+              <span>${p.nombre}</span>
+              <small>${[formatoDe(p), Number.isFinite(precioUnidad(p)) && `${precioUnidad(p).toFixed(2).replace('.', ',')} ${etiquetaUnidad(p.unidad)}`].filter(Boolean).join(' · ')}</small>
+              ${gusta && p.marca && html`<button class="enlace peq" onClick=${() => noMeGusta(p)}>No me gusta ${p.marca}</button>`}
+              ${!gusta && html`<small>No le gusta</small>`}
+            </div>
+            <div class="precio">
+              <b>${euros(p.precio)}</b>
+              ${p.precio_anterior && html`<s>${euros(p.precio_anterior)}</s>`}
+              ${gusta && (actual?.id === p.id && elegidoAMano
+                ? html`<span class="elegido">✓</span>`
+                : html`<button class="boton peq" onClick=${() => elegir(p)}>Elegir</button>`)}
+            </div>
+          </li>`;
+        })}
+        ${resultados.length === 0 && html`<li class="vacio">Busca con otras palabras (por ejemplo, la marca).</li>`}
+      </ul>
+      ${disgustos.length > 0 && html`
+        <h3>No le gusta</h3>
+        <div class="chips">${disgustos.map((x) => html`<button class="chip" onClick=${() => almacen.borrar('preferencias', x.id)}>
+          ${x.marca ?? catalogo.productos.get(x.producto_id)?.nombre ?? 'producto'} ✕</button>`)}</div>
+        <p><small>Toca una para volver a permitirla.</small></p>`}
     </${Hoja}>`;
 }
 
@@ -666,7 +992,7 @@ function App({ almacen, sesion }) {
     + datos.lista.filter((l) => !l.comprado).length, [datos, pestana]);
 
   const props = {
-    almacen, datos,
+    almacen, datos, sesion,
     abrirReceta: (id, raciones) => setReceta({ id, raciones }),
     editarReceta: (id) => setEditando(id),
   };
