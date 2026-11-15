@@ -16,6 +16,7 @@ import {
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
+import { entenderConsumo, cantidadGastada } from './consumo.js';
 import * as config from '../config.js';
 
 // ---------------------------------------------------------------------------
@@ -552,6 +553,15 @@ function PantallaDespensa({ almacen, datos }) {
   const [buscar, setBuscar] = useState('');
   const [soloFaltan, setSoloFaltan] = useState(false);
   const [editar, setEditar] = useState(null); // articulo_id o 'nuevo'
+  const [gastado, setGastado] = useState('');
+  const [revisar, setRevisar] = useState(null);   // lo gastado, entendido, para confirmar
+  const [repasar, setRepasar] = useState(false);
+  const restar = (e) => {
+    e?.preventDefault();
+    const cosas = entenderConsumo(gastado, datos);
+    if (!cosas.length) return mostrarAviso('Di o escribe qué habéis gastado');
+    setRevisar(cosas);
+  };
   const filas = datos.despensa
     .filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)))
     .filter((d) => !soloFaltan || (d.minimo > 0 && d.cantidad < d.minimo));
@@ -563,7 +573,14 @@ function PantallaDespensa({ almacen, datos }) {
         <input type="search" placeholder="Buscar en la despensa" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
         <button class="boton" onClick=${() => setEditar('nuevo')}>+ Añadir</button>
       </div>
+      <form class="gastado" onSubmit=${restar}>
+        <input placeholder="He gastado… (bote de tomate, bolsa de papas)" value=${gastado}
+          onInput=${(e) => setGastado(e.target.value)} aria-label="Lo que habéis gastado" />
+        <${BotonDictar} onTexto=${(t) => { setGastado(t); setRevisar(entenderConsumo(t, datos)); }} />
+        <button class="boton" disabled=${!gastado.trim()}>Restar</button>
+      </form>
       <div class="chips">
+        <button class="chip" onClick=${() => setRepasar(true)}>📋 Repasar despensa</button>
         <button class="chip ${soloFaltan ? 'activo' : ''}" onClick=${() => setSoloFaltan(!soloFaltan)}>
           Se acaba${faltanN ? ` (${faltanN})` : ''}</button>
       </div>
@@ -592,7 +609,113 @@ function PantallaDespensa({ almacen, datos }) {
         </ul>`)}
       ${editar && html`<${EditarDespensa} almacen=${almacen} datos=${datos} articuloId=${editar === 'nuevo' ? null : editar}
         onCerrar=${() => setEditar(null)} />`}
+      ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
+        onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
+      ${repasar && html`<${RepasarDespensa} almacen=${almacen} datos=${datos} onCerrar=${() => setRepasar(false)} />`}
     </section>`;
+}
+
+/** Confirmar lo gastado antes de restarlo. Lo que no se reconoce se pregunta. */
+function RevisarConsumo({ almacen, datos, cosas, onCerrar }) {
+  const [filas, setFilas] = useState(cosas.map((c, i) => ({ ...c, clave: i, saltar: false })));
+  const cambiar = (k, cambios) => setFilas((xs) => xs.map((x) => (x.clave === k ? { ...x, ...cambios } : x)));
+  const elegir = (k, a) => {
+    const f = filas.find((x) => x.clave === k);
+    cambiar(k, { articulo: a, cantidad: cantidadGastada(f.leido, a, datos), saltar: false });
+  };
+  const enDespensa = datos.despensa.map((d) => articulo(datos, d.articulo_id)).filter(Boolean)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const listas = filas.filter((f) => !f.saltar && f.articulo && f.cantidad > 0);
+  const pendientes = filas.filter((f) => !f.saltar && !f.articulo).length;
+  const aplicar = async () => {
+    for (const f of listas) await almacen.sumarDespensa(f.articulo.id, -f.cantidad);
+    mostrarAviso(`Restado: ${listas.map((f) => f.articulo.nombre).join(', ')}`);
+    onCerrar(true);
+  };
+  return html`
+    <${Hoja} titulo="Restar de la despensa" onCerrar=${() => onCerrar(false)}>
+      ${filas.map((f) => {
+        const hay = f.articulo ? datos.despensa.find((d) => d.articulo_id === f.articulo.id)?.cantidad ?? 0 : 0;
+        return html`<div class="ing-fila ${f.saltar ? 'saltado' : ''}">
+          <div class="ing-cab">
+            <span class="meta">“${f.texto}”</span>
+            <button class="enlace" onClick=${() => cambiar(f.clave, { saltar: !f.saltar })}>${f.saltar ? 'Restar' : 'Saltar'}</button>
+          </div>
+          ${!f.saltar && f.articulo && html`
+            <div class="ing-cab"><strong>${f.articulo.nombre}</strong>
+              <button class="enlace" onClick=${() => cambiar(f.clave, { articulo: null })}>No es esto</button></div>
+            <div class="ing-datos">
+              <${CampoCantidad} unidad=${f.articulo.unidad} valor=${f.cantidad} onCambio=${(c) => cambiar(f.clave, { cantidad: c })} />
+              <small class="meta">hay ${formatoCantidad(hay, f.articulo.unidad)}${hay === 0 ? ' (no estaba apuntado)' : ''}</small>
+            </div>`}
+          ${!f.saltar && !f.articulo && html`
+            <p><b>¿Qué es?</b></p>
+            <div class="acciones">
+              ${f.sugerencias.map((a) => html`<button class="chip" onClick=${() => elegir(f.clave, a)}>${a.nombre}</button>`)}
+            </div>
+            <select aria-label="Elegir de la despensa" onChange=${(e) => { const a = articulo(datos, e.target.value); if (a) elegir(f.clave, a); }}>
+              <option value="">Elegir de la despensa…</option>
+              ${enDespensa.map((a) => html`<option value=${a.id}>${a.nombre}</option>`)}
+            </select>`}
+        </div>`;
+      })}
+      ${pendientes > 0 && html`<p class="meta">Elige qué es o pulsa Saltar en ${pendientes === 1 ? 'la que falta' : `las ${pendientes} que faltan`}.</p>`}
+      <button class="boton grande" disabled=${!listas.length || pendientes > 0} onClick=${aplicar}>
+        Restar ${listas.length || ''} de la despensa</button>
+    </${Hoja}>`;
+}
+
+/** Recorrer la despensa y mandar a la lista lo que falta o queda poco. */
+function RepasarDespensa({ almacen, datos, onCerrar }) {
+  const [buscar, setBuscar] = useState('');
+  const [marcas, setMarcas] = useState({});   // articulo_id -> 'poco' | 'nohay'
+  const [guardando, setGuardando] = useState(false);
+  const hoy = fechaISO();
+  const enLista = new Set([
+    ...datos.lista.filter((l) => !l.comprado).map((l) => l.articulo_id),
+    ...faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).map((f) => f.articulo_id),
+  ]);
+  const filas = datos.despensa.filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)));
+  const marcar = (id, m) => setMarcas((x) => ({ ...x, [id]: x[id] === m ? undefined : m }));
+  const elegidas = Object.entries(marcas).filter(([, m]) => m);
+  const aplicar = async () => {
+    setGuardando(true);
+    for (const [id, m] of elegidas) {
+      const d = datos.despensa.find((x) => x.articulo_id === id);
+      if (m === 'nohay') await almacen.fijarDespensa(id, { cantidad: 0 });
+      // Con mínimo y sin nada en casa, la lista ya lo pide sola.
+      if (m === 'nohay' && d?.minimo > 0) continue;
+      await almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
+    }
+    setGuardando(false);
+    mostrarAviso(`${elegidas.length} apuntado${elegidas.length === 1 ? '' : 's'} en la lista`);
+    onCerrar();
+  };
+  return html`
+    <${Hoja} titulo="Repasar despensa" onCerrar=${onCerrar}>
+      <p class="meta">Marca lo que queda poco o ya no hay. Irá a la lista de la compra.</p>
+      <input type="search" placeholder="Buscar" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
+      ${datos.despensa.length === 0 && html`<p class="vacio">La despensa está vacía. Añade primero lo que soléis tener en casa.</p>`}
+      ${agruparPorCategoria(filas, datos.articulos).map(([cat, grupo]) => html`
+        <h3 class="categoria">${cat}</h3>
+        <ul class="filas repaso">
+          ${grupo.map((d) => {
+            const a = articulo(datos, d.articulo_id);
+            const m = marcas[a.id];
+            return html`<li>
+              <span class="nombre">${a.nombre}<small>hay ${formatoCantidad(d.cantidad, a.unidad)}</small></span>
+              ${enLista.has(a.id) && !m
+                ? html`<small class="meta">✓ en la lista</small>`
+                : html`<div class="chips-dia">
+                    <button class="chip ${m === 'poco' ? 'activo' : ''}" onClick=${() => marcar(a.id, 'poco')}>Queda poco</button>
+                    <button class="chip ${m === 'nohay' ? 'activo' : ''}" onClick=${() => marcar(a.id, 'nohay')}>No hay</button>
+                  </div>`}
+            </li>`;
+          })}
+        </ul>`)}
+      <button class="boton grande fijo-abajo" disabled=${guardando} onClick=${elegidas.length ? aplicar : onCerrar}>
+        ${elegidas.length ? `Apuntar ${elegidas.length} en la lista` : 'Cerrar'}</button>
+    </${Hoja}>`;
 }
 
 function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
