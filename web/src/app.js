@@ -655,13 +655,13 @@ function PantallaLista({ almacen, datos, sesion }) {
   const hoy = fechaISO();
   const [plazo, setPlazo] = useState(leerPlazo());
   const [texto, setTexto] = useState('');
-  const [verComprado, setVerComprado] = useState(true);
   const [editar, setEditar] = useState(null);
   const [comparar, setComparar] = useState(false);
   const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
   const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
   const manual = datos.lista.filter((l) => !l.comprado);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
+  const tachados = comprado.map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
   const pendientes = [
     ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
     ...manual.map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
@@ -748,13 +748,23 @@ function PantallaLista({ almacen, datos, sesion }) {
         <span class="chips-label">Recetas de:</span>
         ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
       </div>
-      ${pendientes.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
+      ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
+      ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
         <p><small>La lista se llena sola con las recetas del plan y con lo que baje del mínimo en la despensa.</small></p></div>`}
-      ${agruparPorCategoria(pendientes, datos.articulos).map(([cat, grupo]) => html`
+      ${agruparPorCategoria([...pendientes, ...tachados], datos.articulos).map(([cat, grupo]) => html`
         <h3 class="categoria">${cat}</h3>
         <ul class="filas compra">
-          ${grupo.map((f) => {
+          ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map((f) => {
             const a = articulo(datos, f.articulo_id);
+            if (f.tipo === 'comprado') {
+              return html`<li key=${f.clave} class="hecho">
+                <button class="marcar marcado" aria-label=${`Desmarcar: ${a?.nombre}`} onClick=${() => deshacer(f)}>✓</button>
+                <button class="enlace nombre" onClick=${() => setEditar(f)}>
+                  <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>en el carro · toca ✓ para desmarcar</small>
+                </button>
+                <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
+              </li>`;
+            }
             const motivo = f.tipo === 'manual' ? 'a mano'
               : [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
             return html`<li key=${f.clave}>
@@ -768,21 +778,9 @@ function PantallaLista({ almacen, datos, sesion }) {
           })}
         </ul>`)}
       ${comprado.length > 0 && html`
-        <div class="comprado">
-          <button class="enlace" onClick=${() => setVerComprado(!verComprado)}>
-            ${verComprado ? '▾' : '▸'} Comprado (${comprado.length})</button>
-          ${verComprado && html`
-            <ul class="filas">
-              ${comprado.map((l) => {
-                const a = articulo(datos, l.articulo_id);
-                return html`<li class="hecho">
-                  <button class="marcar marcado" aria-label=${`Deshacer: ${a?.nombre}`} onClick=${() => deshacer(l)}>✓</button>
-                  <button class="enlace nombre" onClick=${() => setEditar(l)}>${a?.nombre}<small>toca para cambiar la cantidad</small></button>
-                  <span class="cant">${l.cantidad != null ? formatoCantidad(l.cantidad, a?.unidad) : ''}</span>
-                </li>`;
-              })}
-            </ul>
-            <p class="pie"><button class="enlace" onClick=${vaciarComprado}>Vaciar comprados</button></p>`}
+        <div class="terminar">
+          <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
+          <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Quitar lo tachado? Toca otra vez" onClick=${vaciarComprado} />
         </div>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
       ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(false)}
