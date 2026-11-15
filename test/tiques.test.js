@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { leerTique, emparejarArticulo, gastosPorPeriodo, ahorroPosible, inicioPeriodo, pagado, gastoPorCategoria, textoCSV, tiqueRepetido } from '../web/src/tiques.js';
+import { leerTique, emparejarArticulo, gastosPorPeriodo, ahorroPosible, inicioPeriodo, pagado, gastoPorCategoria, textoCSV, tiqueRepetido, lineasQueSobran, seccionPorTexto } from '../web/src/tiques.js';
 import { ARTICULOS } from '../web/src/recetas-inicio.js';
 
 const articulos = Object.entries(ARTICULOS).map(([nombre, [unidad]], i) => ({ id: `a${i}`, nombre, unidad }));
@@ -168,4 +168,29 @@ test('tique repetido: mismo súper, día y total (y hora si la hay)', () => {
     lineas: [{ texto: 'Leche semidesnatada' }, { texto: 'PAN DE MOLDE INTEGRAL' }] }, guardados, lineas)?.id, 't2');
   assert.equal(tiqueRepetido({ supermercado: 'mercadona', fecha: '2026-11-15', total: 5.55,
     lineas: [{ texto: 'Huevos' }] }, guardados, lineas), null);
+});
+
+test('lo del pago no cuenta como producto, ni al leer ni en lo ya guardado', () => {
+  const t = leerTique('LIDL\nZUMO SALUDABLE 0,99x 2 1,98 B\nPAN 1,00 A\nTOTAL 2,98\nENTREGA 50,00\nIMP.: 2,98');
+  assert.deepEqual(t.lineas.map((l) => [l.texto, l.cantidad, l.importe]), [['ZUMO SALUDABLE', 2, 1.98], ['PAN', null, 1]]);
+  // Guardados antes del arreglo (como los tiques reales de Lidl de noviembre)
+  const tiques = [{ id: 't1', total: 98.34 }, { id: 't2', total: 32.78 }];
+  const lineas = [
+    { id: 'a', tique_id: 't1', texto: 'GAMBON AUSTRAL', importe: 9.39, descuento: 0.4 },
+    { id: 'b', tique_id: 't1', texto: 'MINIS', importe: 89.35, descuento: 0 },
+    { id: 'c', tique_id: 't1', texto: 'ENTREGA', importe: 98.34, descuento: 0 },
+    { id: 'd', tique_id: 't1', texto: 'IMP.:', importe: 98.34, descuento: 0 },
+    { id: 'e', tique_id: 't2', texto: 'ENTRECOT DE AÑOJO', importe: 32.78, descuento: 0 },
+    { id: 'f', tique_id: 't2', texto: 'ENTREGA', importe: 52.8, descuento: 0 },
+  ];
+  assert.deepEqual(lineasQueSobran(tiques, lineas).map((l) => l.id).sort(), ['c', 'd', 'f']);
+});
+
+test('sección probable de lo que no está en la lista de la casa', () => {
+  assert.equal(seccionPorTexto('LIMPIADOR'), 'Droguería');
+  assert.equal(seccionPorTexto('ENTRECOT DE AÑOJO'), 'Carne');
+  assert.equal(seccionPorTexto('KEFIR NATURAL'), 'Lácteos y huevos');
+  assert.equal(seccionPorTexto('TOMATE TRITURADO HIDA'), 'Conservas');
+  assert.equal(seccionPorTexto('KIWI GOLD ZESPRI'), 'Frutas y verduras');
+  assert.equal(seccionPorTexto('XYZ 123'), null);
 });

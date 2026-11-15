@@ -6,7 +6,7 @@ import { normalizar, redondear, fechaISO } from './logica.js';
 // ---------------------------------------------------------------------------
 // Leer el texto
 // ---------------------------------------------------------------------------
-const NO_SON_PRODUCTOS = /\b(total|subtotal|sub-total|tarjeta|efectivo|cambio|entregado|igic|i\.g\.i\.c|iva|base|cuota|importe|visa|mastercard|maestro|n\.?i\.?f|c\.?i\.?f|factura|puntos|saldo|pago|pagado|devoluci|contactless|autoriz|operaci|ahorro total|has ahorrado|cupones? acumulad|redondeo|n[ºo°] art|art[ií]culos)\b/i;
+const NO_SON_PRODUCTOS = /\b(total|subtotal|sub-total|tarjeta|efectivo|cambio|entregado|igic|i\.g\.i\.c|iva|base|cuota|importe|visa|mastercard|maestro|n\.?i\.?f|c\.?i\.?f|factura|puntos|saldo|pago|pagado|devoluci|contactless|autoriz|operaci|ahorro total|has ahorrado|cupones? acumulad|redondeo|n[ºo°] art|art[ií]culos|entrega|imp|a pagar|pendiente|propina|bolsa de pago)\b/i;
 
 /** "1,99" "1.99" "-0,30" (con los errores típicos del reconocimiento: O por 0) -> número */
 export function leerImporte(s) {
@@ -129,7 +129,14 @@ export function leerTique(texto) {
       cantidad = leerImporte(pesoAqui[1]); kg = true; precioUnidad = null; resto = resto.slice(0, pesoAqui.index).trim();
     }
     if (cantidad && !precioUnidad && cantidad > 1 && !kg) precioUnidad = redondear(importe / cantidad);
-    resto = resto.replace(/^[^a-záéíóúñ0-9]+/i, '').trim();
+    // Lidl: "ZUMO SALUDABLE 0,99x 2" (precio por unidad y veces detrás del nombre)
+    const porVeces = cantidad == null && resto.match(/[\s,]+(\d{1,3}[.,]\d{2,3})\s*[x×]\s*(\d{1,3})$/i);
+    if (porVeces) {
+      const pu = leerImporte(porVeces[1]), n = Number(porVeces[2]);
+      cantidad = n; precioUnidad = Math.abs(pu * n - importe) < 0.02 ? pu : redondear(importe / n);
+      resto = resto.slice(0, porVeces.index).trim();
+    }
+    resto = resto.replace(/^[^a-záéíóúñ0-9]+/i, '').replace(/[\s,;.]+$/, '').trim();
     if (!/[a-záéíóúñ]{2}/i.test(resto)) continue;
     if (vecesPendiente && cantidad == null && Math.abs(importe - vecesPendiente.n * vecesPendiente.pu) < 0.02) {
       cantidad = vecesPendiente.n; precioUnidad = vecesPendiente.pu;
@@ -137,7 +144,8 @@ export function leerTique(texto) {
     vecesPendiente = null;
     lineas.push({ texto: resto, cantidad, precio_unidad: precioUnidad, importe, descuento: 0, ...(kg ? { kg } : {}) });
   }
-  return { supermercado: detectarSuper(texto), fecha: detectarFecha(texto), hora: horaJuntoAFecha(texto), total, lineas };
+  return { supermercado: detectarSuper(texto), fecha: detectarFecha(texto), hora: horaJuntoAFecha(texto), total,
+    lineas: sinLineasDePago(lineas, total) };
 }
 
 /** Lo que de verdad se pagó por una línea. */
@@ -235,7 +243,7 @@ export function gastoPorCategoria(lineas, articulos) {
   const cat = new Map(articulos.map((a) => [a.id, a.categoria || 'Otros']));
   const suma = new Map();
   for (const l of lineas) {
-    const c = (l.articulo_id && cat.get(l.articulo_id)) || 'Sin clasificar';
+    const c = (l.articulo_id && cat.get(l.articulo_id)) || seccionPorTexto(l.texto) || 'Sin clasificar';
     suma.set(c, redondear((suma.get(c) ?? 0) + pagado(l)));
   }
   return [...suma.entries()].sort((a, b) => b[1] - a[1]);
@@ -279,4 +287,54 @@ export function tiqueRepetido(nuevo, tiques, lineasGuardadas = []) {
     if (nuevas.size && comunes / Math.max(nuevas.size, viejas.size) >= 0.6) return t;
   }
   return null;
+}
+
+/**
+ * Quita las líneas que son el pago y no un producto ("ENTREGA 50,00", "IMP.: 98,34"): las que el lector
+ * reconoce como tal, o las que valen el total cuando el resto ya suma el total.
+ */
+function sinLineasDePago(lineas, total) {
+  let fuera = lineas.filter((l) => NO_SON_PRODUCTOS.test(l.texto));
+  let quedan = lineas.filter((l) => !fuera.includes(l));
+  if (total != null) {
+    const suma = (ls) => redondear(ls.reduce((s, l) => s + pagado(l), 0));
+    for (const l of [...quedan].reverse()) {
+      if (suma(quedan) <= total + 0.05) break;
+      const sin = quedan.filter((x) => x !== l);
+      // Fuera la línea que hace que no cuadre, si sin ella cuadra (o se acerca) y vale como un pago
+      if (l.importe >= total - 0.01 || Math.abs(suma(sin) - total) <= 0.05) { quedan = sin; fuera = [...fuera, l]; }
+    }
+  }
+  return quedan;
+}
+
+/** Líneas ya guardadas que no son productos (de tiques leídos antes de saber quitarlas). */
+export function lineasQueSobran(tiques, lineas) {
+  const sobran = [];
+  for (const t of tiques) {
+    const suyas = lineas.filter((l) => l.tique_id === t.id);
+    const buenas = new Set(sinLineasDePago(suyas, t.total == null ? null : Number(t.total)));
+    sobran.push(...suyas.filter((l) => !buenas.has(l)));
+  }
+  return sobran;
+}
+
+// Sección probable de una línea sin artículo de la casa (para "En qué se va").
+const SECCIONES = [
+  ['Droguería', /limpi|deterg|lavavaj|suaviz|lejia|fregon|bayeta|estropaj|papel hig|servillet|rollo coc|jabon|champu|gel |desodor|dentif|pañal|toallit|mantel|bolsa basura|bricolaje|pila|bombilla/],
+  ['Bebidas', /\bagua\b|refresco|cola\b|zumo|sidra|cerveza|vino|bebida|tonica|gaseosa|batido|nectar/],
+  ['Pescado', /pescad|merluz|salmon|atun fresc|langostin|gamb|calamar|sepia|mejill|bacalao|dorada|lubina|pulpo|colas de/],
+  ['Carne', /carne|pollo|pechug|ternera|añojo|anojo|entrecot|cerdo|lomo|costill|chuleta|hamburgues|salchich|pavo|cordero|conejo|filete|picada/],
+  ['Charcutería y quesos', /jamon|chorizo|salchichon|fuet|mortadela|pate|queso|lonchas|edam|gouda|bacon|embutid/],
+  ['Lácteos y huevos', /leche|yogur|kefir|bifidus|natilla|flan|mousse|postre|nata|mantequilla|huevo|cuajada|actimel/],
+  ['Despensa', /galleta|patatas fritas|chocolat|golosin|pistacho|almendra|frutos secos|pretzel|snack|cacao|cereal/],
+  ['Panadería', /\bpan\b|panec|baguet|flauta|barra|bolleria|croissant|magdalen|bizcoch|tostad|picos/],
+  ['Congelados', /congelad|helado|pizza|nugget|croquet|varitas/],
+  ['Conservas', /tomate tritur|tomate frito|conserva|lata|atun|sardina|garbanzo|lenteja|alubia|judias cocid|tomate frito|maiz|aceituna/],
+  ['Frutas y verduras', /platano|manzana|naranja|limon|mandarina|pera\b|kiwi|uva|fresa|melon|sandia|caqui|ciruela|aguacate|papa|patata|tomate|cebolla|ajo|pimiento|lechuga|espinaca|zanahoria|calabac|berenjena|pepino|brocoli|coliflor|judia verde|champi|sofrito|ensalada|higos/],
+  ['Despensa', /arroz|pasta|macarron|espagueti|harina|azucar|sal\b|aceite|vinagre|galleta|cereal|cacao|cafe|infusion|chocolat|golosin|pistacho|almendra|nuez|frutos secos|pretzel|patatas fritas|snack|polvito|minis|mermelada|miel|tomate triturado/],
+];
+export function seccionPorTexto(texto) {
+  const t = normalizar(texto);
+  return SECCIONES.find(([, re]) => re.test(t))?.[0] ?? null;
 }

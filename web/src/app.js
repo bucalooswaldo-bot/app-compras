@@ -12,7 +12,7 @@ import {
 import { crearCatalogo } from './catalogo.js';
 import {
   leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible, gastoPorCategoria, textoCSV,
-  tiqueRepetido,
+  tiqueRepetido, lineasQueSobran,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
@@ -1368,6 +1368,13 @@ function PantallaGastos({ almacen, datos, sesion }) {
   const [revisar, setRevisar] = useState(null);
   const [ver, setVer] = useState(null);
   const [preciosListos, setPreciosListos] = useState(false);
+  // Tiques leídos antes de saber quitar las líneas del pago ("ENTREGA", "IMP.:"): se limpian solos.
+  useEffect(() => {
+    const sobran = lineasQueSobran(datos.tiques, datos.tique_lineas);
+    if (!sobran.length) return;
+    almacen.borrar('tique_lineas', sobran.map((l) => l.id))
+      .then(() => mostrarAviso(`Quitadas ${sobran.length} líneas que eran del pago, no productos (${[...new Set(sobran.map((l) => l.texto))].join(', ')}).`));
+  }, [datos.tique_lineas.length]);
   const fichero = useRef(null);
   const camara = useRef(null);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
@@ -1623,7 +1630,10 @@ function VerTique({ almacen, datos, id, onCerrar }) {
           <div class="fila-gasto">
             <span>${l.texto}${l.articulo_id ? html` <small class="meta">· ${nombreArticulo(datos, l.articulo_id)}</small>` : ''}</span>
             <b>${euros(pagado(l))}</b>
+            <button class="icono peq" aria-label=${`Quitar ${l.texto}`} onClick=${() => almacen.borrar('tique_lineas', l.id)}>✕</button>
           </div>`)}
+        ${Math.abs(redondear(lineas.reduce((x, l) => x + pagado(l), 0)) - Number(t.total ?? 0)) > 0.05 && html`
+          <p class="texto-suave aviso-suave">Las líneas suman ${euros(redondear(lineas.reduce((x, l) => x + pagado(l), 0)))} y el total es ${euros(Number(t.total ?? 0))}: quita con ✕ lo que no sea un producto.</p>`}
         <div class="fila-gasto total"><span>Total</span><b>${euros(t.total ?? 0)}</b></div>
       </div>
       <div class="pie">
