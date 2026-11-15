@@ -67,6 +67,22 @@ export function crearCatalogo(cliente) {
       return data.resultados ?? [];
     },
 
+    /** Productos de Lidl (salen de los tiques de la casa). */
+    async cargarLidl() {
+      const { data, error } = await cliente.from('productos_super').select('id').eq('supermercado_id', 'lidl');
+      if (error) throw error;
+      const ids = data.map((x) => x.id);
+      for (const id of ids) productos.delete(id); // sus precios cambian con cada tique
+      await this.cargar(ids);
+    },
+
+    /** Productos de Lidl cuyo nombre lleva las palabras de `texto`. */
+    deLidl(texto) {
+      const ws = String(texto).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter((w) => w.length > 2);
+      return [...productos.values()].filter((p) => p.supermercado_id === 'lidl' && Number.isFinite(p.precio)
+        && ws.some((w) => p.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(w.slice(0, 5))));
+    },
+
     buscado(supermercado, texto) {
       const ids = busquedas.get(`${supermercado}|${texto.toLowerCase()}`);
       return ids ? ids.map((id) => productos.get(id)).filter(Boolean) : null;

@@ -59,7 +59,7 @@ h1, h2, h3 { margin: 0; line-height: 1.2; }
 main { max-width: 640px; margin: 0 auto; padding: 12px 16px 24px; }
 .pestanas {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: var(--panel); border-top: 1px solid var(--linea);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -244,3 +244,34 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .boton.peq { min-height: 34px; padding: 0 12px; font-size: 0.88rem; }
 .enlace.peq { font-size: 0.8rem; color: var(--suave); text-decoration: underline; }
 .elegido { color: var(--verde); font-weight: 700; font-size: 1.2rem; }
+
+/* Gastos y tiques */
+.acciones-gastos { display: flex; flex-direction: column; align-items: stretch; gap: 6px; margin: 4px 0 6px; }
+.periodos { margin: 14px 0 10px; }
+.tarjeta-gasto {
+  background: var(--panel); border-radius: 14px; box-shadow: var(--sombra); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.tarjeta-gasto .cifra { font-size: 2rem; line-height: 1.1; }
+.por-super { display: grid; gap: 4px; margin-top: 8px; border-top: 1px solid var(--linea); padding-top: 8px; }
+.por-super div, .fila-gasto { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.fila-gasto { padding: 10px 2px; border-bottom: 1px solid var(--linea); width: 100%; text-align: left; color: inherit; text-decoration: none; }
+.fila-gasto b { white-space: nowrap; }
+.fila-gasto.total { font-weight: 600; border-bottom: 0; }
+.ahorro { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--aviso-claro); }
+.ahorro.bien { background: var(--verde-claro); }
+.ahorro-detalle { font-size: 0.9rem; color: var(--suave); margin: 6px 0 0; }
+.aviso-suave { color: var(--aviso); }
+.lineas-tique { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.linea-tique {
+  display: grid; grid-template-columns: 1fr 5.5em auto; gap: 6px; align-items: center;
+  padding-bottom: 10px; border-bottom: 1px solid var(--linea);
+}
+.linea-tique .lt-articulo, .linea-tique small { grid-column: 1 / -1; }
+.linea-tique .lt-importe { text-align: right; }
+
+/* Menú propuesto */
+.boton.proponer { width: 100%; margin: 4px 0 12px; }
+.propuesta { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--linea); }
+.propuesta.fuera { opacity: 0.45; text-decoration: line-through; }
+.texto-suave { color: var(--suave); font-size: 0.92rem; margin: 6px 0; }

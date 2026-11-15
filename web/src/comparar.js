@@ -9,7 +9,10 @@ import { normalizar, redondear } from './logica.js';
 export const SUPERS = [
   ['mercadona', 'Mercadona'],
   ['hiperdino', 'HiperDino'],
+  ['lidl', 'Lidl'],
 ];
+// Los que se buscan en su web. Lidl no vende online: sus precios salen de los tiques.
+export const SUPERS_WEB = ['mercadona', 'hiperdino'];
 export const nombreSuper = (id) => SUPERS.find((s) => s[0] === id)?.[1] ?? id;
 
 // Solo se recomienda ir a dos súper si se ahorra al menos esto (euros).
@@ -377,10 +380,17 @@ export function calcularCesta(items, supers = SUPERS.map((s) => s[0])) {
     return { item, porSuper, mejor };
   });
 
-  const comunes = lineas.filter((l) => supers.every((s) => l.porSuper[s]));
-  const totales = Object.fromEntries(supers.map((s) => [s,
+  // Se comparan los súper con precio para al menos la mitad de lo que tiene precio
+  // (Lidl, con pocos precios de tiques, entra en el reparto pero no en el total).
+  const conPrecio = lineas.filter((l) => l.mejor).length;
+  const activos = supers.filter((s) => {
+    const n = lineas.filter((l) => l.porSuper[s]).length;
+    return n > 0 && n >= conPrecio / 2;
+  });
+  const comunes = lineas.filter((l) => activos.length && activos.every((s) => l.porSuper[s]));
+  const totales = Object.fromEntries(activos.map((s) => [s,
     redondear(comunes.reduce((t, l) => t + l.porSuper[s].total, 0))]));
-  const masBarato = comunes.length ? supers.reduce((a, b) => (totales[b] < totales[a] ? b : a)) : null;
+  const masBarato = comunes.length ? activos.reduce((a, b) => (totales[b] < totales[a] ? b : a)) : null;
   const repartido = redondear(comunes.reduce((t, l) => t + l.porSuper[l.mejor].total, 0));
   const ahorro = masBarato ? redondear(totales[masBarato] - repartido) : 0;
   const soloEn = Object.fromEntries(supers.map((s) => [s,
@@ -397,7 +407,7 @@ export function calcularCesta(items, supers = SUPERS.map((s) => s[0])) {
   else if (ahorro >= AHORRO_MINIMO_PARA_REPARTIR) recomendacion = { tipo: 'repartir', ahorro };
   else recomendacion = { tipo: 'uno', supermercado: masBarato, ahorro, diferencia: diferenciaCon(totales, masBarato) };
 
-  return { lineas, comunes: comunes.length, totales, masBarato, repartido, ahorro, soloEn, sinPrecio, reparto,
+  return { lineas, activos, comunes: comunes.length, totales, masBarato, repartido, ahorro, soloEn, sinPrecio, reparto,
     totalReparto, recomendacion };
 }
 
