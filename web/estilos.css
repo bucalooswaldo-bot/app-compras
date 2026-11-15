@@ -304,3 +304,9 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: var(--aviso-claro);
 }
+li.hecho .nombre:has(.tachar) { text-decoration: none; }
+li.hecho .tachar { text-decoration: line-through; }
+li.hecho { opacity: 0.8; }
+.terminar { margin-top: 20px; text-align: center; }
+.dos-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dos-botones .boton.grande { margin-top: 0; }

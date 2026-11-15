@@ -655,13 +655,13 @@ function PantallaLista({ almacen, datos, sesion }) {
   const hoy = fechaISO();
   const [plazo, setPlazo] = useState(leerPlazo());
   const [texto, setTexto] = useState('');
-  const [verComprado, setVerComprado] = useState(true);
   const [editar, setEditar] = useState(null);
   const [comparar, setComparar] = useState(false);
   const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
   const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
   const manual = datos.lista.filter((l) => !l.comprado);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
+  const tachados = comprado.map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
   const pendientes = [
     ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
     ...manual.map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
@@ -748,13 +748,23 @@ function PantallaLista({ almacen, datos, sesion }) {
         <span class="chips-label">Recetas de:</span>
         ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
       </div>
-      ${pendientes.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
+      ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
+      ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
         <p><small>La lista se llena sola con las recetas del plan y con lo que baje del mínimo en la despensa.</small></p></div>`}
-      ${agruparPorCategoria(pendientes, datos.articulos).map(([cat, grupo]) => html`
+      ${agruparPorCategoria([...pendientes, ...tachados], datos.articulos).map(([cat, grupo]) => html`
         <h3 class="categoria">${cat}</h3>
         <ul class="filas compra">
-          ${grupo.map((f) => {
+          ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map((f) => {
             const a = articulo(datos, f.articulo_id);
+            if (f.tipo === 'comprado') {
+              return html`<li key=${f.clave} class="hecho">
+                <button class="marcar marcado" aria-label=${`Desmarcar: ${a?.nombre}`} onClick=${() => deshacer(f)}>✓</button>
+                <button class="enlace nombre" onClick=${() => setEditar(f)}>
+                  <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>en el carro · toca ✓ para desmarcar</small>
+                </button>
+                <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
+              </li>`;
+            }
             const motivo = f.tipo === 'manual' ? 'a mano'
               : [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
             return html`<li key=${f.clave}>
@@ -768,21 +778,9 @@ function PantallaLista({ almacen, datos, sesion }) {
           })}
         </ul>`)}
       ${comprado.length > 0 && html`
-        <div class="comprado">
-          <button class="enlace" onClick=${() => setVerComprado(!verComprado)}>
-            ${verComprado ? '▾' : '▸'} Comprado (${comprado.length})</button>
-          ${verComprado && html`
-            <ul class="filas">
-              ${comprado.map((l) => {
-                const a = articulo(datos, l.articulo_id);
-                return html`<li class="hecho">
-                  <button class="marcar marcado" aria-label=${`Deshacer: ${a?.nombre}`} onClick=${() => deshacer(l)}>✓</button>
-                  <button class="enlace nombre" onClick=${() => setEditar(l)}>${a?.nombre}<small>toca para cambiar la cantidad</small></button>
-                  <span class="cant">${l.cantidad != null ? formatoCantidad(l.cantidad, a?.unidad) : ''}</span>
-                </li>`;
-              })}
-            </ul>
-            <p class="pie"><button class="enlace" onClick=${vaciarComprado}>Vaciar comprados</button></p>`}
+        <div class="terminar">
+          <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
+          <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Quitar lo tachado? Toca otra vez" onClick=${vaciarComprado} />
         </div>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
       ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(false)}
@@ -1221,6 +1219,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
   const [ver, setVer] = useState(null);
   const [preciosListos, setPreciosListos] = useState(false);
   const fichero = useRef(null);
+  const camara = useRef(null);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
 
   useEffect(() => { try { localStorage.setItem('periodo-gastos', periodo); } catch { /* nada */ } }, [periodo]);
@@ -1268,14 +1267,18 @@ function PantallaGastos({ almacen, datos, sesion }) {
   return html`
     <section>
       <div class="acciones-gastos">
-        <button class="boton grande" disabled=${leyendo != null} onClick=${() => fichero.current.click()}>
-          ${leyendo == null ? '📷 Añadir tique' : leyendo === 'cargando' ? 'Preparando el lector…' : `Leyendo el tique… ${leyendo}%`}
-        </button>
+        ${leyendo != null
+          ? html`<button class="boton grande" disabled>${leyendo === 'cargando' ? 'Preparando el lector…' : `Leyendo el tique… ${leyendo}%`}</button>`
+          : html`<div class="dos-botones">
+              <button class="boton grande" onClick=${() => camara.current.click()}>📷 Hacer foto</button>
+              <button class="boton grande" onClick=${() => fichero.current.click()}>🖼 De la galería</button>
+            </div>`}
+        <input ref=${camara} type="file" accept="image/*" capture="environment" hidden onChange=${elegirFoto} />
         <input ref=${fichero} type="file" accept="image/*" hidden onChange=${elegirFoto} />
         <button class="enlace" onClick=${() => setRevisar({ supermercado: null, fecha: null, total: null, lineas: [] })}>o escribirlo a mano</button>
       </div>
-      <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel o una captura del tique de la app
-        (Lidl Plus, Mercadona…). Se lee en el móvil; la foto no se guarda.</p>
+      <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel, o elige de la galería una foto o una captura
+        del tique de la app (Lidl Plus…). El texto se lee en el móvil; la foto no se guarda.</p>
 
       <div class="chips periodos">
         ${Object.entries(NOMBRE_PERIODO).map(([p, n]) => html`
