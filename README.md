@@ -59,6 +59,15 @@ App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
 - Resumen por semana, mes y año, por súper y por sección, y cuánto se habría ahorrado comprando cada cosa donde hoy está más barata.
 - "Descargar todos los gastos" baja un CSV (se abre en Excel) con una fila por cosa comprada, para hacer informes.
 
+## Fotos y marcas en la Despensa
+
+- Cada cosa de la despensa lleva la foto de su marca principal (la elegida con ⭐, o la que más compráis).
+  Al tocar la foto se ven sus marcas: foto, súper, formato, precio y si se ha comprado.
+- Las fotos de Mercadona e HiperDino son las de sus webs (`productos_super.imagen_url`, se enlazan sin copiarlas).
+  Las de Lidl se hacen con el móvil y se guardan en el cajón privado de la casa (`equivalencias.foto_path`).
+- "Añadir una marca" busca en Mercadona e HiperDino y la enlaza con el artículo (también vale para comparar precios).
+- Migración `0007_fotos_productos.sql` (aplicada).
+
 ## Menú de la semana (fase 4)
 
 - En Plan, "✨ Proponer el menú de estos 7 días" rellena los huecos libres (`web/src/menu.js`): prioriza lo que hay en

@@ -333,3 +333,23 @@ li.hecho { opacity: 0.8; }
 .casilla input { width: 22px; min-height: 22px; flex: none; }
 .repetido { text-align: left; }
 .filas .nombre .lapiz { font-size: 0.75rem; opacity: 0.6; }
+
+/* Fotos y marcas en la despensa */
+.foto-boton { flex: none; position: relative; border: 0; padding: 0; background: none; border-radius: 10px; }
+.foto-producto {
+  display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 10px;
+  object-fit: contain; background: #fff; border: 1px solid var(--linea); font-size: 1.5rem;
+}
+.foto-producto.sin { background: var(--verde-claro); border-color: transparent; }
+.foto-producto.grande { width: 84px; height: 84px; font-size: 2.2rem; flex: none; }
+.globo-marcas {
+  position: absolute; right: -6px; bottom: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+  background: var(--verde); color: #fff; font-size: 0.72rem; line-height: 20px; text-align: center;
+}
+.marcas { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 10px; }
+.marcas li { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border-radius: 12px; background: var(--panel); box-shadow: var(--sombra); }
+.marcas li.principal { outline: 2px solid var(--verde); }
+.marca-datos { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.marca-datos small { color: var(--suave); }
+.marca-acciones { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; }
+.marca-acciones .boton { margin: 0; }

@@ -550,13 +550,22 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
 // ---------------------------------------------------------------------------
 // Despensa
 // ---------------------------------------------------------------------------
-function PantallaDespensa({ almacen, datos }) {
+function PantallaDespensa({ almacen, datos, sesion }) {
   const [buscar, setBuscar] = useState('');
   const [soloFaltan, setSoloFaltan] = useState(false);
   const [editar, setEditar] = useState(null); // articulo_id o 'nuevo'
   const [gastado, setGastado] = useState('');
   const [revisar, setRevisar] = useState(null);   // lo gastado, entendido, para confirmar
   const [repasar, setRepasar] = useState(false);
+  const [marcas, setMarcas] = useState(null);     // articulo_id cuyas marcas se ven
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+  const [, setCatalogoListo] = useState(0);
+  useEffect(() => {
+    if (!catalogo) return;
+    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarLidl()])
+      .then(() => setCatalogoListo((n) => n + 1)).catch((e) => console.error(e));
+  }, [datos.equivalencias.length]);
+  const fotosCasa = useFotos(almacen, datos.equivalencias.map((e) => e.foto_path));
   const restar = (e) => {
     e?.preventDefault();
     const cosas = entenderConsumo(gastado, datos);
@@ -585,7 +594,7 @@ function PantallaDespensa({ almacen, datos }) {
         <button class="chip ${soloFaltan ? 'activo' : ''}" onClick=${() => setSoloFaltan(!soloFaltan)}>
           Se acaba${faltanN ? ` (${faltanN})` : ''}</button>
       </div>
-      ${datos.despensa.length > 0 && html`<p class="meta">Toca un producto para cambiar su nombre, cantidad, unidad, sección o aviso. Para uno nuevo, <b>+ Añadir</b>.</p>`}
+      ${datos.despensa.length > 0 && html`<p class="meta">Toca la foto para ver sus marcas, y el nombre para cambiar cantidad, unidad, sección o aviso. Para uno nuevo, <b>+ Añadir</b>.</p>`}
       ${datos.despensa.length === 0 && html`<div class="vacio">
         <p>Apunta lo que hay en casa. Si le pones un <b>mínimo</b>, cuando baje de ahí aparecerá en la lista de la compra.</p>
         <p><small>Ejemplo: aceite, mínimo 1 l.</small></p></div>`}
@@ -596,7 +605,12 @@ function PantallaDespensa({ almacen, datos }) {
             const a = articulo(datos, d.articulo_id);
             const paso = pasoDespensa(a.unidad, d.cantidad);
             const bajo = estaBajo(d);
+            const nMarcas = catalogo ? marcasDe(datos, catalogo, a.id).length : 0;
             return html`<li class=${bajo ? 'bajo' : ''}>
+              <button class="foto-boton" aria-label=${`Marcas y fotos de ${a.nombre}`} onClick=${() => setMarcas(a.id)}>
+                <${FotoProducto} url=${fotoDeArticulo(datos, catalogo, a.id, fotosCasa)} emoji=${emojiDe(a)} />
+                ${nMarcas > 1 && html`<b class="globo-marcas">${nMarcas}</b>`}
+              </button>
               <button class="enlace nombre" onClick=${() => setEditar(d.articulo_id)}>
                 <span>${a.nombre} <span class="lapiz" aria-hidden="true">✏️</span></span>
                 <small>${bajo ? '¡Se acaba! · ' : ''}${d.minimo > 0 ? `aviso al quedar ${formatoCantidad(d.minimo, a.unidad)}` : 'sin aviso'}</small>
@@ -614,6 +628,7 @@ function PantallaDespensa({ almacen, datos }) {
       ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
         onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
       ${repasar && html`<${RepasarDespensa} almacen=${almacen} datos=${datos} onCerrar=${() => setRepasar(false)} />`}
+      ${marcas && html`<${MarcasArticulo} almacen=${almacen} datos=${datos} sesion=${sesion} articuloId=${marcas} onCerrar=${() => setMarcas(null)} />`}
     </section>`;
 }
 
@@ -1309,6 +1324,178 @@ function PantallaAjustes({ almacen, sesion, onCerrar }) {
       <p>En Chrome para Android: menú ⋮ → <b>Añadir a pantalla de inicio</b> (o <b>Instalar aplicación</b>).</p>
       <p class="meta">Versión ${config.VERSION}</p>
     </${Hoja}>`;
+}
+
+// ---------------------------------------------------------------------------
+// Fotos y marcas de cada cosa de la despensa
+// ---------------------------------------------------------------------------
+/** Productos (marcas) enlazados con un artículo, con lo que se sabe de ellos. Lo comprado y lo elegido, primero. */
+function marcasDe(datos, catalogo, articuloId) {
+  if (!catalogo) return [];
+  const veces = new Map();
+  for (const l of datos.tique_lineas) if (l.producto_id) veces.set(l.producto_id, (veces.get(l.producto_id) ?? 0) + 1);
+  return datos.equivalencias
+    .filter((e) => e.articulo_id === articuloId)
+    .map((e) => ({ e, p: catalogo.productos.get(e.producto_id), veces: veces.get(e.producto_id) ?? 0 }))
+    .filter((x) => x.p && x.p.activo !== false)
+    .sort((a, b) => b.veces - a.veces || (a.e.auto === b.e.auto ? 0 : a.e.auto ? 1 : -1)
+      || (a.p.precio ?? 1e9) - (b.p.precio ?? 1e9));
+}
+
+/** La foto que representa al artículo: la elegida, o la de la marca que más compran. */
+function fotoDeArticulo(datos, catalogo, articuloId, fotosCasa) {
+  const marcas = marcasDe(datos, catalogo, articuloId);
+  const a = datos.articulos.find((x) => x.id === articuloId);
+  const elegida = a?.foto_producto_id && marcas.find((m) => m.p.id === a.foto_producto_id);
+  for (const m of elegida ? [elegida, ...marcas] : marcas) {
+    const url = urlDeMarca(m, fotosCasa);
+    if (url) return url;
+  }
+  return null;
+}
+const urlDeMarca = (m, fotosCasa) => (m.e.foto_path ? fotosCasa[m.e.foto_path] : null) ?? m.p.imagen_url ?? null;
+
+function FotoProducto({ url, clase = '', emoji = '🛒' }) {
+  const [mal, setMal] = useState(false);
+  useEffect(() => setMal(false), [url]);
+  return url && !mal
+    ? html`<img class="foto-producto ${clase}" src=${url} alt="" loading="lazy" referrerpolicy="no-referrer" onError=${() => setMal(true)} />`
+    : html`<span class="foto-producto sin ${clase}" aria-hidden="true">${emoji}</span>`;
+}
+
+const EMOJI_SECCION = {
+  'Frutas y verduras': '🥬', Carne: '🥩', Pescado: '🐟', 'Charcutería y quesos': '🧀', 'Lácteos y huevos': '🥛',
+  Panadería: '🥖', Despensa: '🫙', Conservas: '🥫', Congelados: '🧊', Bebidas: '🧃', Droguería: '🧴',
+};
+const emojiDe = (a) => EMOJI_SECCION[a?.categoria] ?? '🛒';
+
+/** Hoja con las marcas de un artículo: sus fotos, precio, veces compradas; buscar más y foto propia (Lidl). */
+function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
+  const a = articulo(datos, articuloId);
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+  const [, setListo] = useState(0);
+  const [resultados, setResultados] = useState(null);
+  const [buscando, setBuscando] = useState(false);
+  const [texto, setTexto] = useState(a?.nombre ?? '');
+  const [subiendo, setSubiendo] = useState(null);
+  const camara = useRef(null);
+  const paraFoto = useRef(null);
+  const marcas = marcasDe(datos, catalogo, articuloId);
+  const fotosCasa = useFotos(almacen, marcas.map((m) => m.e.foto_path));
+  const enTiques = useMemo(() => {
+    const tiques = new Map(datos.tiques.map((t) => [t.id, t]));
+    const vistos = new Map();
+    for (const l of datos.tique_lineas) {
+      if (l.articulo_id !== articuloId || l.producto_id) continue;
+      const t = tiques.get(l.tique_id);
+      const k = `${t?.supermercado_id}|${normalizar(l.texto)}`;
+      const previo = vistos.get(k);
+      if (!previo || (t?.fecha ?? '') > previo.fecha) vistos.set(k, { texto: l.texto, s: t?.supermercado_id, fecha: t?.fecha ?? '', pagado: pagado(l), veces: (previo?.veces ?? 0) + 1 });
+      else previo.veces++;
+    }
+    return [...vistos.values()].sort((x, y) => y.fecha.localeCompare(x.fecha));
+  }, [datos.tique_lineas, articuloId]);
+
+  useEffect(() => {
+    if (!catalogo) return;
+    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarLidl()])
+      .then(() => setListo((n) => n + 1)).catch((e) => console.error(e));
+  }, [datos.equivalencias.length]);
+
+  if (!a) return null;
+  const principal = (a.foto_producto_id && marcas.some((m) => m.p.id === a.foto_producto_id) ? a.foto_producto_id : null)
+    ?? marcas.find((m) => urlDeMarca(m, fotosCasa))?.p.id;
+
+  const buscar = async () => {
+    if (!texto.trim()) return;
+    setBuscando(true);
+    try {
+      const [r] = await catalogo.buscar([{ texto: texto.trim(), supers: SUPERS_WEB }]);
+      const lista = SUPERS_WEB.flatMap((s) => (Array.isArray(r?.[s]) ? r[s] : []))
+        .filter((p) => !marcas.some((m) => m.p.id === p.id)).slice(0, 16);
+      setResultados(lista);
+    } catch (e) {
+      mostrarAviso(`No se pudo buscar: ${e.message ?? e}`);
+    }
+    setBuscando(false);
+  };
+  const enlazar = async (p) => {
+    await almacen.insertar('equivalencias', { articulo_id: articuloId, producto_id: p.id, auto: false });
+    setResultados((xs) => xs.filter((x) => x.id !== p.id));
+    mostrarAviso(`${p.nombre} añadido a ${a.nombre}`);
+  };
+  const quitar = (m) => almacen.borrar('equivalencias', m.e.id);
+  const hacerFoto = (m) => { paraFoto.current = m; camara.current.click(); };
+  const guardarFoto = async (ev) => {
+    const archivo = ev.target.files?.[0];
+    ev.target.value = '';
+    const m = paraFoto.current;
+    if (!archivo || !m) return;
+    setSubiendo(m.e.id);
+    try {
+      const blob = await reducirFoto(archivo, 640, 0.8);
+      const ruta = await almacen.motor.subirFoto(blob);
+      const anterior = m.e.foto_path;
+      await almacen.actualizar('equivalencias', m.e.id, { foto_path: ruta });
+      if (anterior) almacen.motor.borrarFoto(anterior).catch(() => {});
+      mostrarAviso('Foto guardada');
+    } catch (e) {
+      mostrarAviso(`No se pudo guardar la foto: ${e.message ?? e}`);
+    }
+    setSubiendo(null);
+  };
+
+  return html`
+    <${Hoja} titulo=${a.nombre} onCerrar=${onCerrar}>
+      ${!sesion && html`<p class="texto-suave">Las fotos y marcas de los súper se ven con la cuenta de la casa (no en el modo de prueba).</p>`}
+      ${sesion && !marcas.length && html`<p class="texto-suave">Todavía no hay marcas de ${a.nombre}. Búscala abajo, o se irán añadiendo
+        al comparar precios y al guardar tiques de Lidl.</p>`}
+      <ul class="marcas">
+        ${marcas.map((m) => {
+          const url = urlDeMarca(m, fotosCasa);
+          const propia = !m.p.imagen_url;
+          return html`<li class=${principal === m.p.id ? 'principal' : ''}>
+            <${FotoProducto} url=${url} emoji=${emojiDe(a)} clase="grande" />
+            <div class="marca-datos">
+              <b>${m.p.nombre}</b>
+              <small>${nombreSuper(m.p.supermercado_id)}${m.p.marca ? ` · ${m.p.marca}` : ''}${formatoDe(m.p) ? ` · ${formatoDe(m.p)}` : ''}</small>
+              <span>${Number.isFinite(m.p.precio) ? euros(m.p.precio) : ''}${m.veces ? html` <small>· comprado ${m.veces} ${m.veces === 1 ? 'vez' : 'veces'}</small>` : !m.e.auto ? html` <small>· elegido</small>` : html` <small>· para comparar</small>`}</span>
+              <div class="marca-acciones">
+                ${principal !== m.p.id && url && html`<button class="enlace" onClick=${() => almacen.actualizar('articulos', a.id, { foto_producto_id: m.p.id })}>⭐ Foto principal</button>`}
+                ${propia && html`<button class="enlace" disabled=${subiendo === m.e.id} onClick=${() => hacerFoto(m)}>
+                  ${subiendo === m.e.id ? 'Guardando…' : m.e.foto_path ? '📷 Cambiar foto' : '📷 Hacer foto'}</button>`}
+                <button class="enlace peligro" onClick=${() => quitar(m)}>Quitar</button>
+              </div>
+            </div>
+          </li>`;
+        })}
+      </ul>
+      <input ref=${camara} type="file" accept="image/*" capture="environment" hidden onChange=${guardarFoto} />
+      ${enTiques.length > 0 && html`
+        <h3 class="categoria">En vuestros tiques</h3>
+        <ul class="lista-simple">
+          ${enTiques.slice(0, 8).map((x) => html`<li>${x.texto} <small class="meta">· ${nombreSuper(x.s) ?? 'Otro'} · ${euros(x.pagado)}${x.veces > 1 ? ` · ${x.veces} veces` : ''}</small></li>`)}
+        </ul>`}
+      ${sesion && html`
+        <h3 class="categoria">Añadir una marca</h3>
+        <form class="fila-campo" onSubmit=${(e) => { e.preventDefault(); buscar(); }}>
+          <input value=${texto} onInput=${(e) => setTexto(e.target.value)} aria-label="Buscar en Mercadona e HiperDino" />
+          <button class="boton" disabled=${buscando}>${buscando ? 'Buscando…' : 'Buscar'}</button>
+        </form>
+        <p class="texto-suave">Busca en Mercadona e HiperDino. Las de Lidl salen de vuestros tiques; su foto la hacéis con el móvil.</p>
+        ${resultados && !resultados.length && html`<p class="vacio">No he encontrado nada más con ese nombre.</p>`}
+        ${resultados?.length > 0 && html`<ul class="marcas">
+          ${resultados.map((p) => html`<li>
+            <${FotoProducto} url=${p.imagen_url} emoji=${emojiDe(a)} clase="grande" />
+            <div class="marca-datos">
+              <b>${p.nombre}</b>
+              <small>${nombreSuper(p.supermercado_id)}${formatoDe(p) ? ` · ${formatoDe(p)}` : ''}</small>
+              <span>${Number.isFinite(p.precio) ? euros(p.precio) : ''}</span>
+              <div class="marca-acciones"><button class="boton" onClick=${() => enlazar(p)}>+ Es de las nuestras</button></div>
+            </div>
+          </li>`)}
+        </ul>`}`}
+    <//>`;
 }
 
 // ---------------------------------------------------------------------------
