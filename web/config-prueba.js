@@ -4,4 +4,4 @@
 export const MODO = 'prueba';
 export const SUPABASE_URL = 'https://uunbrslndzfmarzinlhe.supabase.co';
 export const SUPABASE_KEY = 'sb_publishable_WfH2H1LLKMXvYLOkjao4XQ_GSpVZulZ';
-export const VERSION = '0.1.0 (fase 1)';
+export const VERSION = '0.2.0 (precios)';
