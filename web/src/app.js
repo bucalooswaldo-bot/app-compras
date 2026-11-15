@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -16,6 +16,7 @@ import {
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
+import { entenderConsumo, cantidadGastada } from './consumo.js';
 import * as config from '../config.js';
 
 // ---------------------------------------------------------------------------
@@ -552,6 +553,15 @@ function PantallaDespensa({ almacen, datos }) {
   const [buscar, setBuscar] = useState('');
   const [soloFaltan, setSoloFaltan] = useState(false);
   const [editar, setEditar] = useState(null); // articulo_id o 'nuevo'
+  const [gastado, setGastado] = useState('');
+  const [revisar, setRevisar] = useState(null);   // lo gastado, entendido, para confirmar
+  const [repasar, setRepasar] = useState(false);
+  const restar = (e) => {
+    e?.preventDefault();
+    const cosas = entenderConsumo(gastado, datos);
+    if (!cosas.length) return mostrarAviso('Di o escribe qué habéis gastado');
+    setRevisar(cosas);
+  };
   const filas = datos.despensa
     .filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)))
     .filter((d) => !soloFaltan || (d.minimo > 0 && d.cantidad < d.minimo));
@@ -563,7 +573,14 @@ function PantallaDespensa({ almacen, datos }) {
         <input type="search" placeholder="Buscar en la despensa" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
         <button class="boton" onClick=${() => setEditar('nuevo')}>+ Añadir</button>
       </div>
+      <form class="gastado" onSubmit=${restar}>
+        <input placeholder="He gastado… (bote de tomate, bolsa de papas)" value=${gastado}
+          onInput=${(e) => setGastado(e.target.value)} aria-label="Lo que habéis gastado" />
+        <${BotonDictar} onTexto=${(t) => { setGastado(t); setRevisar(entenderConsumo(t, datos)); }} />
+        <button class="boton" disabled=${!gastado.trim()}>Restar</button>
+      </form>
       <div class="chips">
+        <button class="chip" onClick=${() => setRepasar(true)}>📋 Repasar despensa</button>
         <button class="chip ${soloFaltan ? 'activo' : ''}" onClick=${() => setSoloFaltan(!soloFaltan)}>
           Se acaba${faltanN ? ` (${faltanN})` : ''}</button>
       </div>
@@ -592,7 +609,113 @@ function PantallaDespensa({ almacen, datos }) {
         </ul>`)}
       ${editar && html`<${EditarDespensa} almacen=${almacen} datos=${datos} articuloId=${editar === 'nuevo' ? null : editar}
         onCerrar=${() => setEditar(null)} />`}
+      ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
+        onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
+      ${repasar && html`<${RepasarDespensa} almacen=${almacen} datos=${datos} onCerrar=${() => setRepasar(false)} />`}
     </section>`;
+}
+
+/** Confirmar lo gastado antes de restarlo. Lo que no se reconoce se pregunta. */
+function RevisarConsumo({ almacen, datos, cosas, onCerrar }) {
+  const [filas, setFilas] = useState(cosas.map((c, i) => ({ ...c, clave: i, saltar: false })));
+  const cambiar = (k, cambios) => setFilas((xs) => xs.map((x) => (x.clave === k ? { ...x, ...cambios } : x)));
+  const elegir = (k, a) => {
+    const f = filas.find((x) => x.clave === k);
+    cambiar(k, { articulo: a, cantidad: cantidadGastada(f.leido, a, datos), saltar: false });
+  };
+  const enDespensa = datos.despensa.map((d) => articulo(datos, d.articulo_id)).filter(Boolean)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const listas = filas.filter((f) => !f.saltar && f.articulo && f.cantidad > 0);
+  const pendientes = filas.filter((f) => !f.saltar && !f.articulo).length;
+  const aplicar = async () => {
+    for (const f of listas) await almacen.sumarDespensa(f.articulo.id, -f.cantidad);
+    mostrarAviso(`Restado: ${listas.map((f) => f.articulo.nombre).join(', ')}`);
+    onCerrar(true);
+  };
+  return html`
+    <${Hoja} titulo="Restar de la despensa" onCerrar=${() => onCerrar(false)}>
+      ${filas.map((f) => {
+        const hay = f.articulo ? datos.despensa.find((d) => d.articulo_id === f.articulo.id)?.cantidad ?? 0 : 0;
+        return html`<div class="ing-fila ${f.saltar ? 'saltado' : ''}">
+          <div class="ing-cab">
+            <span class="meta">“${f.texto}”</span>
+            <button class="enlace" onClick=${() => cambiar(f.clave, { saltar: !f.saltar })}>${f.saltar ? 'Restar' : 'Saltar'}</button>
+          </div>
+          ${!f.saltar && f.articulo && html`
+            <div class="ing-cab"><strong>${f.articulo.nombre}</strong>
+              <button class="enlace" onClick=${() => cambiar(f.clave, { articulo: null })}>No es esto</button></div>
+            <div class="ing-datos">
+              <${CampoCantidad} unidad=${f.articulo.unidad} valor=${f.cantidad} onCambio=${(c) => cambiar(f.clave, { cantidad: c })} />
+              <small class="meta">hay ${formatoCantidad(hay, f.articulo.unidad)}${hay === 0 ? ' (no estaba apuntado)' : ''}</small>
+            </div>`}
+          ${!f.saltar && !f.articulo && html`
+            <p><b>¿Qué es?</b></p>
+            <div class="acciones">
+              ${f.sugerencias.map((a) => html`<button class="chip" onClick=${() => elegir(f.clave, a)}>${a.nombre}</button>`)}
+            </div>
+            <select aria-label="Elegir de la despensa" onChange=${(e) => { const a = articulo(datos, e.target.value); if (a) elegir(f.clave, a); }}>
+              <option value="">Elegir de la despensa…</option>
+              ${enDespensa.map((a) => html`<option value=${a.id}>${a.nombre}</option>`)}
+            </select>`}
+        </div>`;
+      })}
+      ${pendientes > 0 && html`<p class="meta">Elige qué es o pulsa Saltar en ${pendientes === 1 ? 'la que falta' : `las ${pendientes} que faltan`}.</p>`}
+      <button class="boton grande" disabled=${!listas.length || pendientes > 0} onClick=${aplicar}>
+        Restar ${listas.length || ''} de la despensa</button>
+    </${Hoja}>`;
+}
+
+/** Recorrer la despensa y mandar a la lista lo que falta o queda poco. */
+function RepasarDespensa({ almacen, datos, onCerrar }) {
+  const [buscar, setBuscar] = useState('');
+  const [marcas, setMarcas] = useState({});   // articulo_id -> 'poco' | 'nohay'
+  const [guardando, setGuardando] = useState(false);
+  const hoy = fechaISO();
+  const enLista = new Set([
+    ...datos.lista.filter(pendienteManual).map((l) => l.articulo_id),
+    ...faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).map((f) => f.articulo_id),
+  ]);
+  const filas = datos.despensa.filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)));
+  const marcar = (id, m) => setMarcas((x) => ({ ...x, [id]: x[id] === m ? undefined : m }));
+  const elegidas = Object.entries(marcas).filter(([, m]) => m);
+  const aplicar = async () => {
+    setGuardando(true);
+    for (const [id, m] of elegidas) {
+      const d = datos.despensa.find((x) => x.articulo_id === id);
+      if (m === 'nohay') await almacen.fijarDespensa(id, { cantidad: 0 });
+      // Con mínimo y sin nada en casa, la lista ya lo pide sola.
+      if (m === 'nohay' && d?.minimo > 0) continue;
+      await almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
+    }
+    setGuardando(false);
+    mostrarAviso(`${elegidas.length} apuntado${elegidas.length === 1 ? '' : 's'} en la lista`);
+    onCerrar();
+  };
+  return html`
+    <${Hoja} titulo="Repasar despensa" onCerrar=${onCerrar}>
+      <p class="meta">Marca lo que queda poco o ya no hay. Irá a la lista de la compra.</p>
+      <input type="search" placeholder="Buscar" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
+      ${datos.despensa.length === 0 && html`<p class="vacio">La despensa está vacía. Añade primero lo que soléis tener en casa.</p>`}
+      ${agruparPorCategoria(filas, datos.articulos).map(([cat, grupo]) => html`
+        <h3 class="categoria">${cat}</h3>
+        <ul class="filas repaso">
+          ${grupo.map((d) => {
+            const a = articulo(datos, d.articulo_id);
+            const m = marcas[a.id];
+            return html`<li>
+              <span class="nombre">${a.nombre}<small>hay ${formatoCantidad(d.cantidad, a.unidad)}</small></span>
+              ${enLista.has(a.id) && !m
+                ? html`<small class="meta">✓ en la lista</small>`
+                : html`<div class="chips-dia">
+                    <button class="chip ${m === 'poco' ? 'activo' : ''}" onClick=${() => marcar(a.id, 'poco')}>Queda poco</button>
+                    <button class="chip ${m === 'nohay' ? 'activo' : ''}" onClick=${() => marcar(a.id, 'nohay')}>No hay</button>
+                  </div>`}
+            </li>`;
+          })}
+        </ul>`)}
+      <button class="boton grande fijo-abajo" disabled=${guardando} onClick=${elegidas.length ? aplicar : onCerrar}>
+        ${elegidas.length ? `Apuntar ${elegidas.length} en la lista` : 'Cerrar'}</button>
+    </${Hoja}>`;
 }
 
 function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
@@ -659,13 +782,23 @@ function PantallaLista({ almacen, datos, sesion }) {
   const [comparar, setComparar] = useState(false);
   const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
   const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
-  const manual = datos.lista.filter((l) => !l.comprado);
+  const manual = datos.lista.filter(pendienteManual);
+  const descartes = datos.lista.filter((l) => descarteVigente(l, hoy));
+  const caducados = datos.lista.filter((l) => esDescarte(l) && !descarteVigente(l, hoy)).map((l) => l.id).join(',');
+  // Los "hoy no" de otros días ya no valen: se borran.
+  useEffect(() => { if (caducados) almacen.borrar('lista', caducados.split(',')); }, [caducados]);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
   const tachados = comprado.map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
   const pendientes = [
     ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
     ...manual.map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
   ];
+
+  const enListaIds = new Set([...pendientes.map((f) => f.articulo_id), ...descartes.map((l) => l.articulo_id)]);
+  const sugeridas = sugerirCompra(datos, enListaIds);
+  const hoyNo = (f) => almacen.insertar('lista', { articulo_id: f.articulo_id, cantidad: null, origen: 'auto', comprado: false,
+    creado_en: new Date().toISOString() });
+  const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
 
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
@@ -728,7 +861,7 @@ function PantallaLista({ almacen, datos, sesion }) {
     else await almacen.actualizar('lista', l.id, { comprado: false, comprado_en: null });
   };
 
-  const vaciarComprado = () => almacen.borrar('lista', comprado.map((l) => l.id));
+  const vaciarComprado = () => almacen.borrar('lista', [...comprado, ...descartes].map((l) => l.id));
 
   return html`
     <section>
@@ -773,10 +906,26 @@ function PantallaLista({ almacen, datos, sesion }) {
                 ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${motivo}</small>
               </button>
               <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
-              ${f.tipo === 'manual' && html`<button class="icono peq" aria-label="Quitar de la lista" onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`}
+              ${f.tipo === 'manual'
+                ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
+                : html`<button class="icono peq" aria-label=${`Hoy no: ${a?.nombre}`} onClick=${() => hoyNo(f)}>✕</button>`}
             </li>`;
           })}
         </ul>`)}
+      ${descartes.length > 0 && html`
+        <div class="quitado">
+          <p class="meta">Quitado de la lista de hoy (toca para volver a ponerlo):</p>
+          <div class="acciones">
+            ${descartes.map((l) => html`<button class="chip" onClick=${() => almacen.borrar('lista', l.id)}>↩ ${nombreArticulo(datos, l.articulo_id)}</button>`)}
+          </div>
+        </div>`}
+      ${sugeridas.length > 0 && html`
+        <div class="quitado">
+          <p class="meta">¿Os hace falta? Lo soléis comprar y no está en la lista:</p>
+          <div class="acciones">
+            ${sugeridas.map((id) => html`<button class="chip" onClick=${() => apuntar(id)}>+ ${nombreArticulo(datos, id)}</button>`)}
+          </div>
+        </div>`}
       ${comprado.length > 0 && html`
         <div class="terminar">
           <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
@@ -1387,7 +1536,7 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
       }
       if (marcar) {
         const comprados = new Set(filas.map((f) => f.articulo_id).filter(Boolean));
-        for (const l of almacen.datos.lista.filter((x) => !x.comprado && comprados.has(x.articulo_id))) {
+        for (const l of almacen.datos.lista.filter((x) => pendienteManual(x) && comprados.has(x.articulo_id))) {
           await almacen.actualizar('lista', l.id, { comprado: true });
         }
       }
@@ -1546,7 +1695,7 @@ function App({ almacen, sesion }) {
 
   const hoy = fechaISO();
   const nLista = useMemo(() => faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).length
-    + datos.lista.filter((l) => !l.comprado).length, [datos, pestana]);
+    + datos.lista.filter(pendienteManual).length, [datos, pestana]);
 
   const props = {
     almacen, datos, sesion,

@@ -310,3 +310,12 @@ li.hecho { opacity: 0.8; }
 .terminar { margin-top: 20px; text-align: center; }
 .dos-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .dos-botones .boton.grande { margin-top: 0; }
+
+/* Despensa: lo gastado y repasar */
+.gastado { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.gastado input { flex: 1; min-width: 0; }
+.ing-fila.saltado { opacity: 0.5; }
+.ing-fila select { width: 100%; }
+.filas.repaso li { flex-wrap: wrap; }
+.quitado { margin: 14px 0 0; }
+.quitado .acciones { flex-wrap: wrap; }
