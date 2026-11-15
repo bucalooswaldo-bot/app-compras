@@ -6,11 +6,13 @@ import {
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
-  SUPERS, SUPERS_WEB, nombreSuper, entenderDictado, cantidadParaArticulo, unidadNueva, textoBusqueda, sugerir, calcularCesta,
+  SUPERS, SUPERS_WEB, nombreSuper, entenderDictado, pareceFrase, cantidadParaArticulo, unidadNueva, textoBusqueda, sugerir, calcularCesta,
   encaja, palabrasClave, precioUnidad, etiquetaUnidad, euros, AHORRO_MINIMO_PARA_REPARTIR,
 } from './comparar.js';
 import { crearCatalogo } from './catalogo.js';
-import { leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible } from './tiques.js';
+import {
+  leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible, gastoPorCategoria, textoCSV,
+} from './tiques.js';
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
 import * as config from '../config.js';
@@ -598,6 +600,12 @@ function PantallaLista({ almacen, datos, sesion }) {
     // "Necesito aceite, sal, tomate triturado y 2 kilos de papas" -> cinco cosas
     const cosas = entenderDictado(frase, datos.articulos, marcasConocidas());
     if (!cosas.length) return;
+    const nombres = await anadirCosas(cosas);
+    setTexto('');
+    if (cosas.length > 1) mostrarAviso(`Añadido: ${nombres.join(', ')}`);
+  };
+
+  const anadirCosas = async (cosas) => {
     const nombres = [];
     for (const c of cosas) {
       const a = c.articulo ?? await obtenerArticulo(almacen, c.nombre, unidadNueva(c), 'Otros');
@@ -605,8 +613,24 @@ function PantallaLista({ almacen, datos, sesion }) {
         marca: c.detalle, origen: 'manual', comprado: false });
       nombres.push(c.detalle ? `${a.nombre} (${c.detalle})` : a.nombre);
     }
-    setTexto('');
-    if (cosas.length > 1) mostrarAviso(`Añadido: ${nombres.join(', ')}`);
+    return nombres;
+  };
+
+  // Líneas antiguas con una frase dictada entera ("Necesito aceite sal tomate…"): se separan en cosas sueltas.
+  const juntas = manual.filter((l) => pareceFrase(articulo(datos, l.articulo_id)?.nombre ?? ''));
+  const separar = async () => {
+    const nombres = [];
+    for (const l of juntas) {
+      const a = articulo(datos, l.articulo_id);
+      const cosas = entenderDictado(a.nombre, almacen.datos.articulos, marcasConocidas());
+      if (!cosas.length) continue;
+      nombres.push(...await anadirCosas(cosas));
+      const enUso = almacen.datos.despensa.some((x) => x.articulo_id === a.id)
+        || almacen.datos.ingredientes.some((x) => x.articulo_id === a.id);
+      if (enUso) await almacen.borrar('lista', l.id);
+      else await almacen.borrar('articulos', a.id); // también quita la línea de la lista
+    }
+    mostrarAviso(`Separado en: ${nombres.join(', ')}`);
   };
 
   const comprar = async (f) => {
@@ -639,6 +663,9 @@ function PantallaLista({ almacen, datos, sesion }) {
         <${BotonDictar} onTexto=${(t) => setTexto((x) => (x ? `${x}, ${t}` : t))} />
         <button class="boton" type="submit">Añadir</button>
       </form>
+      ${juntas.length > 0 && html`<div class="separar">
+        <span>${juntas.length === 1 ? 'Hay una línea con varias cosas juntas.' : `Hay ${juntas.length} líneas con varias cosas juntas.`}</span>
+        <button class="boton" onClick=${separar}>Separarlas</button></div>`}
       ${previa.length > 1 && html`<p class="previa">Se añadirán ${previa.length}: ${previa.map((c) => c.detalle ? `${c.nombre} (${c.detalle})` : c.nombre).join(' · ')}</p>`}
       ${pendientes.length > 0 && html`<button class="boton grande comparar" onClick=${() => setComparar(true)}>💶 ¿Dónde sale más barato?</button>`}
       <div class="chips">
@@ -1138,6 +1165,12 @@ function PantallaGastos({ almacen, datos, sesion }) {
     return ahorroPosible(lineas, precioEnSuper(datos, catalogo), SUPERS.map(([s]) => s));
   }, [datos, periodo, preciosListos]);
 
+  const categorias = useMemo(() => {
+    if (!actual) return [];
+    const ids = new Set(tiques.filter((t) => inicioPeriodo(t.fecha, periodo) === actual.inicio).map((t) => t.id));
+    return gastoPorCategoria(datos.tique_lineas.filter((l) => ids.has(l.tique_id)), datos.articulos);
+  }, [datos, periodo]);
+
   const elegirFoto = async (e) => {
     const f = e.target.files?.[0];
     e.target.value = '';
@@ -1165,7 +1198,8 @@ function PantallaGastos({ almacen, datos, sesion }) {
         <input ref=${fichero} type="file" accept="image/*" hidden onChange=${elegirFoto} />
         <button class="enlace" onClick=${() => setRevisar({ supermercado: null, fecha: null, total: null, lineas: [] })}>o escribirlo a mano</button>
       </div>
-      <p class="texto-suave">Haz una foto al tique de papel o una captura del tique de Lidl Plus. Se lee en el móvil; la foto no se guarda.</p>
+      <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel o una captura del tique de la app
+        (Lidl Plus, Mercadona…). Se lee en el móvil; la foto no se guarda.</p>
 
       <div class="chips periodos">
         ${Object.entries(NOMBRE_PERIODO).map(([p, n]) => html`
@@ -1189,6 +1223,12 @@ function PantallaGastos({ almacen, datos, sesion }) {
                 </ul>`
             : ahorro.pagado > 0 && html`<p class="ahorro bien">Buena compra: con los precios de hoy no habríais ahorrado casi nada en otro súper.</p>`)}
         </div>`}
+      ${categorias.length > 0 && html`
+        <h3 class="categoria">En qué se va</h3>
+        <div class="filas">
+          ${categorias.slice(0, 8).map(([c, v]) => html`
+            <div class="fila-gasto"><span>${c}</span><b>${euros(v)}</b></div>`)}
+        </div>`}
 
       ${grupos.length > 1 && html`
         <h3 class="categoria">Anteriores</h3>
@@ -1199,6 +1239,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
 
       ${tiques.length > 0 && html`
         <h3 class="categoria">Tiques</h3>
+        <p><button class="enlace" onClick=${() => descargarGastos(datos)}>⬇ Descargar todos los gastos (para Excel)</button></p>
         <div class="filas">
           ${tiques.slice(0, 40).map((t) => html`
             <button class="fila-gasto enlace" onClick=${() => setVer(t.id)}>
@@ -1212,8 +1253,26 @@ function PantallaGastos({ almacen, datos, sesion }) {
     </section>`;
 }
 
+/** Un archivo CSV (se abre en Excel) con una fila por cada cosa comprada. */
+function descargarGastos(datos) {
+  const tiques = new Map(datos.tiques.map((t) => [t.id, t]));
+  const filas = datos.tique_lineas.filter((l) => tiques.has(l.tique_id)).map((l) => {
+    const t = tiques.get(l.tique_id);
+    const a = datos.articulos.find((x) => x.id === l.articulo_id);
+    return [t.fecha.slice(0, 10), nombreDe(t.supermercado_id), l.texto, a?.nombre ?? '', a?.categoria ?? '',
+      l.cantidad ?? '', l.kg ? 'kg' : '', l.importe, l.descuento ?? 0, pagado(l)];
+  }).sort((a, b) => b[0].localeCompare(a[0]));
+  const csv = textoCSV([['Fecha', 'Supermercado', 'En el tique', 'Artículo', 'Sección', 'Cantidad', 'Unidad', 'Importe', 'Descuento', 'Pagado'], ...filas]);
+  const enlace = document.createElement('a');
+  enlace.href = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }));
+  enlace.download = `gastos-super-${fechaISO()}.csv`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  setTimeout(() => { URL.revokeObjectURL(enlace.href); enlace.remove(); }, 1000);
+}
+
 function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
-  const [superId, setSuper] = useState(leido.supermercado ?? 'lidl');
+  const [superId, setSuper] = useState(leido.supermercado ?? '');
   const [fecha, setFecha] = useState(leido.fecha ?? fechaISO());
   const [total, setTotal] = useState(leido.total != null ? String(leido.total).replace('.', ',') : '');
   const [lineas, setLineas] = useState(() => leido.lineas.map((l) => ({

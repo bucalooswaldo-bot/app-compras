@@ -108,13 +108,19 @@ export const MARCAS = [
  * @param {string[]} [marcas]  marcas conocidas (además de MARCAS)
  * @returns {{nombre:string, articulo:object|null, cantidad:number|null, unidad:string|null, detalle:string|null}[]}
  */
+/** Un "artículo" que en realidad es una frase dictada entera ("Necesito aceite sal tomate…"). */
+export function pareceFrase(nombre) {
+  const p = palabras(String(nombre).replace(/\([^)]*\)/g, ' '));
+  return p.length >= 2 && (RELLENO.has(p[0]) || (p.length >= 4 && /,|\sy\s/i.test(nombre)));
+}
+
 export function entenderDictado(texto, articulos, marcas = []) {
   // Diccionario de nombres conocidos (y su primera palabra si no se repite: "aceite" -> "Aceite de oliva").
   const conocidos = new Map();
   const primeras = new Map();
   for (const a of articulos) {
     const p = palabras(a.nombre.replace(/\([^)]*\)/g, ' '));
-    if (!p.length) continue;
+    if (!p.length || pareceFrase(a.nombre)) continue;
     conocidos.set(p.map(raiz).join(' '), a);
     const alt = a.nombre.match(/\(([^)]+)\)/)?.[1];
     if (alt) conocidos.set(palabras(alt).map(raiz).join(' '), a);

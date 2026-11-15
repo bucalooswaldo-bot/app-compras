@@ -55,7 +55,9 @@ App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
   Al guardar se puede tachar de la lista lo comprado.
 - La función `guardar_tique` (`supabase/migrations/0004_tiques.sql`) guarda el tique y, si es de Lidl, crea el producto
   de Lidl con su precio y lo enlaza con el artículo: así Lidl entra en la comparación.
-- Resumen por semana, mes y año, por súper, y cuánto se habría ahorrado comprando cada cosa donde hoy está más barata.
+- Vale para tiques de Mercadona, HiperDino y Lidl (papel o captura de la app).
+- Resumen por semana, mes y año, por súper y por sección, y cuánto se habría ahorrado comprando cada cosa donde hoy está más barata.
+- "Descargar todos los gastos" baja un CSV (se abre en Excel) con una fila por cosa comprada, para hacer informes.
 
 ## Menú de la semana (fase 4)
 
