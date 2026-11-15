@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
+import { pareceFrase,
   entenderDictado, cantidadParaArticulo, sugerir, calcularCesta, textoBusqueda, coste,
 } from '../web/src/comparar.js';
 import { ARTICULOS } from '../web/src/recetas-inicio.js';
@@ -135,4 +135,16 @@ test('cesta sin cantidad y envases distintos: compara lo mismo (por kg)', () => 
   assert.equal(l.porSuper.mercadona.aprox, true);
   assert.equal(l.porSuper.hiperdino.total, 1.77);
   assert.equal(l.mejor, 'mercadona');
+});
+
+test('dictado: una frase guardada antes como un solo artículo no se vuelve a usar como artículo', () => {
+  const arts = [
+    { id: 'x', nombre: 'Necesito aceite sal tomate triturado arroz y azúcar', unidad: 'ud' },
+    { id: 'a', nombre: 'Aceite de oliva', unidad: 'ml' }, { id: 's', nombre: 'Sal', unidad: 'g' },
+    { id: 't', nombre: 'Tomate triturado', unidad: 'g' }, { id: 'r', nombre: 'Arroz', unidad: 'g' },
+  ];
+  assert.ok(pareceFrase(arts[0].nombre));
+  assert.ok(!pareceFrase('Tomate triturado') && !pareceFrase('Sal y pimienta'));
+  const cosas = entenderDictado(arts[0].nombre, arts);
+  assert.deepEqual(cosas.map((c) => c.articulo?.id ?? c.nombre), ['a', 's', 't', 'r', 'Azúcar']);
 });

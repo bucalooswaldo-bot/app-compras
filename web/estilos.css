@@ -300,3 +300,7 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .lista-recetas .miniatura { width: 48px; height: 48px; }
 .lista-recetas .sin-foto { font-size: 1.5rem; }
 .chips-dia { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.separar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: var(--aviso-claro);
+}
