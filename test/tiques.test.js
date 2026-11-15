@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { leerTique, emparejarArticulo, gastosPorPeriodo, ahorroPosible, inicioPeriodo, pagado, gastoPorCategoria, textoCSV } from '../web/src/tiques.js';
+import { leerTique, emparejarArticulo, gastosPorPeriodo, ahorroPosible, inicioPeriodo, pagado, gastoPorCategoria, textoCSV, tiqueRepetido } from '../web/src/tiques.js';
 import { ARTICULOS } from '../web/src/recetas-inicio.js';
 
 const articulos = Object.entries(ARTICULOS).map(([nombre, [unidad]], i) => ({ id: `a${i}`, nombre, unidad }));
@@ -150,4 +150,22 @@ test('gasto por sección y CSV para Excel', () => {
   assert.deepEqual(g, [['Lácteos', 3.19], ['Sin clasificar', 3], ['Frutería', 1.36]]);
   assert.equal(textoCSV([['Fecha', 'Producto', 'Pagado'], ['2026-11-14', 'Pan; "molde"', 1.5]]),
     'Fecha;Producto;Pagado\r\n2026-11-14;"Pan; ""molde""";1,5');
+});
+
+test('tique repetido: mismo súper, día y total (y hora si la hay)', () => {
+  const guardados = [
+    { id: 't1', supermercado_id: 'hiperdino', fecha: '2026-11-14T19:02:00+00:00', total: 5.5 },
+    { id: 't2', supermercado_id: 'lidl', fecha: '2026-11-15T12:00:00+00:00', total: 5.55 },
+  ];
+  const lineas = [{ tique_id: 't2', texto: 'Leche semidesnatada' }, { tique_id: 't2', texto: 'Pan de molde integral' }];
+  const leido = leerTique('HIPERDINO\nFECHA: 14/11/2026 19:02\nPAN 0,99\nTOTAL 5,50');
+  assert.equal(leido.hora, '19:02');
+  assert.equal(tiqueRepetido({ ...leido, fecha: leido.fecha }, guardados)?.id, 't1');
+  assert.equal(tiqueRepetido({ ...leido, hora: '20:15' }, guardados), null);           // otra compra ese día
+  assert.equal(tiqueRepetido({ ...leido, total: 7.1 }, guardados), null);
+  // Súper no reconocido pero mismas líneas, día y total
+  assert.equal(tiqueRepetido({ supermercado: null, fecha: '2026-11-15', total: 5.55,
+    lineas: [{ texto: 'Leche semidesnatada' }, { texto: 'PAN DE MOLDE INTEGRAL' }] }, guardados, lineas)?.id, 't2');
+  assert.equal(tiqueRepetido({ supermercado: 'mercadona', fecha: '2026-11-15', total: 5.55,
+    lineas: [{ texto: 'Huevos' }] }, guardados, lineas), null);
 });
