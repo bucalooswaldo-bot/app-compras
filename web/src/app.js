@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -565,8 +565,8 @@ function PantallaDespensa({ almacen, datos }) {
   };
   const filas = datos.despensa
     .filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)))
-    .filter((d) => !soloFaltan || (d.minimo > 0 && d.cantidad < d.minimo));
-  const faltanN = datos.despensa.filter((d) => d.minimo > 0 && d.cantidad < d.minimo).length;
+    .filter((d) => !soloFaltan || estaBajo(d));
+  const faltanN = datos.despensa.filter(estaBajo).length;
 
   return html`
     <section>
@@ -585,6 +585,7 @@ function PantallaDespensa({ almacen, datos }) {
         <button class="chip ${soloFaltan ? 'activo' : ''}" onClick=${() => setSoloFaltan(!soloFaltan)}>
           Se acaba${faltanN ? ` (${faltanN})` : ''}</button>
       </div>
+      ${datos.despensa.length > 0 && html`<p class="meta">Toca un producto para cambiar su nombre, cantidad, unidad, sección o aviso. Para uno nuevo, <b>+ Añadir</b>.</p>`}
       ${datos.despensa.length === 0 && html`<div class="vacio">
         <p>Apunta lo que hay en casa. Si le pones un <b>mínimo</b>, cuando baje de ahí aparecerá en la lista de la compra.</p>
         <p><small>Ejemplo: aceite, mínimo 1 l.</small></p></div>`}
@@ -594,11 +595,11 @@ function PantallaDespensa({ almacen, datos }) {
           ${grupo.map((d) => {
             const a = articulo(datos, d.articulo_id);
             const paso = pasoDespensa(a.unidad, d.cantidad);
-            const bajo = d.minimo > 0 && d.cantidad < d.minimo;
+            const bajo = estaBajo(d);
             return html`<li class=${bajo ? 'bajo' : ''}>
               <button class="enlace nombre" onClick=${() => setEditar(d.articulo_id)}>
-                ${a.nombre}
-                ${d.minimo > 0 && html`<small>mín. ${formatoCantidad(d.minimo, a.unidad)}</small>`}
+                <span>${a.nombre} <span class="lapiz" aria-hidden="true">✏️</span></span>
+                <small>${bajo ? '¡Se acaba! · ' : ''}${d.minimo > 0 ? `aviso al quedar ${formatoCantidad(d.minimo, a.unidad)}` : 'sin aviso'}</small>
               </button>
               <div class="contador">
                 <button aria-label=${`Quitar ${paso}`} onClick=${() => almacen.sumarDespensa(a.id, -paso)}>−</button>
@@ -728,9 +729,10 @@ function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
   const [categoria, setCategoria] = useState(a0?.categoria ?? 'Otros');
   const [cantidad, setCantidad] = useState(d0?.cantidad ?? null);
   const [minimo, setMinimo] = useState(d0?.minimo || null);
-  const u = existente?.unidad ?? unidad;
+  const u = unidad;
+  const enRecetas = existente ? datos.ingredientes.filter((i) => i.articulo_id === existente.id && i.cantidad != null).length : 0;
 
-  useEffect(() => { if (existente && !a0) setCategoria(existente.categoria); }, [existente?.id]);
+  useEffect(() => { if (existente && !a0) { setCategoria(existente.categoria); setUnidad(existente.unidad); } }, [existente?.id]);
 
   const guardar = async () => {
     if (!nombre.trim()) return mostrarAviso('Escribe el nombre');
@@ -740,6 +742,7 @@ function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
       const cambios = {};
       if (nombre.trim() !== art.nombre && a0) cambios.nombre = nombre.trim();
       if (categoria !== art.categoria) cambios.categoria = categoria;
+      if (unidad !== art.unidad) cambios.unidad = unidad;
       if (Object.keys(cambios).length) await almacen.actualizar('articulos', art.id, cambios);
     }
     await almacen.fijarDespensa(art.id, { cantidad: cantidad ?? 0, minimo: minimo ?? 0 });
@@ -754,15 +757,16 @@ function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
     <${Hoja} titulo=${a0 ? a0.nombre : 'Añadir a la despensa'} onCerrar=${onCerrar}>
       <datalist id="articulos-despensa">${datos.articulos.map((a) => html`<option value=${a.nombre} />`)}</datalist>
       <label>Producto<input list="articulos-despensa" value=${nombre} autoFocus=${!a0} onInput=${(e) => setNombre(e.target.value)} /></label>
-      ${!existente && html`<label>Se mide en
+      <label>Se cuenta por
         <select value=${unidad} onChange=${(e) => { setUnidad(e.target.value); setCantidad(null); setMinimo(null); }}>
-          <option value="ud">unidades</option><option value="g">peso (g / kg)</option><option value="ml">líquido (ml / l)</option>
-        </select></label>`}
+          <option value="ud">unidades (botes, paquetes, piezas…)</option><option value="g">peso (g / kg)</option><option value="ml">líquido (ml / l)</option>
+        </select></label>
+      ${existente && unidad !== existente.unidad && enRecetas > 0 && html`<p class="meta">Ojo: ${enRecetas === 1 ? '1 receta lo usa' : `${enRecetas} recetas lo usan`} con cantidad en ${UNIDAD_LARGA[existente.unidad]}. Revisa esas cantidades después.</p>`}
       <label>Sección<select value=${categoria} onChange=${(e) => setCategoria(e.target.value)}>
         ${CATEGORIAS.map((c) => html`<option value=${c}>${c}</option>`)}</select></label>
       <label>Hay en casa</label>
       <${CampoCantidad} unidad=${u} valor=${cantidad} onCambio=${setCantidad} placeholder="0" />
-      <label>Avisar cuando baje de <small>(opcional)</small></label>
+      <label>Avisar cuando quede esto o menos <small>(opcional)</small></label>
       <${CampoCantidad} unidad=${u} valor=${minimo} onCambio=${setMinimo} placeholder="Sin mínimo" />
       <button class="boton grande" onClick=${guardar}>Guardar</button>
       ${d0 && html`<p class="pie"><button class="enlace peligro" onClick=${quitar}>Quitar de la despensa</button></p>`}

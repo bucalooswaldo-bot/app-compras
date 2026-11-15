@@ -332,3 +332,4 @@ li.hecho { opacity: 0.8; }
 .casilla { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
 .casilla input { width: 22px; min-height: 22px; flex: none; }
 .repetido { text-align: left; }
+.filas .nombre .lapiz { font-size: 0.75rem; opacity: 0.6; }
