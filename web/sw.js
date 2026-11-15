@@ -1,10 +1,10 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'compras-v6';
+const VERSION = 'compras-v7';
 const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
-  'src/comparar.js', 'src/catalogo.js', 'src/tiques.js', 'src/menu.js', 'src/fotos.js'];
+  'src/comparar.js', 'src/catalogo.js', 'src/tiques.js', 'src/menu.js', 'src/fotos.js', 'src/ingredientes.js'];
 // El lector de tiques (vendor/ocr, unos 10 MB) no se guarda al instalar: se guarda la primera vez que se usa.
 
 self.addEventListener('install', (e) => {

@@ -113,6 +113,7 @@ export function ingredientesDeComida(datos, comida) {
 export function faltas(datos, desde, hasta) {
   const necesita = new Map();   // articulo_id -> cantidad
   const porReceta = new Map();  // articulo_id -> Set(nombre de receta)
+  const sinCantidad = new Set(); // ingredientes "al gusto" o sin cantidad que no son básicos (sal, aceite…)
 
   for (const comida of datos.plan) {
     if (comida.cocinado || comida.fecha < desde || comida.fecha > hasta) continue;
@@ -121,6 +122,15 @@ export function faltas(datos, desde, hasta) {
       necesita.set(ing.articulo_id, (necesita.get(ing.articulo_id) ?? 0) + ing.cantidad);
       if (!porReceta.has(ing.articulo_id)) porReceta.set(ing.articulo_id, new Set());
       if (receta) porReceta.get(ing.articulo_id).add(receta.nombre);
+    }
+    // Sin cantidad ("lechuga", "un puñado de espinacas"): se pide si no hay en casa, sin decir cuánto.
+    for (const i of datos.ingredientes) {
+      if (i.receta_id !== comida.receta_id || i.cantidad != null) continue;
+      const a = datos.articulos.find((x) => x.id === i.articulo_id);
+      if (!a || esBasico(a.nombre)) continue;
+      sinCantidad.add(a.id);
+      if (!porReceta.has(a.id)) porReceta.set(a.id, new Set());
+      if (receta) porReceta.get(a.id).add(receta.nombre);
     }
   }
 
@@ -131,7 +141,7 @@ export function faltas(datos, desde, hasta) {
     enLista.set(l.articulo_id, (enLista.get(l.articulo_id) ?? 0) + (l.cantidad ?? Infinity));
   }
 
-  const ids = new Set([...necesita.keys(), ...datos.despensa.filter((d) => d.minimo > 0).map((d) => d.articulo_id)]);
+  const ids = new Set([...necesita.keys(), ...sinCantidad, ...datos.despensa.filter((d) => d.minimo > 0).map((d) => d.articulo_id)]);
   const resultado = [];
   for (const id of ids) {
     const articulo = datos.articulos.find((a) => a.id === id);
@@ -141,7 +151,13 @@ export function faltas(datos, desde, hasta) {
     const minimo = d?.minimo ?? 0;
     const pide = necesita.get(id) ?? 0;
     const bajoMinimo = minimo > 0 && hay < minimo;
-    if (pide === 0 && !bajoMinimo) continue;
+    if (pide === 0 && !bajoMinimo) {
+      // Solo lo pide una receta sin cantidad: si no hay nada en casa ni está ya en la lista, se apunta sin cantidad.
+      if (sinCantidad.has(id) && hay <= 0 && !enLista.has(id)) {
+        resultado.push({ articulo_id: id, cantidad: null, recetas: [...(porReceta.get(id) ?? [])], bajoMinimo: false });
+      }
+      continue;
+    }
     let falta = pide + minimo - hay - (enLista.get(id) ?? 0);
     if (articulo.unidad === 'ud') falta = Math.ceil(falta - 1e-9);
     falta = redondear(falta, 3);
@@ -150,6 +166,14 @@ export function faltas(datos, desde, hasta) {
   }
   return ordenarPorPasillo(resultado, datos.articulos);
 }
+
+/** Momentos del día en el plan, en el orden en que se enseñan. */
+export const MOMENTOS = [['comida', 'Comida'], ['cena', 'Cena'], ['postre', 'Postre'], ['tentempie', 'Tentempié']];
+export const nombreMomento = (m) => MOMENTOS.find((x) => x[0] === m)?.[1] ?? m;
+
+/** Lo que se suele tener siempre en casa: sin cantidad en la receta, no entra en la lista. */
+const BASICOS = /^(sal|pimienta|aceite|vinagre|agua|especias?|comino|oregano|tomillo|romero|laurel|pimenton|azafran|colorante|picante|canela|nuez moscada|hielo)\b/;
+export const esBasico = (nombre) => BASICOS.test(normalizar(nombre));
 
 const ORDEN_CATEGORIAS = [
   'Frutas y verduras', 'Carne', 'Pescado', 'Charcutería y quesos', 'Lácteos y huevos',

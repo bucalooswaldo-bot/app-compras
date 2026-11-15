@@ -285,6 +285,21 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .foto-receta img { display: block; width: 100%; max-height: 42vh; object-fit: cover; }
 .foto-receta .sin-foto.grande { height: 120px; font-size: 3.5rem; }
 .acciones-foto { display: flex; align-items: center; gap: 12px; padding: 10px 16px 0; flex-wrap: wrap; }
+
+/* Editor de ingredientes */
+.ing-fila { padding: 10px 0; border-bottom: 1px solid var(--linea); display: grid; gap: 6px; }
+.ing-cab { display: flex; align-items: center; gap: 8px; }
+.ing-cab strong { flex: 1; min-width: 0; }
+.ing-datos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.ing-datos .fila-campo input { min-width: 0; }
+.pegar { background: var(--panel); border-radius: 12px; padding: 4px 12px 12px; margin-top: 8px; }
+.crear-ingrediente { background: var(--verde-claro); border-radius: 12px; padding: 4px 12px 12px; margin: 8px 0; }
+.lista-simple li > button.elegido { color: var(--verde); font-weight: 600; }
+.fijo-abajo { position: sticky; bottom: 0; }
+.lista-recetas { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.lista-recetas .miniatura { width: 48px; height: 48px; }
+.lista-recetas .sin-foto { font-size: 1.5rem; }
+.chips-dia { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .separar {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: var(--aviso-claro);

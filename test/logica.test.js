@@ -103,3 +103,18 @@ test('las recetas propuestas solo usan artículos conocidos', () => {
   }
   assert.equal(new Set(RECETAS.map((r) => r.nombre)).size, RECETAS.length);
 });
+
+test('ingredientes sin cantidad (no básicos) entran si no hay en casa', () => {
+  const d = base();
+  d.articulos.push({ id: 'lechuga', nombre: 'Lechuga', unidad: 'ud', categoria: 'Frutas y verduras' });
+  d.ingredientes.push({ id: 'i4', receta_id: 'r1', articulo_id: 'lechuga', cantidad: null });
+  d.plan.push({ id: 'p1', fecha: HOY, momento: 'cena', receta_id: 'r1', raciones: 4, cocinado: false });
+  let f = faltas(d, HOY, HOY);
+  const lechuga = f.find((x) => x.articulo_id === 'lechuga');
+  assert.ok(lechuga);
+  assert.equal(lechuga.cantidad, null);
+  assert.ok(!f.some((x) => x.articulo_id === 'aceite'), 'el aceite es básico');
+  d.despensa.push({ articulo_id: 'lechuga', cantidad: 1, minimo: 0 });
+  f = faltas(d, HOY, HOY);
+  assert.ok(!f.some((x) => x.articulo_id === 'lechuga'), 'si hay en casa no se pide');
+});
