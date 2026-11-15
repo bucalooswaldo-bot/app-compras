@@ -758,16 +758,16 @@ function ElegirCasa({ cliente, onListo }) {
   return html`
     <div class="portada">
       <h1>Tu casa</h1>
-      <p>¿Ya ha creado la casa la otra persona? Pon su código:</p>
-      <form class="fila-campo" onSubmit=${unirse}>
-        <input placeholder="Código (6 letras)" value=${codigo} onInput=${(e) => setCodigo(e.target.value)} />
-        <button class="boton">Unirme</button>
-      </form>
-      <p>Si eres el primero, crea la casa:</p>
+      <p>Crea la casa para empezar:</p>
       <div class="fila-campo">
-        <input value=${nombre} onInput=${(e) => setNombre(e.target.value)} />
+        <input aria-label="Nombre de la casa" value=${nombre} onInput=${(e) => setNombre(e.target.value)} />
         <button class="boton" onClick=${crear}>Crear casa</button>
       </div>
+      <p><small>¿Otra persona ya creó la casa con su propia cuenta? Pon el código que ve en ⚙:</small></p>
+      <form class="fila-campo" onSubmit=${unirse}>
+        <input placeholder="Código (6 letras)" value=${codigo} onInput=${(e) => setCodigo(e.target.value)} />
+        <button class="boton" disabled=${codigo.trim().length < 6}>Unirme</button>
+      </form>
       ${msg && html`<p class="mensaje">${msg}</p>`}
       <p><button class="enlace" onClick=${() => cliente.auth.signOut().then(() => location.reload())}>Cerrar sesión</button></p>
     </div>`;
