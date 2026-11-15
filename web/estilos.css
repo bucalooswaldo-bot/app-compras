@@ -279,11 +279,15 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 /* Fotos de las recetas */
 .tarjeta.con-foto { flex-direction: row; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; }
 .texto-tarjeta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.miniatura { flex: none; width: 64px; height: 64px; border-radius: 10px; object-fit: cover; background: var(--verde-claro); }
+.miniatura { flex: none; width: 72px; aspect-ratio: 4 / 3; height: auto; border-radius: 10px; object-fit: cover; background: var(--verde-claro); }
 .sin-foto { display: grid; place-items: center; font-size: 1.9rem; background: var(--verde-claro); }
 .foto-receta { margin: -12px -16px 12px; }
-.foto-receta img { display: block; width: 100%; max-height: 42vh; object-fit: cover; }
-.foto-receta .sin-foto.grande { height: 120px; font-size: 3.5rem; }
+/* Foto de la ficha: 4:3 a todo el ancho y entera (sin recortes). Si no es 4:3, se ve completa con bandas. */
+.foto-receta img, .foto-receta .sin-foto.grande {
+  display: grid; place-items: center; width: 100%; aspect-ratio: 4 / 3; max-height: 60vh; object-fit: contain;
+  background: var(--verde-claro);
+}
+.foto-receta .sin-foto.grande { font-size: 4.5rem; }
 .acciones-foto { display: flex; align-items: center; gap: 12px; padding: 10px 16px 0; flex-wrap: wrap; }
 
 /* Editor de ingredientes */
@@ -297,7 +301,7 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .lista-simple li > button.elegido { color: var(--verde); font-weight: 600; }
 .fijo-abajo { position: sticky; bottom: 0; }
 .lista-recetas { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.lista-recetas .miniatura { width: 48px; height: 48px; }
+.lista-recetas .miniatura { width: 60px; }
 .lista-recetas .sin-foto { font-size: 1.5rem; }
 .chips-dia { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .separar {
