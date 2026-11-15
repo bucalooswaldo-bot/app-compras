@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { leerTique, emparejarArticulo, gastosPorPeriodo, ahorroPosible, inicioPeriodo, pagado } from '../web/src/tiques.js';
+import { leerTique, emparejarArticulo, gastosPorPeriodo, ahorroPosible, inicioPeriodo, pagado, gastoPorCategoria, textoCSV } from '../web/src/tiques.js';
 import { ARTICULOS } from '../web/src/recetas-inicio.js';
 
 const articulos = Object.entries(ARTICULOS).map(([nombre, [unidad]], i) => ({ id: `a${i}`, nombre, unidad }));
@@ -113,4 +113,41 @@ test('captura de Lidl Plus leída por el móvil (texto real del reconocedor)', (
   assert.equal(t.lineas.length, 4);
   assert.equal(t.lineas[3].importe, 2.19);
   assert.equal(t.total, 5.55);
+});
+
+test('tique de HiperDino: cantidad detrás del nombre, peso y descuento del club', () => {
+  const t = leerTique(`HIPERDINO EXPRESS
+DINOSOL SUPERMERCADOS S.L.
+FECHA: 14/11/2026 19:02
+DESCRIPCION CANT. PRECIO IMPORTE
+LECHE ASTURIANA SEMI 1L 2 1,15 2,30
+PAN MOLDE BIMBO 0,99
+PLATANO CANARIAS
+0,870 kg x 1,79 €/kg 1,56
+MANZANA GOLDEN 0,654 kg x 2,15 €/kg 1,41
+TOMATE TRITURADO HIDA 0,85
+DTO. CLUB HIPERDINO -0,20
+TOTAL COMPRA 6,91
+TARJETA 6,91`);
+  assert.equal(t.supermercado, 'hiperdino');
+  assert.equal(t.fecha, '2026-11-14');
+  assert.equal(t.total, 6.91);
+  assert.deepEqual(t.lineas.map((l) => [l.texto, l.cantidad, l.importe, l.descuento, !!l.kg]), [
+    ['LECHE ASTURIANA SEMI 1L', 2, 2.3, 0, false],
+    ['PAN MOLDE BIMBO', null, 0.99, 0, false],
+    ['PLATANO CANARIAS', 0.87, 1.56, 0, true],
+    ['MANZANA GOLDEN', 0.654, 1.41, 0, true],
+    ['TOMATE TRITURADO HIDA', null, 0.85, 0.2, false],
+  ]);
+});
+
+test('gasto por sección y CSV para Excel', () => {
+  const arts = [{ id: 'l', nombre: 'Leche', categoria: 'Lácteos' }, { id: 'p', nombre: 'Plátano', categoria: 'Frutería' }];
+  const g = gastoPorCategoria([
+    { articulo_id: 'l', importe: 2.3, descuento: 0 }, { articulo_id: 'p', importe: 1.56, descuento: 0.2 },
+    { articulo_id: null, importe: 3, descuento: 0 }, { articulo_id: 'l', importe: 0.89, descuento: 0 },
+  ], arts);
+  assert.deepEqual(g, [['Lácteos', 3.19], ['Sin clasificar', 3], ['Frutería', 1.36]]);
+  assert.equal(textoCSV([['Fecha', 'Producto', 'Pagado'], ['2026-11-14', 'Pan; "molde"', 1.5]]),
+    'Fecha;Producto;Pagado\r\n2026-11-14;"Pan; ""molde""";1,5');
 });

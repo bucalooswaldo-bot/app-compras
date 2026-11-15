@@ -115,16 +115,27 @@ export function leerTique(texto) {
     let cantidad = null, precioUnidad = null;
     const delante = resto.match(/^(\d{1,2})\s+(?=\D)/);
     if (delante) { cantidad = Number(delante[1]); resto = resto.slice(delante[0].length); }
-    const unitario = resto.match(/\s(\d{1,4}[.,]\d{2})$/);
+    const unitario = resto.match(/\s[(\[|]?(\d{1,4}[.,]\d{2})[)\]|]?$/);
     if (unitario) { precioUnidad = leerImporte(unitario[1]); resto = resto.slice(0, unitario.index).trim(); }
-    if (cantidad && !precioUnidad && cantidad > 1) precioUnidad = redondear(importe / cantidad);
+    // "LECHE ASTURIANA 1L 2 1,15 2,30" (HiperDino): cantidad detrás del nombre
+    const detras = precioUnidad != null && cantidad == null && resto.match(/\s(\d{1,2})$/);
+    if (detras && Math.abs(Number(detras[1]) * precioUnidad - importe) < 0.02) {
+      cantidad = Number(detras[1]); resto = resto.slice(0, detras.index).trim();
+    }
+    // Peso en la misma línea: "PLATANO 0,870 kg 1,56" o "PLATANO 0,870 kg x 1,79 €/kg 1,56"
+    let kg = false;
+    const pesoAqui = cantidad == null && resto.match(/\s(\d+[.,]\d{1,3})\s*kg\b.*$/i);
+    if (pesoAqui && /[a-záéíóúñ]{3}/i.test(resto.slice(0, pesoAqui.index))) {
+      cantidad = leerImporte(pesoAqui[1]); kg = true; precioUnidad = null; resto = resto.slice(0, pesoAqui.index).trim();
+    }
+    if (cantidad && !precioUnidad && cantidad > 1 && !kg) precioUnidad = redondear(importe / cantidad);
     resto = resto.replace(/^[^a-záéíóúñ0-9]+/i, '').trim();
     if (!/[a-záéíóúñ]{2}/i.test(resto)) continue;
     if (vecesPendiente && cantidad == null && Math.abs(importe - vecesPendiente.n * vecesPendiente.pu) < 0.02) {
       cantidad = vecesPendiente.n; precioUnidad = vecesPendiente.pu;
     }
     vecesPendiente = null;
-    lineas.push({ texto: resto, cantidad, precio_unidad: precioUnidad, importe, descuento: 0 });
+    lineas.push({ texto: resto, cantidad, precio_unidad: precioUnidad, importe, descuento: 0, ...(kg ? { kg } : {}) });
   }
   return { supermercado: detectarSuper(texto), fecha: detectarFecha(texto), total, lineas };
 }
@@ -217,4 +228,24 @@ export function ahorroPosible(lineas, precioEn, supers) {
   }
   detalle.sort((a, b) => b.diferencia - a.diferencia);
   return { pagado: redondear(pagadoTotal), minimo: redondear(mejorTotal), ahorro: redondear(pagadoTotal - mejorTotal), detalle };
+}
+
+/** Gasto por sección de la casa (Frutería, Lácteos…), de más a menos. Lo no enlazado va a "Sin clasificar". */
+export function gastoPorCategoria(lineas, articulos) {
+  const cat = new Map(articulos.map((a) => [a.id, a.categoria || 'Otros']));
+  const suma = new Map();
+  for (const l of lineas) {
+    const c = (l.articulo_id && cat.get(l.articulo_id)) || 'Sin clasificar';
+    suma.set(c, redondear((suma.get(c) ?? 0) + pagado(l)));
+  }
+  return [...suma.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+/** CSV con punto y coma y coma decimal (lo que espera Excel en España). */
+export function textoCSV(filas) {
+  const celda = (v) => {
+    const t = typeof v === 'number' ? String(v).replace('.', ',') : String(v ?? '');
+    return /[;"\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  return filas.map((f) => f.map(celda).join(';')).join('\r\n');
 }
