@@ -31,7 +31,7 @@ App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
   - `0002_fase1.sql`: código de invitación, despensa, recetas, plan, lista y, ya preparadas para más adelante, las tablas de **tiques** (foto del tique, líneas con precio, enlace al producto del súper y al artículo) para el resumen de gastos y ahorro.
 - `test/`: pruebas (`npm test`) y pruebas de permisos de la base de datos (`sql-pruebas.sql`).
 
-## Comparar precios (fases 2 y 3)
+## Comparar precios (fase 2)
 
 - **Dictar la lista**: en Lista se puede escribir o dictar una frase entera ("necesito aceite, sal, leche puleva y 2 kilos de papas").
   La app la separa en cosas sueltas, con cantidad y marca o tipo (`web/src/comparar.js`, `entenderDictado`).
@@ -43,7 +43,25 @@ App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
   con las webs de los súper. Solo busca cuando hay una cosa nueva sin producto, y cada día a las 04:00 (UTC) refresca los
   productos enlazados cuyo precio tiene más de 6 días: cada producto se consulta como mucho una vez por semana.
   Si un súper cambia su web, se arregla su bloque en `lectores.ts`.
-- Lidl entrará con los tiques de Lidl Plus.
+- **Lidl** no tiene web de precios: sus precios salen de los tiques que se guardan (ver abajo). En la comparación
+  aparece cuando hay precios de Lidl para al menos la mitad de la lista; si no, cuenta solo en "Si repartes".
+
+## Tiques y gastos (fase 3)
+
+- Pestaña **Gastos**: "Añadir tique" con una foto del tique de papel o una captura del tique de Lidl Plus.
+  El texto se lee en el propio móvil con Tesseract (`web/vendor/ocr/`, se descarga la primera vez, unos 10 MB);
+  la foto no se sube a ningún sitio. `web/src/tiques.js` saca súper, fecha, total y líneas (cantidades, peso, descuentos).
+- Antes de guardar se revisa: cada línea se puede corregir y enlazar a un artículo de la casa (se propone solo).
+  Al guardar se puede tachar de la lista lo comprado.
+- La función `guardar_tique` (`supabase/migrations/0004_tiques.sql`) guarda el tique y, si es de Lidl, crea el producto
+  de Lidl con su precio y lo enlaza con el artículo: así Lidl entra en la comparación.
+- Resumen por semana, mes y año, por súper, y cuánto se habría ahorrado comprando cada cosa donde hoy está más barata.
+
+## Menú de la semana (fase 4)
+
+- En Plan, "✨ Proponer el menú de estos 7 días" rellena los huecos libres (`web/src/menu.js`): prioriza lo que hay en
+  casa, lo que está de oferta y las favoritas, y no repite lo de las dos últimas semanas ni dos platos del mismo tipo seguidos.
+  Se puede quitar lo que no apetezca o pedir otra propuesta. Es todo con reglas, sin IA de pago.
 
 ## Cómo encaja con los precios (fase 2)
 

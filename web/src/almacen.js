@@ -12,6 +12,8 @@ export const TABLAS = {
   lista: 'lista_compra',
   equivalencias: 'equivalencias',
   preferencias: 'preferencias',
+  tiques: 'tiques',
+  tique_lineas: 'tique_lineas',
 };
 
 export const nuevoId = () =>
@@ -146,6 +148,7 @@ export function motorPrueba() {
         copia.ingredientes = copia.ingredientes.filter((i) => !s.has(i.receta_id));
         copia.plan = copia.plan.filter((p) => !s.has(p.receta_id));
       }
+      if (k === 'tiques') copia.tique_lineas = copia.tique_lineas.filter((l) => !s.has(l.tique_id));
       if (k === 'articulos') {
         for (const t of ['despensa', 'ingredientes', 'lista', 'equivalencias', 'preferencias']) {
           copia[t] = copia[t].filter((f) => !s.has(f.articulo_id));
@@ -181,6 +184,10 @@ export function motorSupabase(cliente, hogarId) {
         for (const f of datos[t]) if (f.cantidad != null) f.cantidad = Number(f.cantidad);
       }
       for (const p of datos.plan) p.raciones = Number(p.raciones);
+      for (const t of datos.tiques) if (t.total != null) t.total = Number(t.total);
+      for (const l of datos.tique_lineas) {
+        for (const c of ['cantidad', 'precio_unidad', 'importe', 'descuento']) if (l[c] != null) l[c] = Number(l[c]);
+      }
       return datos;
     },
     async insertar(tabla, filas) {
