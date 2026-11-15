@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -13,6 +13,7 @@ import { crearCatalogo } from './catalogo.js';
 import { leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible } from './tiques.js';
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
+import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
 import * as config from '../config.js';
 
 // ---------------------------------------------------------------------------
@@ -157,11 +158,11 @@ function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
       ${dias.map((fecha) => html`
         <div class="dia ${fecha === hoy ? 'hoy' : ''}">
           <h3>${nombreDia(fecha, hoy)}</h3>
-          ${['comida', 'cena'].map((momento) => {
+          ${MOMENTOS.map(([momento]) => {
             const comidas = datos.plan.filter((p) => p.fecha === fecha && p.momento === momento);
             return html`
               <div class="momento">
-                <span class="etiqueta-momento">${momento === 'comida' ? 'Comida' : 'Cena'}</span>
+                <span class="etiqueta-momento">${nombreMomento(momento)}</span>
                 <div class="comidas">
                   ${comidas.map((c) => {
                     const r = datos.recetas.find((x) => x.id === c.receta_id);
@@ -181,7 +182,7 @@ function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
               </div>`;
           })}
         </div>`)}
-      ${elegir && html`<${ElegirReceta} datos=${datos} titulo=${`${nombreDia(elegir.fecha, hoy)}, ${elegir.momento}`}
+      ${elegir && html`<${ElegirReceta} almacen=${almacen} datos=${datos} titulo=${`${nombreDia(elegir.fecha, hoy)}, ${nombreMomento(elegir.momento).toLowerCase()}`} momento=${elegir.momento}
         onCerrar=${() => setElegir(null)}
         onElegir=${(receta, raciones) => {
           almacen.insertar('plan', { fecha: elegir.fecha, momento: elegir.momento, receta_id: receta.id, raciones, cocinado: false });
@@ -196,22 +197,30 @@ function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
 const leerRaciones = () => { try { return Number(localStorage.getItem('raciones-plan')) || null; } catch { return null; } };
 const guardarRaciones = (n) => { try { localStorage.setItem('raciones-plan', String(n)); } catch { /* nada */ } };
 
-function ElegirReceta({ datos, titulo, onCerrar, onElegir }) {
+const ETIQUETA_MOMENTO = { postre: /postre|dulce/, tentempie: /tentempi|merienda|desayuno|snack/, cena: /cena|ligera/ };
+
+function ElegirReceta({ almacen, datos, titulo, momento, onCerrar, onElegir }) {
   const [buscar, setBuscar] = useState('');
   const [raciones, setRaciones] = useState(leerRaciones() ?? 2);
+  const encaja = (r) => (ETIQUETA_MOMENTO[momento]?.test(normalizar(r.etiquetas.join(' '))) ? 1 : 0);
   const lista = datos.recetas
     .filter((r) => normalizar(r.nombre).includes(normalizar(buscar)) || r.etiquetas.some((e) => normalizar(e).includes(normalizar(buscar))))
-    .sort((a, b) => (b.favorita - a.favorita) || a.nombre.localeCompare(b.nombre, 'es'));
+    .sort((a, b) => (encaja(b) - encaja(a)) || (b.favorita - a.favorita) || a.nombre.localeCompare(b.nombre, 'es'));
+  const fotos = useFotos(almacen, lista.map((r) => r.foto_path));
   return html`
     <${Hoja} titulo=${`Añadir: ${titulo}`} onCerrar=${onCerrar}>
       <div class="fila-campo">
         <label>Raciones</label>
         <${Contador} valor=${raciones} onCambio=${setRaciones} />
       </div>
-      <input type="search" placeholder="Buscar receta" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
-      <ul class="lista-simple">
-        ${lista.map((r) => html`<li><button onClick=${() => onElegir(r, raciones)}>
-          ${r.favorita ? '★ ' : ''}${r.nombre} <small>${r.tiempo_min ? `${r.tiempo_min} min` : ''}</small></button></li>`)}
+      <input type="search" placeholder="Buscar receta (o elige de la lista)" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
+      ${lista.length === 0 && html`<p class="vacio">No hay recetas con ese nombre. Créala en la pestaña Recetas.</p>`}
+      <ul class="lista-recetas">
+        ${lista.map((r) => html`<li><button class="tarjeta con-foto" onClick=${() => onElegir(r, raciones)}>
+          <${Miniatura} receta=${r} url=${r.foto_path ? fotos[r.foto_path] : null} />
+          <span class="texto-tarjeta"><strong>${r.favorita ? '★ ' : ''}${r.nombre}</strong>
+            <small>${[r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas].filter(Boolean).join(' · ')}</small></span>
+        </button></li>`)}
       </ul>
     </${Hoja}>`;
 }
@@ -378,7 +387,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
       ${alPlan && html`<${ElegirDia} onCerrar=${() => setAlPlan(false)} onElegir=${(fecha, momento) => {
         almacen.insertar('plan', { fecha, momento, receta_id: id, raciones, cocinado: false });
         setAlPlan(false);
-        mostrarAviso(`Añadida al plan: ${nombreDia(fecha)}, ${momento}`);
+        mostrarAviso(`Añadida al plan: ${nombreDia(fecha)}, ${nombreMomento(momento).toLowerCase()}`);
       }} />`}
     </${Hoja}>`;
 }
@@ -391,12 +400,50 @@ function ElegirDia({ onCerrar, onElegir }) {
       <ul class="lista-simple">
         ${dias.map((f) => html`<li class="dia-elegir">
           <span>${nombreDia(f, hoy)}</span>
-          <button class="chip" onClick=${() => onElegir(f, 'comida')}>Comida</button>
-          <button class="chip" onClick=${() => onElegir(f, 'cena')}>Cena</button>
+          <span class="chips-dia">${MOMENTOS.map(([m, nombre]) => html`<button class="chip" onClick=${() => onElegir(f, m)}>${nombre}</button>`)}</span>
         </li>`)}
       </ul>
     </${Hoja}>`;
 }
+
+/** Listado para elegir ingredientes: buscar, tocar para añadir (varios seguidos) o crear uno nuevo. */
+function ElegirIngredientes({ datos, elegidos, onElegir, onCerrar }) {
+  const [buscar, setBuscar] = useState('');
+  const n = normalizar(buscar);
+  const filtrados = datos.articulos.filter((a) => !n || normalizar(a.nombre).includes(n));
+  const exacto = buscarArticulo(datos.articulos, buscar);
+  const crear = (unidad) => {
+    onElegir({ nombre: mayusculaInicial(buscar.trim()), unidad, categoria: adivinarCategoria(buscar) });
+    setBuscar('');
+  };
+  return html`
+    <${Hoja} titulo="Añadir ingredientes" onCerrar=${onCerrar}>
+      <input type="search" placeholder="Buscar o escribir uno nuevo" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
+      ${buscar.trim() && !exacto && html`
+        <div class="crear-ingrediente">
+          <p>Crear <b>${mayusculaInicial(buscar.trim())}</b>. ¿Cómo se compra?</p>
+          <div class="acciones">
+            <button class="chip" onClick=${() => crear('ud')}>Por unidades</button>
+            <button class="chip" onClick=${() => crear('g')}>Por peso (g / kg)</button>
+            <button class="chip" onClick=${() => crear('ml')}>Líquido (ml / l)</button>
+          </div>
+        </div>`}
+      ${agruparPorCategoria(filtrados.map((a) => ({ articulo_id: a.id })), datos.articulos).map(([cat, grupo]) => html`
+        <h3 class="categoria">${cat}</h3>
+        <ul class="lista-simple">
+          ${grupo.map(({ articulo_id }) => {
+            const a = articulo(datos, articulo_id);
+            const ya = elegidos.has(normalizar(a.nombre));
+            return html`<li><button class=${ya ? 'elegido' : ''} onClick=${() => onElegir({ nombre: a.nombre, unidad: a.unidad, categoria: a.categoria })}>
+              ${ya ? '✓ ' : '+ '}${a.nombre}</button></li>`;
+          })}
+        </ul>`)}
+      <button class="boton grande fijo-abajo" onClick=${onCerrar}>Listo</button>
+    </${Hoja}>`;
+}
+
+const mayusculaInicial = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
+const UNIDAD_LARGA = { g: 'peso', ml: 'líquido', ud: 'unidades' };
 
 function EditarReceta({ almacen, datos, id, onCerrar }) {
   const original = id ? datos.recetas.find((r) => r.id === id) : null;
@@ -407,13 +454,25 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
   });
   const [ings, setIngs] = useState(ingOriginales.map((i) => {
     const a = articulo(datos, i.articulo_id);
-    return { clave: i.id, nombre: a?.nombre ?? '', cantidad: i.cantidad, unidad: a?.unidad ?? 'ud', nota: i.nota ?? '' };
+    return { clave: i.id, nombre: a?.nombre ?? '', cantidad: i.cantidad, unidad: a?.unidad ?? 'ud', categoria: a?.categoria, nota: i.nota ?? '' };
   }));
+  const [elegir, setElegir] = useState(false);
+  const [pegar, setPegar] = useState(null); // texto que se está pegando
   const [guardando, setGuardando] = useState(false);
-  const cambiarIng = (k, cambios) => setIngs(ings.map((x) => (x.clave === k ? { ...x, ...cambios } : x)));
-  const nombreCambiado = (k, nombre) => {
-    const a = buscarArticulo(datos.articulos, nombre);
-    cambiarIng(k, a ? { nombre, unidad: a.unidad } : { nombre });
+  const cambiarIng = (k, cambios) => setIngs((xs) => xs.map((x) => (x.clave === k ? { ...x, ...cambios } : x)));
+  const elegidos = new Set(ings.map((i) => normalizar(i.nombre)));
+
+  const anadir = (nuevo) => setIngs((xs) => (xs.some((x) => normalizar(x.nombre) === normalizar(nuevo.nombre))
+    ? xs.filter((x) => normalizar(x.nombre) !== normalizar(nuevo.nombre))   // tocar otra vez lo quita
+    : [...xs, { clave: crypto.randomUUID(), cantidad: null, nota: '', ...nuevo }]));
+
+  const separar = () => {
+    const leidos = entenderIngredientes(pegar, datos.articulos);
+    setIngs((xs) => [...xs, ...leidos.map((l) => ({
+      clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, nota: l.nota ?? '', categoria: l.categoria,
+    }))]);
+    setPegar(null);
+    mostrarAviso(`${leidos.length} ingredientes añadidos. Revisa las cantidades.`);
   };
 
   const guardar = async () => {
@@ -432,8 +491,8 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
     let orden = 0;
     for (const i of ings) {
       if (!i.nombre.trim()) continue;
-      const a = await obtenerArticulo(almacen, i.nombre, i.unidad, 'Otros');
-      filas.push({ receta_id: recetaId, articulo_id: a.id, cantidad: i.cantidad, nota: i.nota || null, orden: orden++ });
+      const a = await obtenerArticulo(almacen, i.nombre, i.unidad, i.categoria ?? adivinarCategoria(i.nombre));
+      filas.push({ receta_id: recetaId, articulo_id: a.id, cantidad: i.cantidad, nota: i.nota?.trim() || null, orden: orden++ });
     }
     if (filas.length) await almacen.insertar('ingredientes', filas);
     setGuardando(false);
@@ -448,22 +507,39 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
         <label>Minutos<input inputmode="numeric" value=${f.tiempo_min} onInput=${(e) => setF({ ...f, tiempo_min: e.target.value })} /></label>
       </div>
       <label>Etiquetas <small>(separadas por comas)</small>
-        <input value=${f.etiquetas} placeholder="Cuchara, Rápida…" onInput=${(e) => setF({ ...f, etiquetas: e.target.value })} /></label>
+        <input value=${f.etiquetas} placeholder="Cuchara, Rápida, Postre…" onInput=${(e) => setF({ ...f, etiquetas: e.target.value })} /></label>
       <h3>Ingredientes</h3>
-      <datalist id="articulos-lista">${datos.articulos.map((a) => html`<option value=${a.nombre} />`)}</datalist>
+      ${ings.length === 0 && html`<p class="meta">Añádelos uno a uno desde el listado, o pega un texto con todos.</p>`}
       ${ings.map((i) => html`
-        <div class="ing-editar">
-          <input list="articulos-lista" placeholder="Ingrediente" value=${i.nombre} onInput=${(e) => nombreCambiado(i.clave, e.target.value)} />
-          ${!buscarArticulo(datos.articulos, i.nombre) && i.nombre.trim() && html`
-            <select aria-label="Se mide en" value=${i.unidad} onChange=${(e) => cambiarIng(i.clave, { unidad: e.target.value, cantidad: null })}>
-              <option value="g">peso</option><option value="ml">líquido</option><option value="ud">unidades</option>
-            </select>`}
-          <${CampoCantidad} unidad=${i.unidad} valor=${i.cantidad} placeholder="Al gusto" onCambio=${(c) => cambiarIng(i.clave, { cantidad: c })} />
-          <button class="icono peq" aria-label="Quitar ingrediente" onClick=${() => setIngs(ings.filter((x) => x.clave !== i.clave))}>✕</button>
+        <div class="ing-fila">
+          <div class="ing-cab">
+            <strong>${i.nombre}</strong>
+            ${!buscarArticulo(datos.articulos, i.nombre) && html`<small class="meta">nuevo · ${UNIDAD_LARGA[i.unidad]}</small>`}
+            <button class="icono peq" aria-label=${`Quitar ${i.nombre}`} onClick=${() => setIngs(ings.filter((x) => x.clave !== i.clave))}>✕</button>
+          </div>
+          <div class="ing-datos">
+            <${CampoCantidad} unidad=${i.unidad} valor=${i.cantidad} placeholder="Cantidad" onCambio=${(c) => cambiarIng(i.clave, { cantidad: c })} />
+            <input class="ing-nota" placeholder="Nota (1 cdta, picado…)" value=${i.nota} onInput=${(e) => cambiarIng(i.clave, { nota: e.target.value })} />
+          </div>
         </div>`)}
-      <button class="anadir" onClick=${() => setIngs([...ings, { clave: crypto.randomUUID(), nombre: '', cantidad: null, unidad: 'g', nota: '' }])}>+ Ingrediente</button>
+      <div class="acciones">
+        <button class="anadir" onClick=${() => setElegir(true)}>+ Añadir ingredientes</button>
+        <button class="anadir" onClick=${() => setPegar('')}>📋 Pegar de un texto</button>
+      </div>
+      ${pegar != null && html`
+        <div class="pegar">
+          <label>Pega o escribe los ingredientes, separados por comas o en líneas
+            <textarea rows="4" placeholder="80 g fideos, 1/2 cebolla, 2 tazas de caldo, sal" value=${pegar}
+              onInput=${(e) => setPegar(e.target.value)}></textarea></label>
+          <div class="acciones">
+            <button class="boton" disabled=${!pegar.trim()} onClick=${separar}>Separar ingredientes</button>
+            <button class="enlace" onClick=${() => setPegar(null)}>Cancelar</button>
+          </div>
+        </div>`}
+      <p class="meta">Sin cantidad también entran en la lista de la compra (menos sal, aceite y especias, que se controlan con la despensa).</p>
       <label>Preparación<textarea rows="6" value=${f.pasos} onInput=${(e) => setF({ ...f, pasos: e.target.value })}></textarea></label>
       <button class="boton grande" disabled=${guardando} onClick=${guardar}>${guardando ? 'Guardando…' : 'Guardar'}</button>
+      ${elegir && html`<${ElegirIngredientes} datos=${datos} elegidos=${elegidos} onElegir=${anadir} onCerrar=${() => setElegir(false)} />`}
     </${Hoja}>`;
 }
 
@@ -1375,7 +1451,7 @@ function ProponerSemana({ almacen, datos, sesion, desde, onCerrar }) {
               return html`
                 <div class="propuesta ${fuera ? 'fuera' : ''}">
                   <div>
-                    <small class="meta">${nombreDia(p.fecha, hoy)} · ${p.momento === 'comida' ? 'Comida' : 'Cena'}</small>
+                    <small class="meta">${nombreDia(p.fecha, hoy)} · ${nombreMomento(p.momento)}</small>
                     <div>${r?.nombre}</div>
                     ${p.motivo && html`<small class="meta">${p.motivo}</small>`}
                   </div>

@@ -2,13 +2,13 @@
 
 App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
 
-- **Recetas**: 20 recetas de inicio propuestas por la IA (cocina casera y canaria), favoritas, etiquetas, raciones ajustables, crear y editar.
-- **Plan**: próximos 7 días, comida y cena. "Hecho" descuenta los ingredientes de la despensa (y se puede deshacer).
+- **Recetas**: 20 recetas de inicio propuestas por la IA (cocina casera y canaria), favoritas, etiquetas, raciones ajustables, crear y editar (todas, también las propuestas). Ingredientes uno por fila con cantidad y unidad, elegidos de un listado o separados de un texto pegado (`src/ingredientes.js`).
+- **Plan**: próximos 7 días: comida, cena, postre y tentempié (migración `0006`), eligiendo la receta de un listado con foto. "Hecho" descuenta los ingredientes de la despensa (y se puede deshacer).
 - **Despensa**: qué hay en casa (solo cantidades), con mínimo opcional. Botones + y − para ajustar rápido.
 - **Lista de la compra**: se calcula sola con
   `lo que piden las recetas del plan + el mínimo − lo que hay en casa`,
   ordenada por secciones del súper. Se pueden añadir cosas a mano. Al marcar algo como comprado pasa a la despensa
-  (y se puede cambiar la cantidad comprada o deshacer).
+  (y se puede cambiar la cantidad comprada o deshacer). Los ingredientes sin cantidad ("lechuga") también entran si no hay en casa, salvo los básicos (sal, aceite, especias).
 - **Casa compartida**: cada persona entra con su correo; la segunda se une con un código de 6 letras. Los cambios
   aparecen en el otro móvil al momento.
 
