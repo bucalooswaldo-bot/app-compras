@@ -1219,6 +1219,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
   const [ver, setVer] = useState(null);
   const [preciosListos, setPreciosListos] = useState(false);
   const fichero = useRef(null);
+  const camara = useRef(null);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
 
   useEffect(() => { try { localStorage.setItem('periodo-gastos', periodo); } catch { /* nada */ } }, [periodo]);
@@ -1266,14 +1267,18 @@ function PantallaGastos({ almacen, datos, sesion }) {
   return html`
     <section>
       <div class="acciones-gastos">
-        <button class="boton grande" disabled=${leyendo != null} onClick=${() => fichero.current.click()}>
-          ${leyendo == null ? '📷 Añadir tique' : leyendo === 'cargando' ? 'Preparando el lector…' : `Leyendo el tique… ${leyendo}%`}
-        </button>
+        ${leyendo != null
+          ? html`<button class="boton grande" disabled>${leyendo === 'cargando' ? 'Preparando el lector…' : `Leyendo el tique… ${leyendo}%`}</button>`
+          : html`<div class="dos-botones">
+              <button class="boton grande" onClick=${() => camara.current.click()}>📷 Hacer foto</button>
+              <button class="boton grande" onClick=${() => fichero.current.click()}>🖼 De la galería</button>
+            </div>`}
+        <input ref=${camara} type="file" accept="image/*" capture="environment" hidden onChange=${elegirFoto} />
         <input ref=${fichero} type="file" accept="image/*" hidden onChange=${elegirFoto} />
         <button class="enlace" onClick=${() => setRevisar({ supermercado: null, fecha: null, total: null, lineas: [] })}>o escribirlo a mano</button>
       </div>
-      <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel o una captura del tique de la app
-        (Lidl Plus, Mercadona…). Se lee en el móvil; la foto no se guarda.</p>
+      <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel, o elige de la galería una foto o una captura
+        del tique de la app (Lidl Plus…). El texto se lee en el móvil; la foto no se guarda.</p>
 
       <div class="chips periodos">
         ${Object.entries(NOMBRE_PERIODO).map(([p, n]) => html`
