@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -672,7 +672,7 @@ function RepasarDespensa({ almacen, datos, onCerrar }) {
   const [guardando, setGuardando] = useState(false);
   const hoy = fechaISO();
   const enLista = new Set([
-    ...datos.lista.filter((l) => !l.comprado).map((l) => l.articulo_id),
+    ...datos.lista.filter(pendienteManual).map((l) => l.articulo_id),
     ...faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).map((f) => f.articulo_id),
   ]);
   const filas = datos.despensa.filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)));
@@ -782,13 +782,23 @@ function PantallaLista({ almacen, datos, sesion }) {
   const [comparar, setComparar] = useState(false);
   const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
   const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
-  const manual = datos.lista.filter((l) => !l.comprado);
+  const manual = datos.lista.filter(pendienteManual);
+  const descartes = datos.lista.filter((l) => descarteVigente(l, hoy));
+  const caducados = datos.lista.filter((l) => esDescarte(l) && !descarteVigente(l, hoy)).map((l) => l.id).join(',');
+  // Los "hoy no" de otros días ya no valen: se borran.
+  useEffect(() => { if (caducados) almacen.borrar('lista', caducados.split(',')); }, [caducados]);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
   const tachados = comprado.map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
   const pendientes = [
     ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
     ...manual.map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
   ];
+
+  const enListaIds = new Set([...pendientes.map((f) => f.articulo_id), ...descartes.map((l) => l.articulo_id)]);
+  const sugeridas = sugerirCompra(datos, enListaIds);
+  const hoyNo = (f) => almacen.insertar('lista', { articulo_id: f.articulo_id, cantidad: null, origen: 'auto', comprado: false,
+    creado_en: new Date().toISOString() });
+  const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
 
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
@@ -851,7 +861,7 @@ function PantallaLista({ almacen, datos, sesion }) {
     else await almacen.actualizar('lista', l.id, { comprado: false, comprado_en: null });
   };
 
-  const vaciarComprado = () => almacen.borrar('lista', comprado.map((l) => l.id));
+  const vaciarComprado = () => almacen.borrar('lista', [...comprado, ...descartes].map((l) => l.id));
 
   return html`
     <section>
@@ -896,10 +906,26 @@ function PantallaLista({ almacen, datos, sesion }) {
                 ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${motivo}</small>
               </button>
               <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
-              ${f.tipo === 'manual' && html`<button class="icono peq" aria-label="Quitar de la lista" onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`}
+              ${f.tipo === 'manual'
+                ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
+                : html`<button class="icono peq" aria-label=${`Hoy no: ${a?.nombre}`} onClick=${() => hoyNo(f)}>✕</button>`}
             </li>`;
           })}
         </ul>`)}
+      ${descartes.length > 0 && html`
+        <div class="quitado">
+          <p class="meta">Quitado de la lista de hoy (toca para volver a ponerlo):</p>
+          <div class="acciones">
+            ${descartes.map((l) => html`<button class="chip" onClick=${() => almacen.borrar('lista', l.id)}>↩ ${nombreArticulo(datos, l.articulo_id)}</button>`)}
+          </div>
+        </div>`}
+      ${sugeridas.length > 0 && html`
+        <div class="quitado">
+          <p class="meta">¿Os hace falta? Lo soléis comprar y no está en la lista:</p>
+          <div class="acciones">
+            ${sugeridas.map((id) => html`<button class="chip" onClick=${() => apuntar(id)}>+ ${nombreArticulo(datos, id)}</button>`)}
+          </div>
+        </div>`}
       ${comprado.length > 0 && html`
         <div class="terminar">
           <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
@@ -1510,7 +1536,7 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
       }
       if (marcar) {
         const comprados = new Set(filas.map((f) => f.articulo_id).filter(Boolean));
-        for (const l of almacen.datos.lista.filter((x) => !x.comprado && comprados.has(x.articulo_id))) {
+        for (const l of almacen.datos.lista.filter((x) => pendienteManual(x) && comprados.has(x.articulo_id))) {
           await almacen.actualizar('lista', l.id, { comprado: true });
         }
       }
@@ -1669,7 +1695,7 @@ function App({ almacen, sesion }) {
 
   const hoy = fechaISO();
   const nLista = useMemo(() => faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).length
-    + datos.lista.filter((l) => !l.comprado).length, [datos, pestana]);
+    + datos.lista.filter(pendienteManual).length, [datos, pestana]);
 
   const props = {
     almacen, datos, sesion,

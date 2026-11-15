@@ -137,7 +137,7 @@ export function faltas(datos, desde, hasta) {
   const despensa = new Map(datos.despensa.map((d) => [d.articulo_id, d]));
   const enLista = new Map();
   for (const l of datos.lista) {
-    if (l.comprado) continue;
+    if (l.comprado || (esDescarte(l) && !descarteVigente(l, desde))) continue;
     enLista.set(l.articulo_id, (enLista.get(l.articulo_id) ?? 0) + (l.cantidad ?? Infinity));
   }
 
@@ -168,6 +168,32 @@ export function faltas(datos, desde, hasta) {
 }
 
 /** Momentos del día en el plan, en el orden en que se enseñan. */
+// ---------------------------------------------------------------------------
+// Lista del día
+// ---------------------------------------------------------------------------
+/** "Hoy no": una línea 'auto' sin comprar dice que eso no hace falta. Solo vale el día en que se puso. */
+export const esDescarte = (l) => l.origen === 'auto' && !l.comprado;
+export const descarteVigente = (l, hoy) => esDescarte(l) && (l.creado_en ?? '').slice(0, 10) >= hoy;
+/** Lo apuntado a mano y aún sin comprar. */
+export const pendienteManual = (l) => !l.comprado && l.origen !== 'auto';
+
+/**
+ * Lo que soléis comprar (2 veces o más, por tiques o por la lista) y ahora no está en la lista
+ * ni hay en casa. Devuelve ids de artículo, lo más comprado primero.
+ */
+export function sugerirCompra(datos, yaEnLista, max = 8) {
+  const veces = new Map();
+  const contar = (id) => id && veces.set(id, (veces.get(id) ?? 0) + 1);
+  for (const l of datos.tique_lineas ?? []) contar(l.articulo_id);
+  for (const l of datos.lista) if (l.comprado) contar(l.articulo_id);
+  const hay = new Map(datos.despensa.map((d) => [d.articulo_id, d.cantidad]));
+  return [...veces]
+    .filter(([id, n]) => n >= 2 && !yaEnLista.has(id) && !(hay.get(id) > 0) && datos.articulos.some((a) => a.id === id))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, max)
+    .map(([id]) => id);
+}
+
 export const MOMENTOS = [['comida', 'Comida'], ['cena', 'Cena'], ['postre', 'Postre'], ['tentempie', 'Tentempié']];
 export const nombreMomento = (m) => MOMENTOS.find((x) => x[0] === m)?.[1] ?? m;
 

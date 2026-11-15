@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  faltas, formatoCantidad, deEntrada, aEntrada, sumarDias, escalar, agruparPorCategoria, buscarArticulo,
+  faltas, sugerirCompra, formatoCantidad, deEntrada, aEntrada, sumarDias, escalar, agruparPorCategoria, buscarArticulo,
 } from '../web/src/logica.js';
 import { RECETAS, ARTICULOS } from '../web/src/recetas-inicio.js';
 
@@ -117,4 +117,21 @@ test('ingredientes sin cantidad (no básicos) entran si no hay en casa', () => {
   d.despensa.push({ articulo_id: 'lechuga', cantidad: 1, minimo: 0 });
   f = faltas(d, HOY, HOY);
   assert.ok(!f.some((x) => x.articulo_id === 'lechuga'), 'si hay en casa no se pide');
+});
+
+test('"hoy no" quita una cosa de la lista solo ese día', () => {
+  const d = base();
+  d.despensa.push({ articulo_id: 'tomate', cantidad: 0, minimo: 2 });
+  d.lista.push({ id: 'x', articulo_id: 'tomate', cantidad: null, origen: 'auto', comprado: false, creado_en: `${HOY}T10:00:00Z` });
+  assert.equal(faltas(d, HOY, HOY).length, 0);
+  assert.equal(faltas(d, sumarDias(HOY, 1), sumarDias(HOY, 1)).length, 1, 'al día siguiente vuelve');
+});
+
+test('sugerir lo que se compra a menudo y no hay', () => {
+  const d = base();
+  d.tique_lineas = [{ articulo_id: 'huevos' }, { articulo_id: 'huevos' }, { articulo_id: 'arroz' }, { articulo_id: 'tomate' }];
+  d.lista.push({ id: 'c', articulo_id: 'tomate', comprado: true, origen: 'manual' });
+  d.despensa.push({ articulo_id: 'tomate', cantidad: 3, minimo: 0 });
+  assert.deepEqual(sugerirCompra(d, new Set()), ['huevos']);
+  assert.deepEqual(sugerirCompra(d, new Set(['huevos'])), []);
 });

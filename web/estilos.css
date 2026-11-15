@@ -317,3 +317,5 @@ li.hecho { opacity: 0.8; }
 .ing-fila.saltado { opacity: 0.5; }
 .ing-fila select { width: 100%; }
 .filas.repaso li { flex-wrap: wrap; }
+.quitado { margin: 14px 0 0; }
+.quitado .acciones { flex-wrap: wrap; }
