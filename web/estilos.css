@@ -319,3 +319,12 @@ li.hecho { opacity: 0.8; }
 .filas.repaso li { flex-wrap: wrap; }
 .quitado { margin: 14px 0 0; }
 .quitado .acciones { flex-wrap: wrap; }
+.repetido {
+  display: flex; flex-direction: column; gap: 4px; margin: 12px 0 4px; padding: 12px;
+  border-radius: 10px; background: var(--aviso-claro); color: var(--texto);
+}
+.repetido b { color: var(--aviso); }
+.fila-campo input.hora { width: 7.5em; flex: none; }
+.casilla { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+.casilla input { width: 22px; min-height: 22px; flex: none; }
+.repetido { text-align: left; }

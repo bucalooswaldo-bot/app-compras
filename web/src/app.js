@@ -12,6 +12,7 @@ import {
 import { crearCatalogo } from './catalogo.js';
 import {
   leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible, gastoPorCategoria, textoCSV,
+  tiqueRepetido,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
@@ -1514,6 +1515,13 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
   const suma = redondear(lineas.reduce((s, l) => s + pagado(l), 0));
   const totalNum = total.trim() ? leerImporte(total) : null;
   const descuadre = totalNum != null && Math.abs(totalNum - suma) > 0.05;
+  const [hora, setHora] = useState(leido.hora ?? '');
+  const repetido = useMemo(() => tiqueRepetido(
+    { supermercado: superId || null, fecha, hora: hora || null, total: totalNum ?? suma, lineas },
+    datos.tiques, datos.tique_lineas,
+  ), [superId, fecha, hora, totalNum, suma, lineas, datos.tiques]);
+  const [aunAsi, setAunAsi] = useState(false);
+  const fechaHora = () => `${fecha}T${hora || '12:00'}:00`;
 
   const guardar = async () => {
     const validas = lineas.filter((l) => l.texto.trim() && Number.isFinite(l.importe));
@@ -1526,12 +1534,12 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
     try {
       if (sesion) {
         const { error } = await sesion.cliente.rpc('guardar_tique', {
-          p_hogar: sesion.hogarId, p_super: superId || null, p_fecha: `${fecha}T12:00:00`, p_total: t, p_lineas: filas,
+          p_hogar: sesion.hogarId, p_super: superId || null, p_fecha: fechaHora(), p_total: t, p_lineas: filas,
         });
         if (error) throw error;
         await almacen.cargar();
       } else {
-        const [tique] = await almacen.insertar('tiques', { supermercado_id: superId || null, fecha: `${fecha}T12:00:00`, total: t, estado: 'revisado' });
+        const [tique] = await almacen.insertar('tiques', { supermercado_id: superId || null, fecha: fechaHora(), total: t, estado: 'revisado' });
         await almacen.insertar('tique_lineas', filas.map((f) => ({ ...f, tique_id: tique.id })));
       }
       if (marcar) {
@@ -1557,6 +1565,7 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
           <option value="">Otro</option>
         </select>
         <input type="date" value=${fecha} onInput=${(e) => setFecha(e.target.value)} aria-label="Fecha" />
+        <input type="time" class="hora" value=${hora} onInput=${(e) => setHora(e.target.value)} aria-label="Hora" />
       </div>
       <div class="fila-campo">
         <label class="meta" for="total-tique">Total del tique</label>
@@ -1583,11 +1592,19 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
           </div>`)}
         <button class="anadir" onClick=${() => setLineas([...lineas, { clave: nuevaClave(), texto: '', importe: 0, descuento: 0, cantidad: null, articulo_id: '' }])}>+ Añadir línea</button>
       </div>
-      <label class="marcar"><input type="checkbox" checked=${marcar} onChange=${(e) => setMarcar(e.target.checked)} />
+      <label class="casilla"><input type="checkbox" checked=${marcar} onChange=${(e) => setMarcar(e.target.checked)} />
         Tachar de la lista lo que ya está comprado</label>
       ${superId === 'lidl' && html`<p class="nota">Los precios de este tique se usarán para comparar Lidl con los otros súper.</p>`}
       <div class="pie">
-        <button class="boton grande" disabled=${guardando || !lineas.length} onClick=${guardar}>${guardando ? 'Guardando…' : 'Guardar tique'}</button>
+        ${repetido && html`<div class="repetido">
+          <b>⚠ Este tique parece que ya está guardado</b>
+          <span>${nombreDe(repetido.supermercado_id)} · ${fechaCorta(repetido.fecha)}${repetido.fecha.slice(11, 16) !== '12:00' ? ` · ${repetido.fecha.slice(11, 16)}` : ''} · ${euros(Number(repetido.total))}</span>
+          <span>Si lo guardas otra vez, el gasto contará doble.</span>
+        </div>`}
+        ${repetido && !aunAsi
+          ? html`<button class="boton grande" onClick=${onCerrar}>No guardar (ya lo tenía)</button>
+              <button class="enlace" onClick=${() => setAunAsi(true)}>Es otro tique distinto, guardarlo igualmente</button>`
+          : html`<button class="boton grande" disabled=${guardando || !lineas.length} onClick=${guardar}>${guardando ? 'Guardando…' : 'Guardar tique'}</button>`}
       </div>
     <//>`;
 }

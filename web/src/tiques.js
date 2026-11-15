@@ -137,7 +137,7 @@ export function leerTique(texto) {
     vecesPendiente = null;
     lineas.push({ texto: resto, cantidad, precio_unidad: precioUnidad, importe, descuento: 0, ...(kg ? { kg } : {}) });
   }
-  return { supermercado: detectarSuper(texto), fecha: detectarFecha(texto), total, lineas };
+  return { supermercado: detectarSuper(texto), fecha: detectarFecha(texto), hora: horaJuntoAFecha(texto), total, lineas };
 }
 
 /** Lo que de verdad se pagó por una línea. */
@@ -248,4 +248,35 @@ export function textoCSV(filas) {
     return /[;"\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   };
   return filas.map((f) => f.map(celda).join(';')).join('\r\n');
+}
+
+/** La hora que va en la misma línea que la fecha ("15.11.26 18:32", "FECHA: 14/11/2026 19:02"). */
+function horaJuntoAFecha(texto) {
+  const fila = String(texto).split(/\r?\n/).find((l) => /\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/.test(l));
+  if (!fila) return null;
+  const m = fila.replace(/\b\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\b/, ' ').match(/\b([01]?\d|2[0-3])[:h]([0-5]\d)\b/i);
+  return m ? `${m[1].padStart(2, '0')}:${m[2]}` : null;
+}
+
+/**
+ * ¿Este tique ya está guardado? Mismo súper, mismo día y mismo total (y misma hora si las dos la tienen),
+ * o mismo día y mismo total con casi las mismas líneas (por si el súper se leyó distinto).
+ * @returns el tique guardado que coincide, o null
+ */
+export function tiqueRepetido(nuevo, tiques, lineasGuardadas = []) {
+  const dia = nuevo.fecha?.slice(0, 10);
+  if (!dia || nuevo.total == null) return null;
+  const textos = (ls) => new Set(ls.map((l) => normalizar(l.texto).replace(/\s+/g, ' ').trim()).filter(Boolean));
+  const nuevas = textos(nuevo.lineas ?? []);
+  for (const t of tiques) {
+    if (t.fecha.slice(0, 10) !== dia || Math.abs(Number(t.total) - nuevo.total) > 0.01) continue;
+    const h1 = nuevo.hora, h2 = t.fecha.slice(11, 16);
+    const conHora = h1 && h2 && h2 !== '12:00';
+    if (conHora && h1 !== h2) continue;
+    if ((t.supermercado_id ?? '') === (nuevo.supermercado ?? '')) return t;
+    const viejas = textos(lineasGuardadas.filter((l) => l.tique_id === t.id));
+    const comunes = [...nuevas].filter((x) => viejas.has(x)).length;
+    if (nuevas.size && comunes / Math.max(nuevas.size, viejas.size) >= 0.6) return t;
+  }
+  return null;
 }
