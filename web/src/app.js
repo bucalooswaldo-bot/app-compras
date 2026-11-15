@@ -12,6 +12,7 @@ import {
 import { crearCatalogo } from './catalogo.js';
 import { leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible } from './tiques.js';
 import { proponerMenu } from './menu.js';
+import { reducirFoto, dibujoReceta } from './fotos.js';
 import * as config from '../config.js';
 
 // ---------------------------------------------------------------------------
@@ -218,6 +219,27 @@ function ElegirReceta({ datos, titulo, onCerrar, onElegir }) {
 // ---------------------------------------------------------------------------
 // Recetas
 // ---------------------------------------------------------------------------
+/** Direcciones para ver las fotos de las recetas (se piden de una vez y se recuerdan). */
+function useFotos(almacen, rutas) {
+  const [urls, setUrls] = useState({});
+  const clave = [...new Set(rutas.filter(Boolean))].sort().join('|');
+  useEffect(() => {
+    if (!clave) return;
+    let vivo = true;
+    almacen.motor.urlsFotos(clave.split('|'))
+      .then((u) => vivo && setUrls((prev) => ({ ...prev, ...u })))
+      .catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, [clave]);
+  return urls;
+}
+
+function Miniatura({ receta, url }) {
+  return url
+    ? html`<img class="miniatura" src=${url} alt="" loading="lazy" />`
+    : html`<span class="miniatura sin-foto" aria-hidden="true">${dibujoReceta(receta)}</span>`;
+}
+
 function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
   const [buscar, setBuscar] = useState('');
   const [etiqueta, setEtiqueta] = useState(null);
@@ -229,6 +251,7 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
     .filter((r) => !etiqueta || r.etiquetas.includes(etiqueta))
     .filter((r) => normalizar(r.nombre).includes(normalizar(buscar)))
     .sort((a, b) => (b.favorita - a.favorita) || a.nombre.localeCompare(b.nombre, 'es'));
+  const fotos = useFotos(almacen, lista.map((r) => r.foto_path));
 
   const cargar = async () => {
     setCargando(true);
@@ -258,9 +281,12 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
       <ul class="tarjetas">
         ${lista.map((r) => html`
           <li>
-            <button class="tarjeta" onClick=${() => abrirReceta(r.id)}>
-              <strong>${r.favorita ? '★ ' : ''}${r.nombre}</strong>
-              <small>${[r.tiempo_min && `${r.tiempo_min} min`, `${r.raciones} rac.`, ...r.etiquetas].filter(Boolean).join(' · ')}</small>
+            <button class="tarjeta con-foto" onClick=${() => abrirReceta(r.id)}>
+              <${Miniatura} receta=${r} url=${r.foto_path ? fotos[r.foto_path] : null} />
+              <span class="texto-tarjeta">
+                <strong>${r.favorita ? '★ ' : ''}${r.nombre}</strong>
+                <small>${[r.tiempo_min && `${r.tiempo_min} min`, `${r.raciones} rac.`, ...r.etiquetas].filter(Boolean).join(' · ')}</small>
+              </span>
             </button>
           </li>`)}
       </ul>
@@ -273,16 +299,58 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
   const r = datos.recetas.find((x) => x.id === id);
   const [raciones, setRaciones] = useState(racionesIniciales ?? r?.raciones ?? 4);
   const [alPlan, setAlPlan] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
+  const entradaFoto = useRef(null);
+  const fotos = useFotos(almacen, [r?.foto_path]);
   if (!r) return null;
   const ingredientes = datos.ingredientes.filter((i) => i.receta_id === id).sort((a, b) => a.orden - b.orden);
+  const urlFoto = r.foto_path ? fotos[r.foto_path] : null;
+
+  const ponerFoto = async (e) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = '';
+    if (!archivo) return;
+    setSubiendo(true);
+    try {
+      const prueba = almacen.motor.modo === 'prueba';
+      const blob = await reducirFoto(archivo, prueba ? 640 : 1280, prueba ? 0.7 : 0.8);
+      const ruta = await almacen.motor.subirFoto(blob);
+      const anterior = r.foto_path;
+      await almacen.actualizar('recetas', id, { foto_path: ruta });
+      if (anterior) almacen.motor.borrarFoto(anterior).catch(() => {});
+      mostrarAviso('Foto guardada');
+    } catch (err) {
+      console.error(err);
+      mostrarAviso(`No se pudo guardar la foto: ${err.message ?? err}`);
+    }
+    setSubiendo(false);
+  };
+  const quitarFoto = async () => {
+    const anterior = r.foto_path;
+    await almacen.actualizar('recetas', id, { foto_path: null });
+    almacen.motor.borrarFoto(anterior).catch(() => {});
+  };
+
   const borrar = async () => {
     await almacen.borrar('ingredientes', ingredientes.map((i) => i.id));
     await almacen.borrar('plan', datos.plan.filter((p) => p.receta_id === id).map((p) => p.id));
     await almacen.borrar('recetas', id);
+    if (r.foto_path) almacen.motor.borrarFoto(r.foto_path).catch(() => {});
     onCerrar();
   };
   return html`
     <${Hoja} titulo=${r.nombre} onCerrar=${onCerrar}>
+      <div class="foto-receta">
+        ${urlFoto
+          ? html`<img src=${urlFoto} alt=${`Foto de ${r.nombre}`} />`
+          : html`<span class="sin-foto grande" aria-hidden="true">${r.foto_path ? '…' : dibujoReceta(r)}</span>`}
+        <input ref=${entradaFoto} type="file" accept="image/*" hidden onChange=${ponerFoto} />
+        <div class="acciones-foto">
+          <button class="chip" disabled=${subiendo} onClick=${() => entradaFoto.current?.click()}>
+            ${subiendo ? 'Guardando foto…' : r.foto_path ? '📷 Cambiar foto' : '📷 Añadir foto'}</button>
+          ${r.foto_path && !subiendo && html`<${BotonSeguro} texto="Quitar foto" pregunta="Toca otra vez para quitarla" onClick=${quitarFoto} />`}
+        </div>
+      </div>
       <div class="acciones">
         <button class="chip ${r.favorita ? 'activo' : ''}" onClick=${() => almacen.actualizar('recetas', id, { favorita: !r.favorita })}>
           ${r.favorita ? '★ Favorita' : '☆ Favorita'}</button>
