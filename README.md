@@ -74,3 +74,10 @@ y la cesta más barata se calcula sobre la lista que ya genera esta app.
 - La versión compartida se publica sola en GitHub Pages al cambiar `main` (`.github/workflows/publicar.yml`), tras pasar las pruebas.
 - Lector de código de barras para la despensa (Chrome en Android lo permite).
 - Alergias o productos prohibidos (por preguntar).
+
+## Fotos de las recetas
+
+- En cada receta: "📷 Añadir foto" abre la cámara o la galería del móvil. La foto se reduce en el móvil (1280 px) antes de guardarse.
+- Se guardan en Supabase Storage, cajón privado `fotos`, carpeta `<hogar_id>/` (`supabase/migrations/0005_fotos_recetas.sql`). Solo la propia casa puede verlas; la app usa direcciones temporales de 1 día.
+- Las recetas sin foto muestran un dibujo según su tipo (pescado, pasta, cuchara…).
+- En modo prueba la foto se guarda en el propio móvil, más pequeña (640 px).

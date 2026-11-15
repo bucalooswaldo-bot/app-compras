@@ -3,6 +3,8 @@
 //   - "prueba": el propio móvil (localStorage). Sin cuentas ni conexión.
 //   - "supabase": la base de datos compartida de la casa.
 
+import { blobADataUrl } from './fotos.js';
+
 export const TABLAS = {
   articulos: 'articulos',
   despensa: 'despensa',
@@ -161,6 +163,10 @@ export function motorPrueba() {
       guardar();
     },
     borrarTodo() { copia = vacio(); guardar(); },
+    // En modo prueba la foto se guarda dentro de la receta, como texto (data:...).
+    async subirFoto(blob) { return blobADataUrl(blob); },
+    async urlsFotos(rutas) { return Object.fromEntries(rutas.map((r) => [r, r])); },
+    async borrarFoto() {},
   };
 }
 
@@ -168,6 +174,7 @@ export function motorPrueba() {
 // Motor Supabase: la casa compartida
 // ---------------------------------------------------------------------------
 export function motorSupabase(cliente, hogarId) {
+  const cacheFotos = new Map(); // ruta -> { url, caduca }
   const comprobar = ({ error }) => { if (error) throw error; };
   const conHogar = (filas) => filas.map((f) => ({ ...f, hogar_id: hogarId }));
   const sinHogar = (filas) => filas.map(({ hogar_id, ...f }) => f);
@@ -204,6 +211,26 @@ export function motorSupabase(cliente, hogarId) {
     },
     async sumarDespensa(articulo_id, delta) {
       comprobar(await cliente.rpc('sumar_despensa', { p_articulo: articulo_id, p_delta: delta }));
+    },
+    /** Guarda una foto en Supabase Storage (carpeta de la casa) y devuelve su ruta. */
+    async subirFoto(blob) {
+      const ruta = `${hogarId}/${nuevoId()}.jpg`;
+      comprobar(await cliente.storage.from('fotos').upload(ruta, blob, { contentType: 'image/jpeg', cacheControl: '31536000' }));
+      return ruta;
+    },
+    /** Direcciones temporales (1 día) para ver las fotos. Solo funcionan para la propia casa. */
+    async urlsFotos(rutas) {
+      const ahora = Date.now();
+      const faltan = rutas.filter((r) => !(cacheFotos.get(r)?.caduca > ahora));
+      if (faltan.length) {
+        const { data, error } = await cliente.storage.from('fotos').createSignedUrls(faltan, 86400);
+        if (error) throw error;
+        for (const d of data) if (d.signedUrl) cacheFotos.set(d.path, { url: d.signedUrl, caduca: ahora + 23 * 3600e3 });
+      }
+      return Object.fromEntries(rutas.map((r) => [r, cacheFotos.get(r)?.url ?? null]));
+    },
+    async borrarFoto(ruta) {
+      if (ruta && !ruta.startsWith('data:')) await cliente.storage.from('fotos').remove([ruta]);
     },
     /** Avisa cuando el otro móvil cambia algo. */
     escucharCambios(fn) {
