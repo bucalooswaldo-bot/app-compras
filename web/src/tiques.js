@@ -338,3 +338,40 @@ export function seccionPorTexto(texto) {
   const t = normalizar(texto);
   return SECCIONES.find(([, re]) => re.test(t))?.[0] ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Comparar el tique con lo que se cogió en la compra
+// ---------------------------------------------------------------------------
+/**
+ * Empareja las líneas del tique con lo del carro.
+ * carro: [{ id, articulo_id, nombre, producto, precio }]  (nombre del artículo; producto = nombre del producto del súper)
+ * @returns {{ pares: {fila, linea}[], soloCarro: fila[], soloTique: linea[] }}
+ */
+export function cotejarTique(carro, lineas) {
+  const libres = new Set(carro.map((f) => f.id));
+  const pares = [];
+  const soloTique = [];
+  const puntos = (texto, f) => {
+    const wt = pals(texto);
+    const ws = [...pals(f.nombre), ...pals(f.producto ?? '')];
+    const casadas = new Set(ws.filter((w) => wt.some((t) => casan(t, w))));
+    const todasArticulo = pals(f.nombre).every((w) => wt.some((t) => casan(t, w)));
+    return casadas.size + (todasArticulo ? 2 : 0);
+  };
+  // Primero por nombre (artículo y producto); lo que quede, por precio igual.
+  const pendientes = [];
+  for (const l of lineas) {
+    let mejor = null, nota = 0;
+    for (const f of carro) {
+      if (!libres.has(f.id)) continue;
+      const n = puntos(l.texto, f);
+      if (n > nota) { mejor = f; nota = n; }
+    }
+    if (mejor && nota >= 2) { libres.delete(mejor.id); pares.push({ fila: mejor, linea: l }); } else pendientes.push(l);
+  }
+  for (const l of pendientes) {
+    const f = carro.find((x) => libres.has(x.id) && x.precio != null && Math.abs(x.precio - Number(l.importe)) < 0.005);
+    if (f) { libres.delete(f.id); pares.push({ fila: f, linea: l, porPrecio: true }); } else soloTique.push(l);
+  }
+  return { pares, soloCarro: carro.filter((f) => libres.has(f.id)), soloTique };
+}

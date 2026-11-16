@@ -194,3 +194,23 @@ test('pendienteHoy: solo lo apartado para hoy y sin comprar', async () => {
   assert.equal(pendienteHoy({ para_hoy: false, comprado: false }), false);
   assert.equal(pendienteHoy({ comprado: false }), false);
 });
+
+test('cotejarTique: empareja por nombre o precio y separa lo de más y lo de menos', async () => {
+  const { cotejarTique } = await import('../web/src/tiques.js');
+  const carro = [
+    { id: 'a', articulo_id: 'leche', nombre: 'Leche entera', producto: 'Leche entera Hacendado', precio: 0.95 },
+    { id: 'b', articulo_id: 'tomate', nombre: 'Tomate triturado', producto: 'Tomate triturado', precio: 0.65 },
+    { id: 'c', articulo_id: 'pan', nombre: 'Pan de molde', producto: 'Pan de molde blanco', precio: 1.35 },
+    { id: 'd', articulo_id: 'det', nombre: 'Detergente', producto: null, precio: 5.5 },
+  ];
+  const lineas = [
+    { texto: 'LECHE ENTERA', importe: 0.99, descuento: 0 },
+    { texto: 'TOMATE TRITUR', importe: 0.65, descuento: 0.1 },
+    { texto: 'XYZ 12', importe: 1.35, descuento: 0 }, // mal leído, pero mismo precio que el pan
+    { texto: 'CHOCOLATE NEGRO', importe: 1.2, descuento: 0 },
+  ];
+  const r = cotejarTique(carro, lineas);
+  assert.deepEqual(r.pares.map((p) => p.fila.id).sort(), ['a', 'b', 'c']);
+  assert.deepEqual(r.soloCarro.map((f) => f.id), ['d']);
+  assert.deepEqual(r.soloTique.map((l) => l.texto), ['CHOCOLATE NEGRO']);
+});
