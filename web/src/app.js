@@ -580,13 +580,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
     .filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)))
     .filter((d) => !soloFaltan || estaBajo(d));
   const faltanN = datos.despensa.filter(estaBajo).length;
-  // Lo que la casa conoce (recetas, lista, tiques…) y aún no está en la despensa
-  const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
-  const sugeridos = normalizar(buscar).length >= 2
-    ? datos.articulos.filter((a) => !enDespensa.has(a.id) && !pareceFrase(a.nombre) && normalizar(a.nombre).includes(normalizar(buscar)))
-      .sort((x, y) => normalizar(x.nombre).indexOf(normalizar(buscar)) - normalizar(y.nombre).indexOf(normalizar(buscar)) || x.nombre.localeCompare(y.nombre, 'es'))
-      .slice(0, 8)
-    : [];
+  const buscando = normalizar(buscar).length >= 2;
 
   return html`
     <section>
@@ -594,22 +588,13 @@ function PantallaDespensa({ almacen, datos, sesion }) {
         <form class="buscar-despensa" onSubmit=${(e) => {
           e.preventDefault(); e.target.querySelector('input')?.blur();
           if (filas.length === 1) setEditar(filas[0].articulo_id);
-          else if (!filas.length && sugeridos.length === 1) setEditar(sugeridos[0].id);
         }}>
           <input type="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar en la despensa" value=${buscar}
             onInput=${(e) => setBuscar(e.target.value)} />
         </form>
         <button class="boton" onClick=${() => { setNuevoNombre(''); setEditar('nuevo'); }}>+ Añadir</button>
       </div>
-      ${sugeridos.length > 0 && html`
-        <div class="sugeridos">
-          <small class="meta">Añadir a la despensa:</small>
-          ${sugeridos.map((a) => html`<button class="sugerido" onClick=${() => setEditar(a.id)}>
-            <span aria-hidden="true">${emojiDe(a)}</span> ${a.nombre}<b>+</b></button>`)}
-        </div>`}
-      ${buscar.trim() && !datos.articulos.some((a) => normalizar(a.nombre) === normalizar(buscar)) && html`
-        <button class="boton boton-foto" onClick=${() => { setNuevoNombre(mayusculaInicial(buscar.trim())); setEditar('nuevo'); }}>
-          + Añadir «${buscar.trim()}» a la despensa</button>`}
+      ${!buscando && html`
       <button class="boton boton-foto" onClick=${() => camaraProducto.current.click()}>📷 Añadir con una foto</button>
       <input ref=${camaraProducto} type="file" accept="image/*" capture="environment" hidden
         onChange=${(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setPorFoto(f); }} />
@@ -627,7 +612,9 @@ function PantallaDespensa({ almacen, datos, sesion }) {
       ${datos.despensa.length > 0 && html`<p class="meta">Toca la foto para ver sus marcas, y el nombre para cambiar cantidad, unidad, sección o aviso. Para uno nuevo, <b>+ Añadir</b>.</p>`}
       ${datos.despensa.length === 0 && html`<div class="vacio">
         <p>Apunta lo que hay en casa. Si le pones un <b>mínimo</b>, cuando baje de ahí aparecerá en la lista de la compra.</p>
-        <p><small>Ejemplo: aceite, mínimo 1 l.</small></p></div>`}
+        <p><small>Ejemplo: aceite, mínimo 1 l.</small></p></div>`}`}
+      ${buscando && html`<h3 class="titulo-casa">En casa</h3>
+        ${!filas.length && html`<p class="vacio">No tenéis «${buscar.trim()}» en la despensa.</p>`}`}
       ${agruparPorCategoria(filas, datos.articulos).map(([cat, grupo]) => html`
         <h3 class="categoria">${cat}</h3>
         <ul class="filas">
@@ -653,6 +640,8 @@ function PantallaDespensa({ almacen, datos, sesion }) {
             </li>`;
           })}
         </ul>`)}
+      ${buscando && html`<${OtrasOpciones} key=${normalizar(buscar.trim())} texto=${buscar.trim()} almacen=${almacen} datos=${datos}
+        catalogo=${catalogo} onEscribir=${() => { setNuevoNombre(mayusculaInicial(buscar.trim())); setEditar('nuevo'); }} />`}
       ${editar && html`<${EditarDespensa} almacen=${almacen} datos=${datos} articuloId=${editar === 'nuevo' ? null : editar} nombreInicial=${nuevoNombre}
         onCerrar=${() => setEditar(null)} />`}
       ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
@@ -879,6 +868,131 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
         <p class="pie"><button class="enlace" onClick=${onOtra}>📷 Hacer otra foto</button></p>`}
     </${Hoja}>`;
 }
+
+/**
+ * Al buscar en la despensa: botón «Ver otras …» que, solo si se toca, despliega lo que la casa conoce
+ * y lo que venden Mercadona e HiperDino. Se marcan las que hay, con cantidad y aviso, y se añaden de una vez.
+ */
+function OtrasOpciones({ texto, almacen, datos, catalogo, onEscribir }) {
+  const [abierto, setAbierto] = useState(false);
+  const [deSuper, setDeSuper] = useState(null);   // productos de los súper (null = sin buscar)
+  const [buscandoSuper, setBuscandoSuper] = useState(false);
+  const [marcadas, setMarcadas] = useState({});   // clave -> { cantidad, minimo }
+  const [guardando, setGuardando] = useState(false);
+  const q = normalizar(texto);
+  const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
+  const enlazadoA = new Map(datos.equivalencias.map((e) => [e.producto_id, e.articulo_id]));
+
+  const conocidas = datos.articulos
+    .filter((a) => !enDespensa.has(a.id) && !pareceFrase(a.nombre) && normalizar(a.nombre).includes(q))
+    .sort((x, y) => normalizar(x.nombre).indexOf(q) - normalizar(y.nombre).indexOf(q) || x.nombre.localeCompare(y.nombre, 'es'))
+    .slice(0, 10)
+    .map((a) => ({ clave: `a:${a.id}`, articulo: a, nombre: a.nombre, detalle: SECCION_CORTA[a.categoria] ?? a.categoria, unidad: a.unidad, emoji: emojiDe(a) }));
+  const nombresConocidos = new Set(conocidas.map((o) => normalizar(o.nombre)));
+  const delSuper = (deSuper ?? [])
+    // Lo que ya está enlazado con algo de la despensa ya sale en «En casa»
+    .filter((p) => !enDespensa.has(enlazadoA.get(p.id)))
+    .map((p) => {
+      const a = enlazadoA.has(p.id) ? articulo(datos, enlazadoA.get(p.id)) : null;
+      return { clave: `p:${p.id}`, producto: p, articulo: a, nombre: p.nombre, unidad: a?.unidad ?? 'ud',
+        detalle: [nombreSuper(p.supermercado_id), formatoDe(p), Number.isFinite(p.precio) ? euros(p.precio) : null].filter(Boolean).join(' · ') };
+    })
+    .filter((o) => !(o.articulo && nombresConocidos.has(normalizar(o.articulo.nombre))));
+  const todas = [...conocidas, ...delSuper];
+  const elegidas = todas.filter((o) => marcadas[o.clave]);
+
+  const abrir = async () => {
+    const nuevo = !abierto;
+    setAbierto(nuevo);
+    if (!nuevo || deSuper || !catalogo) return;
+    setBuscandoSuper(true);
+    try {
+      const [r] = await catalogo.buscar([{ texto, supers: SUPERS_WEB }]);
+      setDeSuper(SUPERS_WEB.flatMap((s) => (Array.isArray(r?.[s]) ? r[s].slice(0, 6) : [])));
+    } catch (e) {
+      console.error(e);
+      setDeSuper([]);
+    }
+    setBuscandoSuper(false);
+  };
+  const marcar = (o) => setMarcadas((m) => {
+    const x = { ...m };
+    if (x[o.clave]) delete x[o.clave];
+    else x[o.clave] = { cantidad: o.unidad === 'ud' ? 1 : null, minimo: null };
+    return x;
+  });
+  const cambiar = (clave, cambios) => setMarcadas((m) => ({ ...m, [clave]: { ...m[clave], ...cambios } }));
+
+  const resumen = elegidas.map((o) => {
+    const c = marcadas[o.clave].cantidad;
+    return `${o.articulo?.nombre ?? nombreSencillo(o.nombre, o.producto?.marca) ?? o.nombre}${c ? (o.unidad === 'ud' ? ` ×${c}` : ` (${formatoCantidad(c, o.unidad)})`) : ''}`;
+  });
+  const anadir = async () => {
+    setGuardando(true);
+    try {
+      for (const o of elegidas) {
+        const { cantidad, minimo } = marcadas[o.clave];
+        let a = o.articulo;
+        if (!a) {
+          const nombre = mayusculaInicial(nombreSencillo(o.nombre, o.producto?.marca) || o.nombre);
+          a = await obtenerArticulo(almacen, nombre, 'ud', seccionDe(nombre));
+        }
+        await almacen.fijarDespensa(a.id, { cantidad: cantidad ?? 0, minimo: minimo ?? 0 });
+        const p = o.producto;
+        if (p) {
+          if (!datos.equivalencias.some((e) => e.articulo_id === a.id && e.producto_id === p.id)) {
+            await almacen.insertar('equivalencias', { articulo_id: a.id, producto_id: p.id, auto: false });
+          }
+          if (!a.foto_producto_id && p.imagen_url) await almacen.actualizar('articulos', a.id, { foto_producto_id: p.id });
+        }
+      }
+      mostrarAviso(`Añadido a la despensa: ${resumen.join(', ')}`);
+      setMarcadas({});
+      setAbierto(false);
+    } catch (e) {
+      mostrarAviso(`No se pudo guardar: ${e.message ?? e}`);
+    }
+    setGuardando(false);
+  };
+
+  const fila = (o) => {
+    const m = marcadas[o.clave];
+    return html`<li class="opcion ${m ? 'marcada' : ''}">
+      <label class="opcion-cab">
+        <input type="checkbox" checked=${!!m} onChange=${() => marcar(o)} />
+        ${o.producto ? html`<${FotoProducto} url=${o.producto.imagen_url} emoji="🛒" />` : html`<span class="foto-producto sin" aria-hidden="true">${o.emoji}</span>`}
+        <span class="opcion-datos"><b>${o.nombre}</b><small>${o.detalle}</small></span>
+      </label>
+      ${m && html`<div class="opcion-extra">
+        <label>Hay en casa
+          ${o.unidad === 'ud'
+            ? html`<${Contador} valor=${m.cantidad ?? 1} min=${1} onCambio=${(c) => cambiar(o.clave, { cantidad: c })} />`
+            : html`<${CampoCantidad} unidad=${o.unidad} valor=${m.cantidad} onCambio=${(c) => cambiar(o.clave, { cantidad: c })} placeholder="Cantidad" />`}</label>
+        <label>Avisar al quedar
+          ${o.unidad === 'ud'
+            ? html`<${Contador} valor=${m.minimo ?? 0} min=${0} onCambio=${(c) => cambiar(o.clave, { minimo: c || null })} />`
+            : html`<${CampoCantidad} unidad=${o.unidad} valor=${m.minimo} onCambio=${(c) => cambiar(o.clave, { minimo: c })} placeholder="Sin aviso" />`}</label>
+      </div>`}
+    </li>`;
+  };
+
+  return html`
+    <button class="abrir-otras" aria-expanded=${abierto} onClick=${abrir}>
+      <span>${abierto ? `Ocultar otras opciones` : `Ver otras opciones de «${texto}»`}</span><span aria-hidden="true">${abierto ? '▴' : '▾'}</span>
+    </button>
+    ${abierto && html`
+      ${conocidas.length > 0 && html`<h3 class="categoria">Que ya conocéis</h3><ul class="opciones">${conocidas.map(fila)}</ul>`}
+      ${catalogo && html`<h3 class="categoria">En Mercadona e HiperDino</h3>
+        ${buscandoSuper && html`<p class="cargando">Buscando en Mercadona e HiperDino…</p>`}
+        ${deSuper && !delSuper.length && html`<p class="texto-suave">No he encontrado nada más con ese nombre.</p>`}
+        ${delSuper.length > 0 && html`<ul class="opciones">${delSuper.map(fila)}</ul>`}`}
+      <button class="enlace escribir-mano" onClick=${onEscribir}>✏️ Ninguna de estas: escribir «${texto}» a mano</button>`}
+    ${elegidas.length > 0 && html`<div class="barra-anadir">
+      <button class="boton grande" disabled=${guardando} onClick=${anadir}>
+        ${guardando ? 'Guardando…' : html`Añadir a la despensa<small>${resumen.join(', ')}</small>`}</button>
+    </div>`}`;
+}
+const SECCION_CORTA = { 'Frutas y verduras': 'fruta y verdura', 'Lácteos y huevos': 'lácteos', 'Charcutería y quesos': 'charcutería' };
 
 /** Confirmar lo gastado antes de restarlo. Lo que no se reconoce se pregunta. */
 function RevisarConsumo({ almacen, datos, cosas, onCerrar }) {

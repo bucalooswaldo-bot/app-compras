@@ -35,6 +35,7 @@ test('nombre sencillo sin marca ni formato', () => {
   assert.equal(nombreSencillo('Patatas fritas clásicas Hacendado 300 g', 'Hacendado'), 'Patatas fritas clásicas');
   assert.equal(nombreSencillo('Asturiana leche entera 1,5 l', 'Asturiana'), 'Leche entera');
   assert.equal(nombreSencillo('', null), '');
+  assert.equal(nombreSencillo('Cebolla morada al peso', null), 'Cebolla morada');
 });
 
 test('qué artículo de la casa es', () => {
