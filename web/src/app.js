@@ -1349,7 +1349,7 @@ function PantallaLista({ almacen, datos, sesion }) {
       </button>
       <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
       ${enHoy
-        ? html`<button class="mover" aria-label=${`Dejar para más adelante: ${a?.nombre}`} onClick=${() => aLuego(f)}>Luego</button>`
+        ? html`<button class="mover" aria-label=${`Dejar para otro día: ${a?.nombre}`} onClick=${() => aLuego(f)}>Otro día</button>`
         : html`<button class="mover hoy" aria-label=${`Pasar a hoy: ${a?.nombre}`} onClick=${() => aHoy([f])}>Hoy</button>
           ${f.tipo === 'manual'
             ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
@@ -1361,9 +1361,9 @@ function PantallaLista({ almacen, datos, sesion }) {
     <section>
       <div class="partes" role="tablist">
         <button role="tab" aria-selected=${enHoy} class=${enHoy ? 'activa' : ''} onClick=${() => elegirVista('hoy')}>
-          🛒 Para hoy${filasHoy.length > 0 && html` <b>${filasHoy.length}</b>`}</button>
+          🛒 Compra de hoy${filasHoy.length > 0 && html` <b>${filasHoy.length}</b>`}</button>
         <button role="tab" aria-selected=${!enHoy} class=${!enHoy ? 'activa' : ''} onClick=${() => elegirVista('luego')}>
-          🗓 Más adelante${filasLuego.length > 0 && html` <b>${filasLuego.length}</b>`}</button>
+          📝 Falta en casa${filasLuego.length > 0 && html` <b>${filasLuego.length}</b>`}</button>
       </div>
       <form class="fila-campo" onSubmit=${anadir}>
         <datalist id="articulos-compra">${datos.articulos.map((a) => html`<option value=${a.nombre} />`)}</datalist>
@@ -1383,8 +1383,8 @@ function PantallaLista({ almacen, datos, sesion }) {
           onDetalle=${() => setComparar(pendientes)} />`}
         ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
         ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio">
-          <p>Aún no hay nada para hoy.</p>
-          <p><small>En «Más adelante» toca <b>Hoy</b> en lo que vayáis a comprar ahora, o usa «¿Tengo todo para…?» con una receta.</small></p>
+          <p>Aún no hay nada en la compra de hoy.</p>
+          <p><small>En «Falta en casa» toca <b>Hoy</b> en lo que vayáis a comprar ahora, o usa «¿Tengo todo para…?» con una receta.</small></p>
           ${filasLuego.length > 0 && html`<button class="boton" onClick=${() => elegirVista('luego')}>Ver lo que falta (${filasLuego.length})</button>`}
         </div>`}
       ` : html`
@@ -1393,7 +1393,7 @@ function PantallaLista({ almacen, datos, sesion }) {
           ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
         </div>
         ${pendientes.length > 1 && html`<div class="todo-hoy">
-          <button class="chip" onClick=${async () => { await aHoy(pendientes); mostrarAviso('Todo pasado a «Para hoy»'); elegirVista('hoy'); }}>Todo a «Para hoy»</button>
+          <button class="chip" onClick=${async () => { await aHoy(pendientes); mostrarAviso('Todo pasado a la compra de hoy'); elegirVista('hoy'); }}>Todo a la compra de hoy</button>
           <button class="chip" onClick=${() => setComparar(pendientes)}>💶 Comparar precios</button>
         </div>`}
         ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
@@ -1520,7 +1520,7 @@ function TengoTodo({ almacen, datos, onCerrar, onListo }) {
     }
     for (const l of porMover) await almacen.actualizar('lista', l.id, { para_hoy: true });
     const n = faltan.length + porMover.length;
-    mostrarAviso(`${n === 1 ? 'Pasada 1 cosa' : `Pasadas ${n} cosas`} a «Para hoy»`);
+    mostrarAviso(`${n === 1 ? 'Pasada 1 cosa' : `Pasadas ${n} cosas`} a la compra de hoy`);
     onListo();
   };
   const icono = { hay: '✅', basico: '🧂', en_lista: '📝', falta: '❌' };
@@ -1545,7 +1545,7 @@ function TengoTodo({ almacen, datos, onCerrar, onListo }) {
       </li>`)}
     </ul>
     ${(faltan.length > 0 || porMover.length > 0) && html`<button class="boton grande" onClick=${anadir}>
-      Añadir lo que falta a «Para hoy» (${faltan.length + porMover.length})</button>`}
+      Añadir lo que falta a la compra de hoy (${faltan.length + porMover.length})</button>`}
     <p class="meta">Mira la despensa tal como está ahora; no descuenta otras comidas del plan.</p>
   </${Hoja}>`;
 }
