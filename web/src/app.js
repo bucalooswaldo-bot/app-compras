@@ -1436,6 +1436,7 @@ function PantallaLista({ almacen, datos, sesion }) {
  * Cuánto sale lo de "Para hoy" en Mercadona y en HiperDino, con los productos ya enlazados
  * (no busca en las webs: eso lo hace "Ver detalle"). Respeta lo que no os gusta.
  */
+let lidlCargado = false;
 function PrecioHoy({ datos, sesion, items, onDetalle }) {
   const [, setCargado] = useState(0);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
@@ -1447,12 +1448,27 @@ function PrecioHoy({ datos, sesion, items, onDetalle }) {
     catalogo.cargar(clave.split(',')).then(() => vivo && setCargado((n) => n + 1)).catch((e) => console.error(e));
     return () => { vivo = false; };
   }, [clave]);
+  // Lidl: sus precios salen de vuestros tiques (no vende comida en su web).
+  useEffect(() => {
+    if (!catalogo || lidlCargado) return;
+    let vivo = true;
+    catalogo.cargarLidl().then(() => { lidlCargado = true; if (vivo) setCargado((n) => n + 1); }).catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, []);
   if (!catalogo) return null;
 
-  const cesta = calcularCesta(items.map((item) => ({
+  const conCandidatos = items.map((item) => ({
     ...item,
-    candidatos: Object.fromEntries(SUPERS_WEB.map((s) => [s, candidatosDe(datos, catalogo, item, s)])),
-  })), SUPERS_WEB);
+    candidatos: Object.fromEntries(SUPERS.map(([s]) => [s, candidatosDe(datos, catalogo, item, s)])),
+  }));
+  // Lidl entra en la cuenta solo si tiene precio de todo lo que se compara; si no, se compararía menos cosas.
+  const sinLidl = calcularCesta(conCandidatos, SUPERS_WEB);
+  const conLidl = calcularCesta(conCandidatos, SUPERS.map(([s]) => s));
+  const cesta = conLidl.activos.includes('lidl') && conLidl.comunes >= sinLidl.comunes ? conLidl : sinLidl;
+  const nLidl = conLidl.lineas.filter((l) => l.porSuper.lidl).length;
+  const cajaLidl = !cesta.activos.includes('lidl') && html`<span class="ph-futuro">
+    <small>Lidl</small><b>${nLidl ? `${nLidl} de ${items.length}` : '–'}</b>
+    <small>${nLidl ? 'precios de tiques' : 'con vuestros tiques'}</small></span>`;
   const r = cesta.recomendacion;
   if (r.tipo === 'sin_datos') {
     return html`<button class="precio-hoy vacio-precio" onClick=${onDetalle}>
@@ -1464,6 +1480,7 @@ function PrecioHoy({ datos, sesion, items, onDetalle }) {
     <span class="ph-supers">
       ${orden.map((s, i) => html`<span class=${i === 0 && orden.length > 1 && cesta.totales[s] < cesta.totales[orden[1]] ? 'ph-mejor' : ''}>
         <small>${nombreSuper(s)}</small><b>${euros(cesta.totales[s])}</b></span>`)}
+      ${cajaLidl}
     </span>
     <span class="ph-veredicto">${r.tipo === 'repartir'
       ? `Repartiendo entre los dos ahorras ${euros(cesta.ahorro)}`

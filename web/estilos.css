@@ -430,6 +430,9 @@ li.hecho { opacity: 0.8; }
   flex: 1; display: flex; flex-direction: column; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--linea);
 }
 .ph-supers b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.ph-supers .ph-futuro { border-style: dashed; color: var(--suave); }
+.ph-supers .ph-futuro b { font-size: 1rem; }
+.ph-supers > span small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ph-supers .ph-mejor { background: var(--verde-claro); border-color: var(--verde); }
 .ph-supers .ph-mejor b { color: var(--verde); }
 .ph-veredicto { font-weight: 600; color: var(--verde); }
