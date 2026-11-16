@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, estaBajo, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -84,6 +84,36 @@ function CampoCantidad({ unidad, valor, onCambio, placeholder = 'Cantidad', auto
 }
 
 /** Botón que pide un segundo toque antes de hacer algo que no se puede deshacer. */
+/**
+ * Cuándo avisar: sin aviso, cuando no quede nada, o al quedar una cantidad.
+ * valor: null = sin aviso, 0 = cuando no quede, > 0 = al quedar eso o menos.
+ */
+function CampoAviso({ unidad, valor, onCambio }) {
+  const modo = valor == null ? 'no' : valor === 0 ? 'cero' : 'queda';
+  const [ultimo, setUltimo] = useState(valor > 0 ? valor : unidad === 'ud' ? 1 : null);
+  return html`
+    <div class="campo-aviso">
+      <div class="chips-aviso" role="group" aria-label="Cuándo avisar">
+        <button type="button" class="chip ${modo === 'no' ? 'activo' : ''}" onClick=${() => onCambio(null)}>Sin aviso</button>
+        <button type="button" class="chip ${modo === 'cero' ? 'activo' : ''}" onClick=${() => onCambio(0)}>Cuando no quede</button>
+        <button type="button" class="chip ${modo === 'queda' ? 'activo' : ''}" onClick=${() => onCambio(ultimo || (unidad === 'ud' ? 1 : null))}>Cuando quede…</button>
+      </div>
+      ${modo === 'queda' && html`<div class="aviso-cantidad">
+        <span>Avisar al quedar</span>
+        ${unidad === 'ud'
+          ? html`<${Contador} valor=${valor ?? 1} min=${1} onCambio=${(c) => { setUltimo(c); onCambio(c); }} />`
+          : html`<${CampoCantidad} unidad=${unidad} valor=${valor} onCambio=${(c) => { setUltimo(c); onCambio(c > 0 ? c : null); }} placeholder="Cantidad" />`}
+        <span class="meta">o menos</span>
+      </div>`}
+    </div>`;
+}
+
+/** Texto corto del aviso para la fila de la despensa. */
+const textoAviso = (d, unidad) => {
+  const v = avisoDe(d);
+  return v == null ? 'sin aviso' : v === 0 ? 'aviso cuando no quede' : `aviso al quedar ${formatoCantidad(v, unidad)}`;
+};
+
 function BotonSeguro({ texto, pregunta, onClick }) {
   const [armado, setArmado] = useState(false);
   useEffect(() => { if (!armado) return; const t = setTimeout(() => setArmado(false), 5000); return () => clearTimeout(t); }, [armado]);
@@ -622,13 +652,14 @@ function PantallaDespensa({ almacen, datos, sesion }) {
             const a = articulo(datos, d.articulo_id);
             const paso = pasoDespensa(a.unidad, d.cantidad);
             const bajo = estaBajo(d);
-            return html`<li class=${bajo ? 'bajo' : ''}>
+            const vacio = bajo && d.cantidad <= 0;
+            return html`<li class="${bajo ? 'bajo' : ''} ${vacio ? 'no-hay' : ''}">
               <button class="foto-boton" aria-label=${`Abrir ${a.nombre}`} onClick=${() => setEditar(a.id)}>
                 <${FotoProducto} url=${fotoDeArticulo(datos, catalogo, a.id, fotosCasa)} emoji=${emojiDe(a)} />
               </button>
               <button class="enlace nombre" onClick=${() => setEditar(d.articulo_id)}>
                 <span>${a.nombre} <span class="lapiz" aria-hidden="true">✏️</span></span>
-                <small>${bajo ? '¡Se acaba! · ' : ''}${d.minimo > 0 ? `aviso al quedar ${formatoCantidad(d.minimo, a.unidad)}` : 'sin aviso'}</small>
+                <small>${vacio ? html`<b class="etiqueta-no-hay">No hay</b> ` : bajo ? '¡Se acaba! · ' : ''}${textoAviso(d, a.unidad)}</small>
               </button>
               <div class="contador">
                 <button aria-label=${`Quitar ${paso}`} onClick=${() => almacen.sumarDespensa(a.id, -paso)}>−</button>
@@ -744,7 +775,7 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
       const delSuper = productos.find((p) => p.supermercado_id === sup.supermercado);
       setProductoId(delSuper?.id ?? null);
       setCantidad(cantidadASumar(a?.unidad ?? 'ud', delSuper ?? r.ficha ?? base));
-      setMinimo(a ? datos.despensa.find((d) => d.articulo_id === a.id)?.minimo || null : null);
+      setMinimo(a ? avisoDe(datos.despensa.find((d) => d.articulo_id === a.id)) : null);
       setPaso(null);
     })();
     return () => { vivo = false; };
@@ -765,7 +796,7 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
     setArticuloId(id);
     const a = id ? articulo(datos, id) : null;
     setCantidad(cantidadASumar(a?.unidad ?? unidadNuevo, elegido ?? leido?.ficha));
-    setMinimo(a ? datos.despensa.find((d) => d.articulo_id === a.id)?.minimo || null : null);
+    setMinimo(a ? avisoDe(datos.despensa.find((d) => d.articulo_id === a.id)) : null);
   };
   const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
   const ordenados = [...datos.articulos].sort((x, y) => (enDespensa.has(y.id) - enDespensa.has(x.id)) || x.nombre.localeCompare(y.nombre, 'es'));
@@ -778,8 +809,8 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
     try {
       const a = art ?? await obtenerArticulo(almacen, mayusculaInicial(nombreNuevo.trim()), unidadNuevo, seccion);
       await almacen.sumarDespensa(a.id, cantidad);
-      const minimoAntes = datos.despensa.find((d) => d.articulo_id === a.id)?.minimo ?? 0;
-      if ((minimo ?? 0) !== minimoAntes) await almacen.fijarDespensa(a.id, { minimo: minimo ?? 0 });
+      const avisoAntes = avisoDe(datos.despensa.find((d) => d.articulo_id === a.id));
+      if (minimo !== avisoAntes) await almacen.fijarDespensa(a.id, camposAviso(minimo));
       if (elegido) {
         if (!datos.equivalencias.some((e) => e.articulo_id === a.id && e.producto_id === elegido.id)) {
           await almacen.insertar('equivalencias', { articulo_id: a.id, producto_id: elegido.id, auto: false });
@@ -838,8 +869,8 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
             : html`<${CampoCantidad} key=${`c-${unidad}-${articuloId}`} unidad=${unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Cantidad" />`}
           <small class="meta">${art ? `hay ${formatoCantidad(hay, unidad)} → ` : ''}quedará ${formatoCantidad(redondear(hay + (cantidad ?? 0), 3), unidad)}</small>
         </div>
-        <label>Avisar cuando quede esto o menos <small>(opcional)</small></label>
-        <${CampoCantidad} key=${`m-${unidad}-${articuloId}`} unidad=${unidad} valor=${minimo} onCambio=${setMinimo} placeholder="Sin aviso" />
+        <label>¿Cuándo os aviso?</label>
+        <${CampoAviso} key=${`m-${unidad}-${articuloId}`} unidad=${unidad} valor=${minimo} onCambio=${setMinimo} />
 
         <label>¿Dónde lo comprasteis?</label>
         <div class="acciones">
@@ -935,7 +966,7 @@ function OtrasOpciones({ texto, almacen, datos, catalogo, onEscribir }) {
           const nombre = mayusculaInicial(nombreSencillo(o.nombre, o.producto?.marca) || o.nombre);
           a = await obtenerArticulo(almacen, nombre, 'ud', seccionDe(nombre));
         }
-        await almacen.fijarDespensa(a.id, { cantidad: cantidad ?? 0, minimo: minimo ?? 0 });
+        await almacen.fijarDespensa(a.id, { cantidad: cantidad ?? 0, ...camposAviso(minimo) });
         const p = o.producto;
         if (p) {
           if (!datos.equivalencias.some((e) => e.articulo_id === a.id && e.producto_id === p.id)) {
@@ -966,10 +997,8 @@ function OtrasOpciones({ texto, almacen, datos, catalogo, onEscribir }) {
           ${o.unidad === 'ud'
             ? html`<${Contador} valor=${m.cantidad ?? 1} min=${1} onCambio=${(c) => cambiar(o.clave, { cantidad: c })} />`
             : html`<${CampoCantidad} unidad=${o.unidad} valor=${m.cantidad} onCambio=${(c) => cambiar(o.clave, { cantidad: c })} placeholder="Cantidad" />`}</label>
-        <label>Avisar al quedar
-          ${o.unidad === 'ud'
-            ? html`<${Contador} valor=${m.minimo ?? 0} min=${0} onCambio=${(c) => cambiar(o.clave, { minimo: c || null })} />`
-            : html`<${CampoCantidad} unidad=${o.unidad} valor=${m.minimo} onCambio=${(c) => cambiar(o.clave, { minimo: c })} placeholder="Sin aviso" />`}</label>
+        <div class="opcion-aviso"><span>¿Cuándo os aviso?</span>
+          <${CampoAviso} unidad=${o.unidad} valor=${m.minimo} onCambio=${(c) => cambiar(o.clave, { minimo: c })} /></div>
       </div>`}
     </li>`;
   };
@@ -1061,7 +1090,7 @@ function RepasarDespensa({ almacen, datos, onCerrar }) {
       const d = datos.despensa.find((x) => x.articulo_id === id);
       if (m === 'nohay') await almacen.fijarDespensa(id, { cantidad: 0 });
       // Con mínimo y sin nada en casa, la lista ya lo pide sola.
-      if (m === 'nohay' && d?.minimo > 0) continue;
+      if (m === 'nohay' && tieneAviso(d)) continue;
       await almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
     }
     setGuardando(false);
@@ -1106,7 +1135,7 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
   const [unidad, setUnidad] = useState(a0?.unidad ?? 'ud');
   const [categoria, setCategoria] = useState(a0?.categoria ?? 'Otros');
   const [cantidad, setCantidad] = useState(d0?.cantidad ?? null);
-  const [minimo, setMinimo] = useState(d0?.minimo || null);
+  const [minimo, setMinimo] = useState(d0 ? avisoDe(d0) : null);
   const u = unidad;
   const enRecetas = existente ? datos.ingredientes.filter((i) => i.articulo_id === existente.id && i.cantidad != null).length : 0;
 
@@ -1116,7 +1145,7 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
     setCategoria(existente.categoria); setUnidad(existente.unidad);
     // Si ya estaba en la despensa, se ven su cantidad y su aviso (y se cambian, no se pierden)
     const d = datos.despensa.find((x) => x.articulo_id === existente.id);
-    if (d) { setCantidad(d.cantidad); setMinimo(d.minimo || null); setClavesCampos((n) => n + 1); }
+    if (d) { setCantidad(d.cantidad); setMinimo(avisoDe(d)); setClavesCampos((n) => n + 1); }
   }, [existente?.id]);
 
   const guardar = async () => {
@@ -1130,7 +1159,7 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
       if (unidad !== art.unidad) cambios.unidad = unidad;
       if (Object.keys(cambios).length) await almacen.actualizar('articulos', art.id, cambios);
     }
-    await almacen.fijarDespensa(art.id, { cantidad: cantidad ?? 0, minimo: minimo ?? 0 });
+    await almacen.fijarDespensa(art.id, { cantidad: cantidad ?? 0, ...camposAviso(minimo) });
     onCerrar();
   };
   const quitar = async () => {
@@ -1151,8 +1180,8 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
         ${CATEGORIAS.map((c) => html`<option value=${c}>${c}</option>`)}</select></label>
       <label>Hay en casa</label>
       <${CampoCantidad} key=${`c${clavesCampos}${u}`} unidad=${u} valor=${cantidad} onCambio=${setCantidad} placeholder="0" />
-      <label>Avisar cuando quede esto o menos <small>(opcional)</small></label>
-      <${CampoCantidad} key=${`m${clavesCampos}${u}`} unidad=${u} valor=${minimo} onCambio=${setMinimo} placeholder="Sin mínimo" />
+      <label>¿Cuándo os aviso?</label>
+      <${CampoAviso} key=${`m${clavesCampos}${u}`} unidad=${u} valor=${minimo} onCambio=${setMinimo} />
       <button class="boton grande" onClick=${guardar}>Guardar</button>
       ${a0 && catalogo && (() => {
         const art = articulo(datos, a0.id) ?? a0;

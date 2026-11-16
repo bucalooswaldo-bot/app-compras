@@ -389,3 +389,11 @@ li.hecho { opacity: 0.8; }
 .del-super { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px; border: 1px solid var(--linea); border-radius: 12px; }
 .del-super-datos { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 0.9rem; }
 .del-super-datos small { color: var(--suave); }
+/* Aviso: sin aviso / cuando no quede / cuando quede… */
+.campo-aviso { display: flex; flex-direction: column; gap: 8px; }
+.chips-aviso { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips-aviso .chip { font-size: 0.85rem; }
+.aviso-cantidad { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.opcion-aviso { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--suave); }
+.etiqueta-no-hay { display: inline-block; background: var(--aviso); color: #fff; font-size: 0.72rem; padding: 1px 7px; border-radius: 999px; letter-spacing: 0.02em; }
+.filas li.no-hay .nombre > span:first-child { color: var(--aviso); font-weight: 700; }

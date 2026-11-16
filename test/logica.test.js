@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  faltas, sugerirCompra, formatoCantidad, deEntrada, aEntrada, sumarDias, escalar, agruparPorCategoria, buscarArticulo,
+  faltas, estaBajo, avisoDe, camposAviso, sugerirCompra, formatoCantidad, deEntrada, aEntrada, sumarDias, escalar, agruparPorCategoria, buscarArticulo,
 } from '../web/src/logica.js';
 import { RECETAS, ARTICULOS } from '../web/src/recetas-inicio.js';
 
@@ -145,4 +145,25 @@ test('al llegar justo al mínimo también avisa ("avísame cuando quede 1")', ()
   assert.equal(f[0].cantidad, null);
   d.lista.push({ id: 'l', articulo_id: 'tomate', cantidad: null, origen: 'manual', comprado: false });
   assert.equal(faltas(d, HOY, HOY).length, 0, 'si ya está apuntado no se repite');
+});
+
+test('aviso «cuando no quede»: solo salta al llegar a 0 y entra en la lista sin cantidad', () => {
+  const d = base();
+  d.despensa.push({ articulo_id: 'aceite', cantidad: 0, minimo: 0, avisar_agotado: true },
+    { articulo_id: 'tomate', cantidad: 1, minimo: 0, avisar_agotado: true },
+    { articulo_id: 'huevos', cantidad: 0, minimo: 0, avisar_agotado: false });
+  assert.equal(estaBajo(d.despensa[0]), true);
+  assert.equal(estaBajo(d.despensa[1]), false);
+  assert.equal(estaBajo(d.despensa[2]), false);
+  const f = faltas(d, HOY, HOY);
+  assert.deepEqual(f.map((x) => [x.articulo_id, x.cantidad, x.bajoMinimo]), [['aceite', null, true]]);
+});
+
+test('el aviso como un solo valor: sin aviso, cuando no quede, al quedar X', () => {
+  assert.equal(avisoDe({ minimo: 0, avisar_agotado: false }), null);
+  assert.equal(avisoDe({ minimo: 0, avisar_agotado: true }), 0);
+  assert.equal(avisoDe({ minimo: 2 }), 2);
+  assert.deepEqual(camposAviso(null), { minimo: 0, avisar_agotado: false });
+  assert.deepEqual(camposAviso(0), { minimo: 0, avisar_agotado: true });
+  assert.deepEqual(camposAviso(3), { minimo: 3, avisar_agotado: false });
 });
