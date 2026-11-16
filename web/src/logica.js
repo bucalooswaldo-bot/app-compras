@@ -141,7 +141,7 @@ export function faltas(datos, desde, hasta) {
     enLista.set(l.articulo_id, (enLista.get(l.articulo_id) ?? 0) + (l.cantidad ?? Infinity));
   }
 
-  const ids = new Set([...necesita.keys(), ...sinCantidad, ...datos.despensa.filter((d) => d.minimo > 0).map((d) => d.articulo_id)]);
+  const ids = new Set([...necesita.keys(), ...sinCantidad, ...datos.despensa.filter(tieneAviso).map((d) => d.articulo_id)]);
   const resultado = [];
   for (const id of ids) {
     const articulo = datos.articulos.find((a) => a.id === id);
@@ -150,7 +150,7 @@ export function faltas(datos, desde, hasta) {
     const hay = d?.cantidad ?? 0;
     const minimo = d?.minimo ?? 0;
     const pide = necesita.get(id) ?? 0;
-    const bajoMinimo = minimo > 0 && hay <= minimo;
+    const bajoMinimo = !!d && estaBajo({ ...d, cantidad: hay });
     if (pide === 0 && !bajoMinimo) {
       // Solo lo pide una receta sin cantidad: si no hay nada en casa ni está ya en la lista, se apunta sin cantidad.
       if (sinCantidad.has(id) && hay <= 0 && !enLista.has(id)) {
@@ -199,7 +199,12 @@ export function sugerirCompra(datos, yaEnLista, max = 8) {
 }
 
 /** ¿Ha llegado al mínimo que se puso para avisar? */
-export const estaBajo = (d) => d.minimo > 0 && d.cantidad <= d.minimo;
+// Aviso de la despensa como un solo valor: null = sin aviso, 0 = cuando no quede, > 0 = al quedar esa cantidad.
+export const avisoDe = (d) => (d?.minimo > 0 ? d.minimo : d?.avisar_agotado ? 0 : null);
+export const camposAviso = (v) => ({ minimo: v > 0 ? v : 0, avisar_agotado: v === 0 });
+export const tieneAviso = (d) => avisoDe(d) != null;
+export const estaBajo = (d) => (d.minimo > 0 && d.cantidad <= d.minimo) || (!!d.avisar_agotado && d.cantidad <= 0);
+export const noHay = (d) => tieneAviso(d) && d.cantidad <= 0;
 
 export const MOMENTOS = [['comida', 'Comida'], ['cena', 'Cena'], ['postre', 'Postre'], ['tentempie', 'Tentempié']];
 export const nombreMomento = (m) => MOMENTOS.find((x) => x[0] === m)?.[1] ?? m;
