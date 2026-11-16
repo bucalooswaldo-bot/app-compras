@@ -580,6 +580,13 @@ function PantallaDespensa({ almacen, datos, sesion }) {
     .filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)))
     .filter((d) => !soloFaltan || estaBajo(d));
   const faltanN = datos.despensa.filter(estaBajo).length;
+  // Lo que la casa conoce (recetas, lista, tiques…) y aún no está en la despensa
+  const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
+  const sugeridos = normalizar(buscar).length >= 2
+    ? datos.articulos.filter((a) => !enDespensa.has(a.id) && !pareceFrase(a.nombre) && normalizar(a.nombre).includes(normalizar(buscar)))
+      .sort((x, y) => normalizar(x.nombre).indexOf(normalizar(buscar)) - normalizar(y.nombre).indexOf(normalizar(buscar)) || x.nombre.localeCompare(y.nombre, 'es'))
+      .slice(0, 8)
+    : [];
 
   return html`
     <section>
@@ -587,13 +594,20 @@ function PantallaDespensa({ almacen, datos, sesion }) {
         <form class="buscar-despensa" onSubmit=${(e) => {
           e.preventDefault(); e.target.querySelector('input')?.blur();
           if (filas.length === 1) setEditar(filas[0].articulo_id);
+          else if (!filas.length && sugeridos.length === 1) setEditar(sugeridos[0].id);
         }}>
           <input type="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar en la despensa" value=${buscar}
             onInput=${(e) => setBuscar(e.target.value)} />
         </form>
         <button class="boton" onClick=${() => { setNuevoNombre(''); setEditar('nuevo'); }}>+ Añadir</button>
       </div>
-      ${buscar.trim() && !filas.some((d) => normalizar(nombreArticulo(datos, d.articulo_id)) === normalizar(buscar)) && html`
+      ${sugeridos.length > 0 && html`
+        <div class="sugeridos">
+          <small class="meta">Añadir a la despensa:</small>
+          ${sugeridos.map((a) => html`<button class="sugerido" onClick=${() => setEditar(a.id)}>
+            <span aria-hidden="true">${emojiDe(a)}</span> ${a.nombre}<b>+</b></button>`)}
+        </div>`}
+      ${buscar.trim() && !datos.articulos.some((a) => normalizar(a.nombre) === normalizar(buscar)) && html`
         <button class="boton boton-foto" onClick=${() => { setNuevoNombre(mayusculaInicial(buscar.trim())); setEditar('nuevo'); }}>
           + Añadir «${buscar.trim()}» a la despensa</button>`}
       <button class="boton boton-foto" onClick=${() => camaraProducto.current.click()}>📷 Añadir con una foto</button>
