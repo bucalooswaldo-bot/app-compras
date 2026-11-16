@@ -444,3 +444,39 @@ li.hecho { opacity: 0.8; }
 .tt-ico { flex: none; width: 26px; text-align: center; }
 .tengo-todo .tt-falta .nombre small { color: var(--aviso); }
 .tengo-todo .tt-hay .nombre, .tengo-todo .tt-basico .nombre { color: var(--suave); }
+
+/* --- En el súper --- */
+.boton.empezar { margin-top: 10px; }
+.en-super {
+  display: flex; align-items: center; gap: 10px; margin: 10px 0 2px; padding: 12px 14px; border-radius: 12px;
+  background: var(--verde-claro); border: 1px solid var(--verde);
+}
+.en-super > span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.en-super small { color: var(--suave); }
+.barra-pagar {
+  position: sticky; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 4; margin-top: 16px; padding: 8px 0;
+  background: var(--fondo); display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.barra-pagar .boton.grande { margin-top: 0; }
+.filas .cant { display: flex; flex-direction: column; align-items: flex-end; }
+.precio-fila { color: var(--texto); font-variant-numeric: tabular-nums; }
+.supers-elegir { display: grid; gap: 10px; margin-top: 12px; }
+.super-boton {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 16px; border-radius: 12px; text-align: left;
+  border: 1px solid var(--linea); background: var(--panel); box-shadow: var(--sombra); color: var(--texto);
+}
+.super-boton b { font-size: 1.1rem; }
+.super-boton span { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.super-boton small { color: var(--suave); }
+.super-boton.activo { border-color: var(--verde); background: var(--verde-claro); }
+.en-este { display: flex; flex-direction: column; gap: 8px; }
+.en-este .meta { margin: 0; }
+.producto-ficha { display: flex; gap: 12px; align-items: center; background: var(--panel); border-radius: 12px; padding: 10px; box-shadow: var(--sombra); }
+.producto-ficha > div { display: flex; flex-direction: column; min-width: 0; }
+.producto-ficha small { color: var(--suave); }
+.foto-producto.grande { width: 88px; height: 88px; font-size: 2.4rem; }
+.foto-producto.mini { width: 36px; height: 36px; font-size: 1.2rem; }
+.comparar-ficha li.mejor { background: var(--verde-claro); }
+.comparar-ficha li.mejor b { color: var(--verde); }
+.comparar-ficha .cant small { color: var(--suave); font-size: 0.78rem; }
+.en-este .dos label { margin-top: 0; }
