@@ -1602,6 +1602,7 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
   const [buscando, setBuscando] = useState(false);
   const [texto, setTexto] = useState(a?.nombre ?? '');
   const [subiendo, setSubiendo] = useState(null);
+  const [abierto, setAbierto] = useState(null);   // producto cuya ficha se ve
   const camara = useRef(null);
   const paraFoto = useRef(null);
   const marcas = marcasDe(datos, catalogo, articuloId);
@@ -1678,10 +1679,17 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
         ${marcas.map((m) => {
           const url = urlDeMarca(m, fotosCasa);
           const propia = !m.p.imagen_url;
-          return html`<li class=${principal === m.p.id ? 'principal' : ''}>
-            <${FotoProducto} url=${url} emoji=${emojiDe(a)} clase="grande" />
+          const ver = abierto === m.p.id;
+          return html`<li class="${principal === m.p.id ? 'principal' : ''} ${ver ? 'abierta' : ''}"
+            onClick=${(ev) => { if (!ev.target.closest('button, a')) setAbierto(ver ? null : m.p.id); }}>
+            <${FotoProducto} url=${url} emoji=${emojiDe(a)} clase=${ver ? 'enorme' : 'grande'} />
             <div class="marca-datos">
               <b>${m.p.nombre}</b>
+              ${ver && html`<div class="ficha-marca">
+                ${Number.isFinite(m.p.precio_por_unidad) && m.p.cantidad && html`<small>${euros(m.p.precio_por_unidad).replace(' €', '')} ${etiquetaUnidad(m.p.unidad)}</small>`}
+                ${m.p.visto_en && html`<small>Precio visto el ${fechaCorta(m.p.visto_en)}</small>`}
+                ${m.p.url && html`<a class="enlace" href=${m.p.url} target="_blank" rel="noopener noreferrer">Ver en la web de ${nombreSuper(m.p.supermercado_id)} ↗</a>`}
+              </div>`}
               <small>${nombreSuper(m.p.supermercado_id)}${m.p.marca ? ` · ${m.p.marca}` : ''}${formatoDe(m.p) ? ` · ${formatoDe(m.p)}` : ''}</small>
               <span>${Number.isFinite(m.p.precio) ? euros(m.p.precio) : ''}${m.veces ? html` <small>· comprado ${m.veces} ${m.veces === 1 ? 'vez' : 'veces'}</small>` : !m.e.auto ? html` <small>· elegido</small>` : html` <small>· para comparar</small>`}</span>
               <div class="marca-acciones">
