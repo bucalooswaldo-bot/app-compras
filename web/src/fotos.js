@@ -51,3 +51,48 @@ export function dibujoReceta(receta) {
   for (const [re, emoji] of DIBUJOS) if (re.test(texto)) return emoji;
   return '🍽️';
 }
+
+/** Dibuja el fotograma que se ve ahora en un <video> y lo pasa a JPEG (para la portada de la receta). */
+export function fotoDeFotograma(video, max = 1280, calidad = 0.8) {
+  const escala = Math.min(1, max / Math.max(video.videoWidth, video.videoHeight));
+  const lienzo = document.createElement('canvas');
+  lienzo.width = Math.round(video.videoWidth * escala);
+  lienzo.height = Math.round(video.videoHeight * escala);
+  lienzo.getContext('2d').drawImage(video, 0, 0, lienzo.width, lienzo.height);
+  return new Promise((ok, mal) =>
+    lienzo.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo sacar la foto del vídeo'))), 'image/jpeg', calidad));
+}
+
+const esperar = (el, evento, ms = 15000) => new Promise((ok, mal) => {
+  const t = setTimeout(() => mal(new Error('El vídeo tarda demasiado')), ms);
+  el.addEventListener(evento, () => { clearTimeout(t); ok(); }, { once: true });
+  el.addEventListener('error', () => { clearTimeout(t); mal(new Error('No se pudo abrir el vídeo')); }, { once: true });
+});
+
+/**
+ * Saca una foto de un vídeo (un archivo del móvil) para usarla de portada.
+ * Por defecto, a los 1,5 s: muchos vídeos de recetas enseñan el plato terminado al principio.
+ */
+export async function fotoDeVideo(archivo, segundo = 1.5, max = 1280, calidad = 0.8) {
+  const url = URL.createObjectURL(archivo);
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  try {
+    const cargado = esperar(video, 'loadeddata');
+    video.src = url;
+    await cargado;
+    const t = Math.min(segundo, Math.max(0, (video.duration || 0) / 2));
+    if (t > 0) {
+      const movido = esperar(video, 'seeked');
+      video.currentTime = t;
+      await movido;
+    }
+    return await fotoDeFotograma(video, max, calidad);
+  } finally {
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(url);
+  }
+}

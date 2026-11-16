@@ -127,6 +127,7 @@ function leerLocal() {
   }
 }
 
+const videosPrueba = new Map(); // ruta -> dirección del vídeo, solo mientras la app está abierta
 export function motorPrueba() {
   let copia = leerLocal();
   const guardar = () => {
@@ -167,6 +168,10 @@ export function motorPrueba() {
     async subirFoto(blob) { return blobADataUrl(blob); },
     async urlsFotos(rutas) { return Object.fromEntries(rutas.map((r) => [r, r])); },
     async borrarFoto() {},
+    // En modo prueba el vídeo solo vive mientras la app está abierta (no cabe en el móvil como texto).
+    async subirVideo(blob) { const r = `local:${nuevoId()}`; videosPrueba.set(r, URL.createObjectURL(blob)); return r; },
+    async urlVideo(ruta) { return videosPrueba.get(ruta) ?? null; },
+    async borrarVideo(ruta) { const u = videosPrueba.get(ruta); if (u) URL.revokeObjectURL(u); videosPrueba.delete(ruta); },
   };
 }
 
@@ -231,6 +236,27 @@ export function motorSupabase(cliente, hogarId) {
     },
     async borrarFoto(ruta) {
       if (ruta && !ruta.startsWith('data:')) await cliente.storage.from('fotos').remove([ruta]);
+    },
+    /** Guarda un vídeo ya comprimido en el cajón "videos" de la casa y devuelve su ruta. */
+    async subirVideo(blob) {
+      const ext = /webm/.test(blob.type) ? 'webm' : /quicktime/.test(blob.type) ? 'mov' : 'mp4';
+      const ruta = `${hogarId}/${nuevoId()}.${ext}`;
+      comprobar(await cliente.storage.from('videos').upload(ruta, blob, { contentType: blob.type || 'video/mp4', cacheControl: '31536000' }));
+      return ruta;
+    },
+    /** Dirección temporal (1 día) para ver el vídeo. */
+    async urlVideo(ruta) {
+      const ahora = Date.now();
+      const clave = `video:${ruta}`;
+      if (!(cacheFotos.get(clave)?.caduca > ahora)) {
+        const { data, error } = await cliente.storage.from('videos').createSignedUrl(ruta, 86400);
+        if (error) throw error;
+        cacheFotos.set(clave, { url: data.signedUrl, caduca: ahora + 23 * 3600e3 });
+      }
+      return cacheFotos.get(clave).url;
+    },
+    async borrarVideo(ruta) {
+      if (ruta) await cliente.storage.from('videos').remove([ruta]);
     },
     /** Avisa cuando el otro móvil cambia algo. */
     escucharCambios(fn) {
