@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { entenderReceta, leerRaciones, leerMinutos } from '../web/src/receta-texto.js';
+import { entenderReceta, leerRaciones, leerMinutos, numerarPasos } from '../web/src/receta-texto.js';
 
 test('captura de Instagram con títulos, ruido de la pantalla y pasos partidos', () => {
   const texto = `12:45 ✱ 87%
@@ -115,4 +115,41 @@ test('varios ingredientes en un renglón, medidas sin número y letras mal leíd
   assert.deepEqual(partirVarios('700 g de papas 1 cebolla 1 pimiento'), ['700 g de papas', '1 cebolla', '1 pimiento']);
   const r = entenderReceta('Ingredientes\n• 320 q de fideos\n• 100 mi de vino blanco\n• 3 gde sal\n• cucharadita de pimentón\n• 1,21 de caldo de pescado');
   assert.deepEqual(r.ingredientes, ['320 g de fideos', '100 ml de vino blanco', '3 g de sal', '1 cucharadita de pimentón', '1,2 l de caldo de pescado']);
+});
+
+test('pasos con el número pegado al segundo renglón (círculo centrado) y restos al final', () => {
+  const r = entenderReceta([
+    'Ingredientes', '700 g de papas', 'PREPARACIÓN',
+    'Salpimienta el pescado, dóralo con el aceite y reserva. Pica',
+    '1. cebolla, pimiento y 2 ajos; rehoga 10 min.',
+    '2. Añade tomate rallado. Cocina 10 min.',
+    'Añade papas en lascas y caldo. Cuece 15-20 min; incorpora pescado y cocina',
+    '3.] 5-8 min, hasta ablandar las papas.',
+    '4. Ajusta sal y deja reposar 5 min..', 'vin.', '1.0', 'Recetas y descubrimientos de la semana',
+  ].join('\n'));
+  assert.deepEqual(r.pasos, [
+    'Salpimienta el pescado, dóralo con el aceite y reserva. Pica cebolla, pimiento y 2 ajos; rehoga 10 min.',
+    'Añade tomate rallado. Cocina 10 min.',
+    'Añade papas en lascas y caldo. Cuece 15-20 min; incorpora pescado y cocina 5-8 min, hasta ablandar las papas.',
+    'Ajusta sal y deja reposar 5 min.',
+  ]);
+});
+
+test('pasos numerados: una frase nueva sin número sigue en el mismo paso, y se numeran', () => {
+  const r = entenderReceta([
+    'Ingredientes', '8 gambas enteras', 'PREPARACIÓN',
+    '1) Limpia los mejillones y desecha los rotos.', 'Saltea las gambas 1 min por lado y reserva.',
+    '2) Dora la sepia en dados', '3) Devuelve las gambas y reposa 3 min', 'oc',
+  ].join('\n'));
+  assert.deepEqual(numerarPasos(r.pasos), [
+    '1. Limpia los mejillones y desecha los rotos. Saltea las gambas 1 min por lado y reserva.',
+    '2. Dora la sepia en dados.',
+    '3. Devuelve las gambas y reposa 3 min.',
+  ]);
+});
+
+test('"Para2 personas" no es el nombre', () => {
+  const r = entenderReceta('Para2 personas\nIngredientes\n2 huevos\nPreparación\nCuece los huevos 10 minutos.');
+  assert.equal(r.nombre, '');
+  assert.equal(r.raciones, 2);
 });

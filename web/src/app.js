@@ -17,7 +17,7 @@ import {
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma, portadaDeCaptura } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
-import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano } from './receta-texto.js';
+import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano, numerarPasos } from './receta-texto.js';
 import { prepararVideo, megas } from './video.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
@@ -28,7 +28,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 31;
+const VERSION_APP = 32;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -705,7 +705,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
         nombre: prev.nombre.trim() || r.nombre,
         raciones: r.raciones ?? prev.raciones,
         tiempo_min: r.tiempo_min ?? prev.tiempo_min,
-        pasos: [prev.pasos.trim(), r.pasos.join('\n')].filter(Boolean).join('\n'),
+        pasos: [prev.pasos.trim(), numerarPasos(r.pasos).join('\n')].filter(Boolean).join('\n'),
       }));
       const leidos = entenderIngredientes(r.ingredientes.join('\n'), datos.articulos);
       setIngs((xs) => [...xs, ...leidos
