@@ -141,16 +141,21 @@ export function faltas(datos, desde, hasta) {
     enLista.set(l.articulo_id, (enLista.get(l.articulo_id) ?? 0) + (l.cantidad ?? Infinity));
   }
 
+  const cacheVariantes = new Map();
   const ids = new Set([...necesita.keys(), ...sinCantidad, ...datos.despensa.filter(tieneAviso).map((d) => d.articulo_id)]);
   const resultado = [];
   for (const id of ids) {
     const articulo = datos.articulos.find((a) => a.id === id);
     if (!articulo) continue;
     const d = despensa.get(id);
-    const hay = d?.cantidad ?? 0;
+    const propio = d?.cantidad ?? 0;
     const minimo = d?.minimo ?? 0;
     const pide = necesita.get(id) ?? 0;
-    const bajoMinimo = !!d && estaBajo({ ...d, cantidad: hay });
+    const bajoMinimo = !!d && estaBajo({ ...d, cantidad: propio });
+    // Para las recetas cuentan también las variantes de la despensa ("Huevos medianos m" para "Huevos").
+    const casa = (pide > 0 || sinCantidad.has(id)) ? enCasa(datos, id, cacheVariantes) : null;
+    if (casa && casa.otraUnidad.length && casa.hay <= 0 && !bajoMinimo) continue; // hay, en otra unidad: no se pide
+    const hay = casa ? Math.max(casa.hay, propio) : propio;
     if (pide === 0 && !bajoMinimo) {
       // Solo lo pide una receta sin cantidad: si no hay nada en casa ni está ya en la lista, se apunta sin cantidad.
       if (sinCantidad.has(id) && hay <= 0 && !enLista.has(id)) {
@@ -213,11 +218,13 @@ export function tengoTodo(datos, recetaId, raciones) {
     filas.set(a.id, { articulo_id: a.id, nombre: a.nombre, unidad: a.unidad, necesita });
   }
   const resultado = [];
+  const cache = new Map();
   for (const f of filas.values()) {
-    const hay = despensa.get(f.articulo_id) ?? 0;
+    const casa = enCasa(datos, f.articulo_id, cache);
+    const hay = Math.max(casa.hay, despensa.get(f.articulo_id) ?? 0);
     const enLista = apuntado.get(f.articulo_id) ?? 0;
     let falta;
-    if (f.necesita == null) falta = hay > 0 ? 0 : null;
+    if (f.necesita == null || (casa.hay <= 0 && casa.otraUnidad.length)) falta = hay > 0 || casa.otraUnidad.length ? 0 : null;
     else {
       falta = f.necesita - hay;
       if (f.unidad === 'ud') falta = Math.ceil(falta - 1e-9);
@@ -225,10 +232,10 @@ export function tengoTodo(datos, recetaId, raciones) {
     }
     let estado;
     if (falta === 0) estado = 'hay';
-    else if (f.necesita == null && esBasico(f.nombre) && !despensa.has(f.articulo_id)) estado = 'basico';
+    else if (f.necesita == null && esBasico(f.nombre)) estado = 'basico';
     else if (enLista >= (falta ?? 1)) estado = 'en_lista';
     else estado = 'falta';
-    resultado.push({ ...f, hay, falta, enLista, estado });
+    resultado.push({ ...f, hay, falta, enLista, estado, casa: [...casa.detalle, ...casa.otraUnidad] });
   }
   const orden = { falta: 0, en_lista: 1, hay: 2, basico: 3 };
   return resultado.sort((x, y) => orden[x.estado] - orden[y.estado] || x.nombre.localeCompare(y.nombre, 'es'));
@@ -303,6 +310,48 @@ export function agruparPorCategoria(filas, articulos) {
 // ---------------------------------------------------------------------------
 export function normalizar(texto) {
   return String(texto ?? '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+const VACIAS_NOMBRE = new Set(['de', 'del', 'la', 'el', 'en', 'con', 'y', 'al', 'a', 'para', 'o', 'sin']);
+const singular = (w) => (w.length > 4 && /[^aeiou]es$/.test(w) ? w.slice(0, -2) : w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w);
+const palabrasNombre = (n) => normalizar(n).replace(/\([^)]*\)/g, ' ').split(/[^a-z0-9]+/)
+  .filter((w) => w && !VACIAS_NOMBRE.has(w) && !/^\d/.test(w)).map(singular);
+
+/**
+ * Artículos que valen por otro: el mismo y los que lo concretan ("Huevos medianos m" vale por "Huevos",
+ * "Ajos" por "Ajo", "Aceite de oliva suave" por "Aceite de oliva"). Empiezan por la misma palabra
+ * y llevan todas las del general.
+ */
+export function variantesDe(articulos, id) {
+  const a = articulos.find((x) => x.id === id);
+  if (!a) return [];
+  const wa = palabrasNombre(a.nombre);
+  if (!wa.length) return [a];
+  return articulos.filter((x) => {
+    if (x.id === id) return true;
+    const wx = palabrasNombre(x.nombre);
+    return wx[0] === wa[0] && wa.every((w) => wx.includes(w));
+  });
+}
+
+/**
+ * Lo que hay en casa de un artículo, contando sus variantes.
+ * @returns {{ hay: number, otraUnidad: {nombre, cantidad, unidad}[], detalle: {nombre, cantidad, unidad}[] }}
+ *   hay = suma en la unidad del artículo; otraUnidad = variantes con otra unidad (no se pueden sumar).
+ */
+export function enCasa(datos, id, cache) {
+  const a = datos.articulos.find((x) => x.id === id);
+  const vars = cache?.get(id) ?? variantesDe(datos.articulos, id);
+  cache?.set(id, vars);
+  let hay = 0;
+  const detalle = [], otraUnidad = [];
+  for (const v of vars) {
+    const d = datos.despensa.find((x) => x.articulo_id === v.id);
+    if (!d || !(d.cantidad > 0)) continue;
+    const fila = { nombre: v.nombre, cantidad: d.cantidad, unidad: v.unidad };
+    if (v.unidad === a?.unidad) { hay += Number(d.cantidad); detalle.push(fila); } else otraUnidad.push(fila);
+  }
+  return { hay: redondear(hay, 3), otraUnidad, detalle };
 }
 
 export function buscarArticulo(articulos, nombre) {

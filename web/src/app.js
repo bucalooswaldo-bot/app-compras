@@ -1617,8 +1617,14 @@ function TengoTodo({ almacen, datos, onCerrar, onListo }) {
   const icono = { hay: '✅', basico: '🧂', en_lista: '📝', falta: '❌' };
   const texto = (f) => {
     const cuanto = (n) => formatoCantidad(n, f.unidad);
-    if (f.estado === 'hay') return f.necesita != null ? `Hace falta ${cuanto(f.necesita)} · en casa ${cuanto(f.hay)}` : `En casa ${cuanto(f.hay)}`;
-    if (f.estado === 'basico') return 'Se da por hecho que hay';
+    // Si lo que hay es otra variante ("Huevos medianos m"), se dice cuál.
+    const variantes = f.casa.length && (f.casa.length > 1 || f.casa[0].nombre !== f.nombre)
+      ? f.casa.map((c) => `${c.nombre} ${formatoCantidad(c.cantidad, c.unidad)}`).join(', ') : null;
+    if (f.estado === 'hay') {
+      if (variantes) return f.necesita != null ? `Hace falta ${cuanto(f.necesita)} · en casa: ${variantes}` : `En casa: ${variantes}`;
+      return f.necesita != null ? `Hace falta ${cuanto(f.necesita)} · en casa ${cuanto(f.hay)}` : `En casa ${cuanto(f.hay)}`;
+    }
+    if (f.estado === 'basico') return 'No está en la despensa; se da por hecho que hay';
     const falta = f.falta != null ? `Falta ${cuanto(f.falta)}` : 'No hay en casa';
     return f.estado === 'en_lista' ? `${falta} · ya está en la lista` : `${falta}${f.hay > 0 ? ` (hay ${cuanto(f.hay)})` : ''}`;
   };
