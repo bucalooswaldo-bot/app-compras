@@ -100,6 +100,11 @@ function unirPasos(lineas) {
   return pasos.map((p) => p.replace(/\s+/g, ' ').trim()).filter((p) => letras(p) >= 3);
 }
 
+/** "100 ml devino blanco" -> "100 ml de vino blanco" (el lector a veces pega el "de"). */
+export function separarDe(t) {
+  return t.replace(/\bdeal$/, 'de sal').replace(/^(\d[\d.,/]*\s*(?:[a-zñ]+\s+)?)de(?!s|ntro|cora|lgad|lica|rret|bajo)([a-záéíóúñ]{2,})/i, '$1de $2');
+}
+
 /** Une los ingredientes partidos en dos líneas ("200 g de queso" + "rallado"). */
 function unirIngredientes(lineas) {
   const salida = [];
@@ -123,7 +128,7 @@ function nombreDe(lineas) {
     const n = normalizar(t);
     if (CAB_INGREDIENTES.test(n) || CAB_PASOS.test(n)) break;
     // Nombres de usuario de la red social ("cocinaconmaria", "chef.ana_23"): no son el título
-    if (/^[a-z0-9._]+$/.test(t)) continue;
+    if (/^[a-z0-9._]+$/.test(t) || /\b\d{1,2}:\d{2}\b/.test(t)) continue;
     if (t.length < 3 || t.length > MAX_NOMBRE || empiezaCantidad(t) || leerRaciones(t) || leerMinutos(t)) continue;
     t = t.replace(/^receta( facil| casera)?( de| del)?\s*:?\s*/i, '');
     if (letras(t) < 3) continue;
@@ -178,7 +183,110 @@ export function entenderReceta(texto) {
       else if (pareceFrase(quitarVineta(l)) || pasos.length) pasos.push(l);
     }
   }
-  const ings = unirIngredientes(ingredientes)
+  const ings = unirIngredientes(ingredientes).map(separarDe)
     .filter((t) => normalizar(t) !== normalizar(nombre) && !SOLO_DATOS.test(normalizar(t)));
   return { nombre, raciones, tiempo_min, ingredientes: ings, pasos: unirPasos(pasos) };
+}
+
+// ---------------------------------------------------------------------------
+// Capturas con diseño (infografías, tarjetas de recetas): el lector devuelve cada línea con la posición
+// de sus palabras. Aquí se quitan las zonas de foto (lo leído con poca seguridad) y se rehacen las
+// columnas: "600 g | 600 g" + "de atún | de cebolla" -> "600 g de atún", "600 g de cebolla".
+// ---------------------------------------------------------------------------
+
+const tieneTexto = (t) => /[a-z0-9áéíóúñ]/i.test(t);
+const CONFIANZA_MINIMA = 55;
+
+/** Parte una línea en celdas donde hay un hueco grande entre palabras. */
+function celdasDe(linea) {
+  const alto = Math.max(8, linea.y1 - linea.y0);
+  const celdas = [];
+  let corte = false;
+  for (const p of [...linea.palabras].sort((a, b) => a.x0 - b.x0)) {
+    // Una raya o signo suelto con hueco a los lados separa columnas ("1 hoja — 1 cucharadita"),
+    // pero no un punto entre dos palabras ("cocinaconmaria · Seguir")
+    if (!tieneTexto(p.texto)) { corte = true; continue; }
+    const c = celdas.at(-1);
+    const hueco = c ? p.x0 - c.x1 : 0;
+    const junto = c && (corte ? hueco < alto * 1.2 : hueco <= alto * 0.9);
+    corte = false;
+    if (junto) { c.texto += ` ${p.texto}`; c.x1 = p.x1; } else celdas.push({ texto: p.texto, x0: p.x0, x1: p.x1 });
+  }
+  // Rayas y signos sueltos de adorno ("— de cebolla", "+ de aceite") fuera
+  return celdas.map((c) => ({ ...c, texto: c.texto.replace(/^[^\p{L}\p{N}¿¡(]+|[^\p{L}\p{N}).:%!?]+$/gu, '') }))
+    .filter((c) => tieneTexto(c.texto));
+}
+
+const solape = (a, b) => Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+
+/**
+ * Rehace el texto de una captura a partir de las líneas del lector.
+ * @param {Array<{y0:number, y1:number, confianza:number, palabras:Array<{texto:string, x0:number, x1:number}>}>} lineas
+ * @param {number} [altoImagen] para quitar la barra de arriba del móvil (hora, batería)
+ */
+export function textoPorColumnas(lineas, altoImagen = 0) {
+  const filas = lineas
+    .filter((l) => l.confianza >= CONFIANZA_MINIMA)
+    .map((l) => ({ ...l, alto: Math.max(8, l.y1 - l.y0), celdas: celdasDe(l) }))
+    .filter((l) => l.celdas.length)
+    .filter((l) => !(altoImagen && l.y0 < altoImagen * 0.06 && /\d{1,2}:\d{2}/.test(l.celdas.map((c) => c.texto).join(' '))))
+    .sort((a, b) => a.y0 - b.y0);
+
+  const salida = [];
+  let bloque = null;   // { columnas: [{ x0, x1, textos: [] }], y1, alto }
+  const cerrar = () => {
+    if (bloque) for (const c of bloque.columnas) salida.push(c.textos.join(' '));
+    bloque = null;
+  };
+  for (const f of filas) {
+    const texto = f.celdas.map((c) => c.texto).join(' ');
+    const titulo = CAB_INGREDIENTES.test(normalizar(texto)) || CAB_PASOS.test(normalizar(texto));
+    // Sigue la tabla si está justo debajo, con letra de tamaño parecido y no es un título
+    const seguida = bloque && !titulo && f.y0 - bloque.y1 < bloque.alto * 1.6
+      && f.alto < bloque.alto * 1.4 && f.alto > bloque.alto / 1.4;
+    if (f.celdas.length >= 2 && !seguida && !titulo) {
+      cerrar();
+      bloque = { columnas: f.celdas.map((c) => ({ x0: c.x0, x1: c.x1, textos: [c.texto] })), y1: f.y1, alto: f.alto };
+      continue;
+    }
+    if (seguida) {
+      // Cada celda va a la columna con la que más se solapa (o la más cercana)
+      const destino = f.celdas.map((c) => bloque.columnas.reduce((mejor, col) => (solape(c, col) > solape(c, mejor) ? col : mejor)));
+      const caben = f.celdas.length >= 2 || solape(f.celdas[0], destino[0]) > 0;
+      if (caben) {
+        f.celdas.forEach((c, k) => { destino[k].textos.push(c.texto); destino[k].x0 = Math.min(destino[k].x0, c.x0); destino[k].x1 = Math.max(destino[k].x1, c.x1); });
+        bloque.y1 = f.y1;
+        continue;
+      }
+    }
+    cerrar();
+    salida.push(f.celdas.map((c) => c.texto).join(' '));
+  }
+  cerrar();
+  return salida.join('\n');
+}
+
+/**
+ * Junta la lectura normal con una segunda lectura a menor tamaño, que es la que pilla los títulos
+ * con letra muy grande. Solo se añaden líneas seguras que no estaban ya.
+ */
+export function juntarLecturas(lineas, lineasPequenas, escala) {
+  const limpia = (t) => normalizar(t).replace(/[^a-z0-9ñ]/g, '');
+  const buenas = lineas.filter((l) => l.confianza >= CONFIANZA_MINIMA);
+  const ya = new Set(buenas.flatMap((l) => l.palabras.map((p) => limpia(p.texto))));
+  // Solo letra grande: más alta que lo normal de la captura
+  const altos = buenas.map((l) => l.y1 - l.y0).sort((a, b) => a - b);
+  const normal = altos[Math.floor(altos.length / 2)] ?? 0;
+  const nuevas = lineasPequenas
+    .filter((l) => l.confianza >= 80 && (l.y1 - l.y0) / escala >= normal * 1.3)
+    .filter((l) => {
+      const ps = l.palabras.map((p) => limpia(p.texto)).filter((t) => t.length > 2);
+      return ps.length && ps.filter((t) => !ya.has(t)).length / ps.length >= 0.5;
+    })
+    .map((l) => ({
+      ...l, y0: l.y0 / escala, y1: l.y1 / escala,
+      // Una sola celda: es un título, no una fila de tabla
+      palabras: [{ texto: l.palabras.map((p) => p.texto).join(' '), x0: l.palabras[0].x0 / escala, x1: l.palabras.at(-1).x1 / escala }],
+    }));
+  return [...lineas, ...nuevas];
 }
