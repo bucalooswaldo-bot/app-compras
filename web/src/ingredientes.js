@@ -18,7 +18,7 @@ const UNIDADES = {
   taza: ['ml', 250], tazas: ['ml', 250], vaso: ['ml', 200], vasos: ['ml', 200],
   diente: ['ud', 1], dientes: ['ud', 1], ud: ['ud', 1], uds: ['ud', 1], unidad: ['ud', 1], unidades: ['ud', 1],
   docena: ['ud', 12],
-  cda: null, cdas: null, cucharada: null, cucharadas: null, cdta: null, cdtas: null, cucharadita: null,
+  cda: null, cdas: null, cucharada: null, cucharadas: null, cdta: null, cdtas: null, cdita: null, cditas: null, cucharadita: null,
   cucharaditas: null, pizca: null, puñado: null, punado: null, chorrito: null, chorro: null, toque: null,
   bandeja: null, bandejas: null, bote: null, botes: null, lata: null, latas: null, paquete: null,
   paquetes: null, sobre: null, sobres: null, loncha: null, lonchas: null, rodaja: null, rodajas: null,
