@@ -678,6 +678,8 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
   const [nombreNuevo, setNombreNuevo] = useState('');
   const [seccion, setSeccion] = useState('Otros');
   const [cantidad, setCantidad] = useState(1);
+  const [unidadNuevo, setUnidadNuevo] = useState('ud');
+  const [minimo, setMinimo] = useState(null);
   const [supermercado, setSupermercado] = useState(null);
   const [motivo, setMotivo] = useState(null);
   const [productoId, setProductoId] = useState(null);
@@ -731,13 +733,14 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
       const delSuper = productos.find((p) => p.supermercado_id === sup.supermercado);
       setProductoId(delSuper?.id ?? null);
       setCantidad(cantidadASumar(a?.unidad ?? 'ud', delSuper ?? r.ficha ?? base));
+      setMinimo(a ? datos.despensa.find((d) => d.articulo_id === a.id)?.minimo || null : null);
       setPaso(null);
     })();
     return () => { vivo = false; };
   }, [foto]);
 
   const art = articuloId ? articulo(datos, articuloId) : null;
-  const unidad = art?.unidad ?? 'ud';
+  const unidad = art?.unidad ?? unidadNuevo;
   const opciones = leido && supermercado && Array.isArray(leido.parecidos?.[supermercado])
     ? [...new Map([...leido.productos.filter((p) => p.supermercado_id === supermercado), ...leido.parecidos[supermercado]]
       .map((p) => [p.id, p])).values()].slice(0, 4)
@@ -750,7 +753,8 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
   const cambiarArticulo = (id) => {
     setArticuloId(id);
     const a = id ? articulo(datos, id) : null;
-    setCantidad(cantidadASumar(a?.unidad ?? 'ud', elegido ?? leido?.ficha));
+    setCantidad(cantidadASumar(a?.unidad ?? unidadNuevo, elegido ?? leido?.ficha));
+    setMinimo(a ? datos.despensa.find((d) => d.articulo_id === a.id)?.minimo || null : null);
   };
   const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
   const ordenados = [...datos.articulos].sort((x, y) => (enDespensa.has(y.id) - enDespensa.has(x.id)) || x.nombre.localeCompare(y.nombre, 'es'));
@@ -761,8 +765,10 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
     if (!(cantidad > 0)) return mostrarAviso('Pon cuánto sumar');
     setGuardando(true);
     try {
-      const a = art ?? await obtenerArticulo(almacen, mayusculaInicial(nombreNuevo.trim()), 'ud', seccion);
+      const a = art ?? await obtenerArticulo(almacen, mayusculaInicial(nombreNuevo.trim()), unidadNuevo, seccion);
       await almacen.sumarDespensa(a.id, cantidad);
+      const minimoAntes = datos.despensa.find((d) => d.articulo_id === a.id)?.minimo ?? 0;
+      if ((minimo ?? 0) !== minimoAntes) await almacen.fijarDespensa(a.id, { minimo: minimo ?? 0 });
       if (elegido) {
         if (!datos.equivalencias.some((e) => e.articulo_id === a.id && e.producto_id === elegido.id)) {
           await almacen.insertar('equivalencias', { articulo_id: a.id, producto_id: elegido.id, auto: false });
@@ -783,9 +789,13 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
   return html`
     <${Hoja} titulo="Añadir con una foto" onCerrar=${onCerrar}>
       <div class="foto-leida">
-        <img src=${urlFoto} alt="Tu foto" />
+        <div class="fotos-cabecera">
+          <${FotoProducto} url=${elegido?.imagen_url ?? leido?.ficha?.imagen_url ?? urlFoto} emoji="🛒" clase="grande" />
+          ${(elegido?.imagen_url || leido?.ficha?.imagen_url) && html`<img class="mini-propia" src=${urlFoto} alt="Tu foto" />`}
+        </div>
         ${leido && html`<div>
-          <b>${leido.nombre || 'No he sabido leerlo'}</b>
+          <b>${elegido?.nombre ?? (leido.nombre || 'No he sabido leerlo')}</b>
+          ${elegido && Number.isFinite(Number(elegido.precio)) && elegido.precio != null && html`<small>${nombreSuper(elegido.supermercado_id)} · ${euros(Number(elegido.precio))}</small>`}
           ${leido.marca && html`<small>${leido.marca}${leido.ficha?.formato ? ` · ${leido.ficha.formato}` : ''}</small>`}
           ${leido.ean && html`<small class="meta">Código ${leido.ean}</small>`}
         </div>`}
@@ -806,11 +816,19 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
           <label>Sección<select value=${seccion} onChange=${(e) => setSeccion(e.target.value)}>
             ${CATEGORIAS.map((c) => html`<option value=${c}>${c}</option>`)}</select></label>`}
 
-        <label>Sumar</label>
+        ${!art && html`<label>Se cuenta por
+          <select value=${unidadNuevo} onChange=${(e) => { setUnidadNuevo(e.target.value); setCantidad(cantidadASumar(e.target.value, elegido ?? leido?.ficha)); setMinimo(null); }}>
+            <option value="ud">unidades (botes, paquetes, piezas…)</option><option value="g">peso (g / kg)</option><option value="ml">líquido (ml / l)</option>
+          </select></label>`}
+        <label>¿Cuánto añades?</label>
         <div class="ing-datos">
-          <${CampoCantidad} unidad=${unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Cantidad" />
-          ${art && html`<small class="meta">ahora hay ${formatoCantidad(hay, unidad)}</small>`}
+          ${unidad === 'ud'
+            ? html`<${Contador} valor=${cantidad ?? 1} min=${1} onCambio=${setCantidad} />`
+            : html`<${CampoCantidad} key=${`c-${unidad}-${articuloId}`} unidad=${unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Cantidad" />`}
+          <small class="meta">${art ? `hay ${formatoCantidad(hay, unidad)} → ` : ''}quedará ${formatoCantidad(redondear(hay + (cantidad ?? 0), 3), unidad)}</small>
         </div>
+        <label>Avisar cuando quede esto o menos <small>(opcional)</small></label>
+        <${CampoCantidad} key=${`m-${unidad}-${articuloId}`} unidad=${unidad} valor=${minimo} onCambio=${setMinimo} placeholder="Sin aviso" />
 
         <label>¿Dónde lo comprasteis?</label>
         <div class="acciones">
