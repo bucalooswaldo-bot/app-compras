@@ -37,6 +37,8 @@ function limpiarLinea(l) {
   t = t.replace(/(\d)\s*[q9]\s+(?=de\b)/g, '$1 g ').replace(/(\d)\s*[q9]\)/g, '$1 g)')
     .replace(/(\d)\s*mi\b/g, '$1 ml').replace(/(\d)\s*gde\b/g, '$1 g de')
     .replace(/\b(\d+(?:,\d)?)[1lI]\s+de\s+(?=(caldo|agua|leche|vino|nata|aceite|zumo)\b)/gi, '$1 l de ');
+  // "Para2 personas" (el lector se come el espacio)
+  t = t.replace(/\b(para)(\d)/gi, '$1 $2');
   return t.replace(/\s+/g, ' ').trim();
 }
 
@@ -51,7 +53,7 @@ function esRuido(t) {
 }
 
 const quitarVineta = (t) => t.replace(/^- /, '');
-const esNumerado = (t) => /^(paso\s*)?[([]?\d{1,2}\s*[.)\]º°:-]+\s*\S/i.test(t);
+const esNumerado = (t) => /^(paso\s*)?[([]?\d{1,2}\s*[.)\]º°:-]+\s*\S/i.test(t) && letras(sinNumero(t)) >= 2;
 const sinNumero = (t) => t.replace(/^(paso\s*)?[([]?\d{1,2}\s*[.)\]º°:-]+\s*/i, '');
 const empiezaCantidad = (t) => /^(\d|un[oa]?\s|medi[oa]\s|una\s|dos\s|tres\s|cuatro\s|cinco\s|seis\s|pizca|chorr|pu[nñ]ado|sal\b|pimienta\b|aceite\b|agua\b)/i.test(t);
 const pareceIngrediente = (t) => {
@@ -95,21 +97,90 @@ export function leerMinutos(texto) {
 }
 
 /** Une las líneas que el lector partió a mitad de frase. */
-function unirPasos(lineas) {
-  const pasos = [];
-  const numerados = [];
-  for (const l of lineas) {
-    // Iconos leídos como un signo o número suelto delante del paso ("9 Sellar: …")
-    const t = quitarVineta(l).replace(/^(?![0-9]{1,2}\s*[.)º°:-])[^\s]{1,2}\s+(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ])/, '');
-    const nuevo = !pasos.length || esNumerado(t) || l.startsWith('- ')
-      || (/[.!?:]$/.test(pasos.at(-1)) && /^[A-ZÁÉÍÓÚÑ¿¡]/.test(t));
-    if (nuevo) { if (esNumerado(t)) numerados.push(pasos.length); pasos.push(sinNumero(t)); }
-    else pasos[pasos.length - 1] += ` ${t}`;
+// Palabras cortas que sí pueden ir al final de una frase partida
+const CORTAS_FINAL = /^(a|y|e|o|u|al|de|el|en|la|lo|le|se|su|un|ya|mi|te|ni|si|sí|no|tu|por|con|del|las|los|sal|ajo|min|g|ml|kg|l)$/i;
+
+/** Quita restos del final de un paso ("…reposa 3 min oc", "…5 min.. vin.") y deja la frase limpia. */
+function limpiarPaso(p) {
+  const t = quitarRestos(p);
+  // Acaba la frase con su punto, como se escribe a mano
+  return /[a-záéíóúñ0-9]$/i.test(t) && t.split(/\s+/).length >= 3 ? `${t}.` : t;
+}
+
+function quitarRestos(p) {
+  // Restos de adornos metidos en medio ("cocina 2-3 minutos comP (hasta…")
+  let t = p.replace(/\s+/g, ' ').replace(/\s[a-záéíóúñ]{1,4}[A-Z]\b/g, '').trim();
+  for (let k = 0; k < 3; k++) {
+    const m = t.match(/\s+(\S{1,4})$/);
+    if (!m) break;
+    const ultima = m[1].replace(/[.,;:!?)]+$/, '');
+    // Tras un punto, una palabrita suelta es un resto; sin punto, solo si no es una palabra corta normal
+    const trasPunto = /[.!?)]\s+\S{1,4}$/.test(t) && !/^\d/.test(ultima) && !/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]/.test(ultima);
+    if ((trasPunto && letras(ultima) <= 3) || (letras(ultima) <= 2 && !/\d/.test(ultima) && !CORTAS_FINAL.test(ultima))) {
+      t = t.slice(0, -m[0].length);
+    } else break;
   }
-  let salida = pasos.map((p) => p.replace(/\s+/g, ' ').trim()).filter((p) => letras(p) >= 3);
-  // Pasos numerados: lo que va suelto detrás (consejos, el texto de la publicación) no es un paso
-  if (numerados.length >= 2) salida = salida.slice(0, numerados.at(-1) + 1);
-  return salida;
+  return t.replace(/\.{2,}$/, '.').replace(/\s+([.,;:])/g, '$1').trim();
+}
+
+// Al final de un renglón, un resto de 1-2 letras raras ("VI", "comP") suele ser el número del paso siguiente mal leído
+const restoDeNumero = (t) => {
+  const m = t.match(/\s(\S{1,2})$/);
+  return !!m && !CORTAS_FINAL.test(m[1].replace(/[.,]+$/, '')) && !/^\d+[.,]?$/.test(m[1]) && /[.!?]\s\S{1,2}$/.test(t);
+};
+
+function unirPasos(lineas) {
+  const limpias = lineas.map(quitarVineta);
+  const modoNumerado = limpias.filter(esNumerado).length >= 2;
+  // El círculo del número va centrado en pasos de dos renglones y el lector lo pega al segundo
+  // ("…reserva. Pica" + "1. cebolla, pimiento…"): entonces el número va abajo
+  const numeroAbajo = limpias.some((t, k) => k > 0 && esNumerado(t) && /^[a-záéíóúñ0-9]/.test(sinNumero(t))
+    && !/[.!?:]$/.test(limpias[k - 1]));
+  const pasos = [];   // { texto, numerado, renglones }
+  for (const l of lineas) {
+    // Iconos o círculos con el número leídos como una letra suelta delante del paso ("9 Sellar: …", "G En una olla")
+    let t = quitarVineta(l);
+    const sinIcono = t.replace(/^(?![0-9]{1,2}\s*[.)\]º°:-])[^\s]{1,2}\s+(?=[A-ZÁÉÍÓÚÑ¿¡][a-záéíóúñ])/, '');
+    const conIcono = sinIcono !== t;
+    t = sinIcono;
+    const actual = pasos.at(-1);
+    const finFrase = actual && /[.!?:)]$/.test(quitarRestos(actual.texto));
+    const numerado = esNumerado(t);
+    const marcado = numerado || conIcono;   // con número o con su círculo mal leído
+    let nuevo;
+    if (!actual) nuevo = true;
+    else if (esNumerado(t)) {
+      nuevo = finFrase || actual.marcado || actual.renglones > 1;
+    } else if (l.startsWith('- ') || conIcono) nuevo = true;
+    else if (restoDeNumero(actual.texto) && /^[A-ZÁÉÍÓÚÑ¿¡]/.test(t)) {
+      actual.texto = actual.texto.replace(/\s\S{1,2}$/, '');
+      nuevo = true;
+    } else {
+      // Con los pasos numerados (número delante), una frase nueva sin número es parte del mismo paso
+      nuevo = (!modoNumerado || numeroAbajo) && finFrase && /^[A-ZÁÉÍÓÚÑ¿¡]/.test(t);
+    }
+    if (nuevo) pasos.push({ texto: sinNumero(t), numerado, marcado, renglones: 1 });
+    else {
+      actual.texto += ` ${sinNumero(t)}`;
+      actual.numerado ||= numerado;
+      actual.marcado ||= marcado;
+      actual.renglones++;
+    }
+  }
+  let salida = pasos.map((p) => ({ ...p, texto: limpiarPaso(p.texto) }));
+  if (modoNumerado) {
+    // Lo que va suelto detrás del último paso numerado (consejos, el texto de la publicación) no es un paso,
+    // y una frase suelta muy corta entre pasos numerados es un adorno de la imagen ("Un plato")
+    const ultimo = salida.findLastIndex((p) => p.numerado);
+    salida = salida.slice(0, ultimo + 1)
+      .filter((p) => p.texto.split(/\s+/).length >= (p.numerado ? 2 : 4));
+  }
+  return salida.map((p) => p.texto).filter((p) => letras(p) >= 3);
+}
+
+/** Los pasos con su número delante ("1. Cocina los fideos…"), como se escriben a mano. */
+export function numerarPasos(pasos) {
+  return pasos.length > 1 ? pasos.map((p, k) => `${k + 1}. ${p}`) : pasos;
 }
 
 /** "100 ml devino blanco" -> "100 ml de vino blanco" (el lector a veces pega el "de"). */
