@@ -295,7 +295,8 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .ing-cab { display: flex; align-items: center; gap: 8px; }
 .ing-cab strong { flex: 1; min-width: 0; }
 .ing-datos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-.ing-datos .fila-campo input { min-width: 0; }
+.ing-datos .fila-campo input { min-width: 0; flex: 1; }
+.ing-datos .fila-campo select { width: auto; flex: none; }
 .pegar { background: var(--panel); border-radius: 12px; padding: 4px 12px 12px; margin-top: 8px; }
 .crear-ingrediente { background: var(--verde-claro); border-radius: 12px; padding: 4px 12px 12px; margin: 8px 0; }
 .lista-simple li > button.elegido { color: var(--verde); font-weight: 600; }
@@ -494,3 +495,19 @@ li.hecho { opacity: 0.8; }
 .filas.extra select { flex: 1 1 100%; margin-bottom: 4px; }
 .filas input[type="checkbox"] { width: 22px; height: 22px; flex: none; accent-color: var(--verde); }
 .filas label.nombre { margin: 0; font-weight: 400; font-size: 1rem; }
+
+/* Recetas desde una captura y vídeos */
+.boton-captura {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; margin: 8px 0 4px;
+  padding: 12px 14px; border: 1px dashed var(--verde); border-radius: 12px; background: var(--verde-claro);
+  color: var(--texto); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+}
+.boton-captura small { font-weight: 400; color: var(--suave); }
+.leyendo-captura { margin: 8px 0; padding: 12px 14px; border-radius: 12px; background: var(--verde-claro); }
+.leyendo-captura small { color: var(--suave); }
+.texto-leido { margin: 8px 0; }
+.texto-leido summary { cursor: pointer; color: var(--suave); padding: 6px 0; }
+.texto-leido textarea { width: 100%; font-size: 0.85rem; }
+.video-receta { margin: 8px -16px 12px; }
+.video-receta video { display: block; width: 100%; max-height: 70vh; background: #000; }
+.video-receta .acciones-foto { padding-top: 8px; }

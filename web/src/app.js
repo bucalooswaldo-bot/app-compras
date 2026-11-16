@@ -15,8 +15,10 @@ import {
   tiqueRepetido, lineasQueSobran, cotejarTique,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
-import { reducirFoto, dibujoReceta } from './fotos.js';
+import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
+import { entenderReceta } from './receta-texto.js';
+import { prepararVideo, megas } from './video.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
 import * as config from '../config.js';
@@ -289,6 +291,7 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
   const [etiqueta, setEtiqueta] = useState(null);
   const [favoritas, setFavoritas] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const entradaCaptura = useRef(null);
   const etiquetas = [...new Set(datos.recetas.flatMap((r) => r.etiquetas))].sort((a, b) => a.localeCompare(b, 'es'));
   const lista = datos.recetas
     .filter((r) => !favoritas || r.favorita)
@@ -310,6 +313,10 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
         <input type="search" placeholder="Buscar receta" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
         <button class="boton" onClick=${() => editarReceta(null)}>+ Nueva</button>
       </div>
+      <input ref=${entradaCaptura} type="file" accept="image/*" multiple hidden
+        onChange=${(e) => { const fs = [...(e.target.files ?? [])]; e.target.value = ''; if (fs.length) editarReceta(null, fs); }} />
+      <button class="boton-captura" onClick=${() => entradaCaptura.current?.click()}>
+        📷 Nueva receta desde una captura <small>Instagram, TikTok, una web… (se pueden elegir varias)</small></button>
       <div class="chips">
         <button class="chip ${favoritas ? 'activo' : ''}" onClick=${() => setFavoritas(!favoritas)}>★ Favoritas</button>
         ${etiquetas.map((e) => html`<button class="chip ${etiqueta === e ? 'activo' : ''}"
@@ -346,28 +353,80 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
   const [subiendo, setSubiendo] = useState(false);
   const entradaFoto = useRef(null);
   const fotos = useFotos(almacen, [r?.foto_path]);
+  const [urlVideo, setUrlVideo] = useState(null);
+  const [video, setVideo] = useState(null);   // texto del progreso al preparar o subir un vídeo
+  const entradaVideo = useRef(null);
+  const reproductor = useRef(null);
+  useEffect(() => {
+    setUrlVideo(null);
+    if (!r?.video_path) return;
+    let vivo = true;
+    almacen.motor.urlVideo(r.video_path).then((u) => vivo && setUrlVideo(u)).catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, [r?.video_path]);
   if (!r) return null;
   const ingredientes = datos.ingredientes.filter((i) => i.receta_id === id).sort((a, b) => a.orden - b.orden);
   const urlFoto = r.foto_path ? fotos[r.foto_path] : null;
 
-  const ponerFoto = async (e) => {
-    const archivo = e.target.files?.[0];
-    e.target.value = '';
-    if (!archivo) return;
+  const prueba = almacen.motor.modo === 'prueba';
+  /** Guarda una foto de portada; `sacar` la prepara (de un archivo o de un fotograma del vídeo). */
+  const guardarPortada = async (sacar, aviso = 'Foto guardada') => {
     setSubiendo(true);
     try {
-      const prueba = almacen.motor.modo === 'prueba';
-      const blob = await reducirFoto(archivo, prueba ? 640 : 1280, prueba ? 0.7 : 0.8);
+      const blob = await sacar();
       const ruta = await almacen.motor.subirFoto(blob);
       const anterior = r.foto_path;
       await almacen.actualizar('recetas', id, { foto_path: ruta });
       if (anterior) almacen.motor.borrarFoto(anterior).catch(() => {});
-      mostrarAviso('Foto guardada');
+      mostrarAviso(aviso);
     } catch (err) {
       console.error(err);
       mostrarAviso(`No se pudo guardar la foto: ${err.message ?? err}`);
     }
     setSubiendo(false);
+  };
+  const ponerFoto = async (e) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = '';
+    if (archivo) await guardarPortada(() => reducirFoto(archivo, prueba ? 640 : 1280, prueba ? 0.7 : 0.8));
+  };
+  const portadaDelVideo = () => {
+    const v = reproductor.current;
+    if (!v?.videoWidth) return mostrarAviso('Dale al play y para el vídeo donde quieras la foto');
+    v.pause();
+    guardarPortada(() => fotoDeFotograma(v, prueba ? 640 : 1280, prueba ? 0.7 : 0.8), 'Portada cambiada');
+  };
+  const ponerVideo = async (e) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = '';
+    if (!archivo) return;
+    setVideo('Preparando el vídeo…');
+    try {
+      const { blob, comprimido } = await prepararVideo(archivo, (p) => setVideo(`Comprimiendo el vídeo… ${p} %`));
+      setVideo(`Guardando el vídeo (${megas(blob.size)})…`);
+      const ruta = await almacen.motor.subirVideo(blob);
+      const anterior = r.video_path;
+      await almacen.actualizar('recetas', id, { video_path: ruta });
+      if (anterior) almacen.motor.borrarVideo(anterior).catch(() => {});
+      // Sin foto todavía: se saca una del vídeo para la portada
+      if (!r.foto_path) {
+        setVideo('Sacando una foto para la portada…');
+        await guardarPortada(() => fotoDeVideo(archivo, 1.5, prueba ? 640 : 1280, prueba ? 0.7 : 0.8), 'Portada sacada del vídeo')
+          .catch(() => {});
+      }
+      mostrarAviso(comprimido
+        ? `Vídeo guardado: ${megas(blob.size)} (era de ${megas(archivo.size)})`
+        : `Vídeo guardado tal cual: ${megas(blob.size)}`);
+    } catch (err) {
+      console.error(err);
+      mostrarAviso(`No se pudo guardar el vídeo: ${err.message ?? err}`);
+    }
+    setVideo(null);
+  };
+  const quitarVideo = async () => {
+    const anterior = r.video_path;
+    await almacen.actualizar('recetas', id, { video_path: null });
+    almacen.motor.borrarVideo(anterior).catch(() => {});
   };
   const quitarFoto = async () => {
     const anterior = r.foto_path;
@@ -380,6 +439,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
     await almacen.borrar('plan', datos.plan.filter((p) => p.receta_id === id).map((p) => p.id));
     await almacen.borrar('recetas', id);
     if (r.foto_path) almacen.motor.borrarFoto(r.foto_path).catch(() => {});
+    if (r.video_path) almacen.motor.borrarVideo(r.video_path).catch(() => {});
     onCerrar();
   };
   return html`
@@ -400,7 +460,21 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
           ${r.favorita ? '★ Favorita' : '☆ Favorita'}</button>
         <button class="chip" onClick=${() => setAlPlan(true)}>+ Al plan</button>
         <button class="chip" onClick=${() => onEditar(id)}>Editar</button>
+        ${!r.video_path && !video && html`<button class="chip" onClick=${() => entradaVideo.current?.click()}>🎬 Añadir vídeo</button>`}
       </div>
+      <input ref=${entradaVideo} type="file" accept="video/*" hidden onChange=${ponerVideo} />
+      ${video && html`<p class="leyendo-captura" role="status">⏳ ${video}<br /><small>No cierres la app hasta que termine.</small></p>`}
+      ${r.video_path && html`
+        <div class="video-receta">
+          ${urlVideo
+            ? html`<video ref=${reproductor} src=${urlVideo} crossorigin="anonymous" controls playsinline preload="metadata"></video>`
+            : html`<p class="meta">${r.video_path.startsWith('local:') ? 'El vídeo de prueba se borra al cerrar la app.' : 'Cargando el vídeo…'}</p>`}
+          ${!video && html`<div class="acciones-foto">
+            <button class="chip" disabled=${subiendo || !urlVideo} onClick=${portadaDelVideo}>📸 Usar este momento de portada</button>
+            <button class="chip" onClick=${() => entradaVideo.current?.click()}>🎬 Cambiar vídeo</button>
+            <${BotonSeguro} texto="Quitar vídeo" pregunta="Toca otra vez para quitarlo" onClick=${quitarVideo} />
+          </div>`}
+        </div>`}
       <p class="meta">${[r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas, r.origen === 'ia' ? 'Propuesta por la IA' : ''].filter(Boolean).join(' · ')}</p>
       <div class="fila-campo"><label>Raciones</label><${Contador} valor=${raciones} onCambio=${setRaciones} /></div>
       <h3>Ingredientes</h3>
@@ -480,7 +554,7 @@ function ElegirIngredientes({ datos, elegidos, onElegir, onCerrar }) {
 const mayusculaInicial = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
 const UNIDAD_LARGA = { g: 'peso', ml: 'líquido', ud: 'unidades' };
 
-function EditarReceta({ almacen, datos, id, onCerrar }) {
+function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
   const original = id ? datos.recetas.find((r) => r.id === id) : null;
   const ingOriginales = id ? datos.ingredientes.filter((i) => i.receta_id === id).sort((a, b) => a.orden - b.orden) : [];
   const [f, setF] = useState({
@@ -494,6 +568,9 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
   const [elegir, setElegir] = useState(false);
   const [pegar, setPegar] = useState(null); // texto que se está pegando
   const [guardando, setGuardando] = useState(false);
+  const [leyendo, setLeyendo] = useState(null);       // texto del progreso al leer capturas
+  const [textoLeido, setTextoLeido] = useState('');
+  const entradaCaptura = useRef(null);
   const cambiarIng = (k, cambios) => setIngs((xs) => xs.map((x) => (x.clave === k ? { ...x, ...cambios } : x)));
   const elegidos = new Set(ings.map((i) => normalizar(i.nombre)));
 
@@ -509,6 +586,42 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
     setPegar(null);
     mostrarAviso(`${leidos.length} ingredientes añadidos. Revisa las cantidades.`);
   };
+
+  /** Lee una o varias capturas de la receta y rellena lo que encuentre (luego se revisa). */
+  const leerCapturas = async (ficheros) => {
+    if (!ficheros?.length) return;
+    setLeyendo('Leyendo la captura…');
+    try {
+      let texto = '';
+      for (let k = 0; k < ficheros.length; k++) {
+        const cual = ficheros.length > 1 ? `Leyendo captura ${k + 1} de ${ficheros.length}` : 'Leyendo la captura';
+        setLeyendo(`${cual}…`);
+        texto += `\n${await leerTextoDeImagen(ficheros[k], (p) => setLeyendo(`${cual}… ${p} %`))}`;
+      }
+      const r = entenderReceta(texto);
+      setTextoLeido(texto.trim());
+      setF((prev) => ({
+        ...prev,
+        nombre: prev.nombre.trim() || r.nombre,
+        raciones: r.raciones ?? prev.raciones,
+        tiempo_min: r.tiempo_min ?? prev.tiempo_min,
+        pasos: [prev.pasos.trim(), r.pasos.join('\n')].filter(Boolean).join('\n'),
+      }));
+      const leidos = entenderIngredientes(r.ingredientes.join('\n'), datos.articulos);
+      setIngs((xs) => [...xs, ...leidos
+        .filter((l, k) => !xs.some((x) => normalizar(x.nombre) === normalizar(l.nombre))
+          && leidos.findIndex((o) => normalizar(o.nombre) === normalizar(l.nombre)) === k)
+        .map((l) => ({ clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, nota: l.nota ?? '', categoria: l.categoria }))]);
+      mostrarAviso(r.nombre || leidos.length || r.pasos.length
+        ? `Leído: ${leidos.length} ingredientes y ${r.pasos.length} pasos. Revísalo antes de guardar.`
+        : 'No se ha entendido bien la captura. Abajo tienes el texto leído para copiarlo.');
+    } catch (err) {
+      console.error(err);
+      mostrarAviso(`No se pudo leer la captura: ${err.message ?? err}`);
+    }
+    setLeyendo(null);
+  };
+  useEffect(() => { if (capturas?.length) leerCapturas(capturas); }, []);
 
   const guardar = async () => {
     if (!f.nombre.trim()) return mostrarAviso('Ponle un nombre a la receta');
@@ -536,6 +649,16 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
 
   return html`
     <${Hoja} titulo=${id ? 'Editar receta' : 'Nueva receta'} onCerrar=${() => onCerrar(id)}>
+      <input ref=${entradaCaptura} type="file" accept="image/*" multiple hidden
+        onChange=${(e) => { const fs = [...(e.target.files ?? [])]; e.target.value = ''; leerCapturas(fs); }} />
+      ${leyendo
+        ? html`<p class="leyendo-captura" role="status">⏳ ${leyendo}<br /><small>La primera vez tarda un poco más.</small></p>`
+        : html`<button class="anadir" onClick=${() => entradaCaptura.current?.click()}>📷 Rellenar desde una captura</button>`}
+      ${textoLeido && html`<details class="texto-leido">
+        <summary>Ver el texto leído de la captura</summary>
+        <textarea rows="8" readonly value=${textoLeido}></textarea>
+        <small>Si falta algo, cópialo de aquí y pégalo donde toque.</small>
+      </details>`}
       <label>Nombre<input value=${f.nombre} onInput=${(e) => setF({ ...f, nombre: e.target.value })} /></label>
       <div class="dos">
         <label>Raciones<input inputmode="numeric" value=${f.raciones} onInput=${(e) => setF({ ...f, raciones: e.target.value })} /></label>
@@ -573,7 +696,7 @@ function EditarReceta({ almacen, datos, id, onCerrar }) {
         </div>`}
       <p class="meta">Sin cantidad también entran en la lista de la compra (menos sal, aceite y especias, que se controlan con la despensa).</p>
       <label>Preparación<textarea rows="6" value=${f.pasos} onInput=${(e) => setF({ ...f, pasos: e.target.value })}></textarea></label>
-      <button class="boton grande" disabled=${guardando} onClick=${guardar}>${guardando ? 'Guardando…' : 'Guardar'}</button>
+      <button class="boton grande" disabled=${guardando || !!leyendo} onClick=${guardar}>${guardando ? 'Guardando…' : 'Guardar'}</button>
       ${elegir && html`<${ElegirIngredientes} datos=${datos} elegidos=${elegidos} onElegir=${anadir} onCerrar=${() => setElegir(false)} />`}
     </${Hoja}>`;
 }
@@ -2607,6 +2730,13 @@ function cargarScript(src) {
   });
 }
 
+function brilloMedio(ctx, lienzo) {
+  const { data } = ctx.getImageData(0, 0, lienzo.width, lienzo.height);
+  let suma = 0, n = 0;
+  for (let i = 0; i < data.length; i += 4 * 37) { suma += data[i]; n++; }
+  return n ? suma / n : 255;
+}
+
 /** Lee el texto de una foto en el propio móvil (sin mandar la foto a nadie). */
 async function leerTextoDeImagen(fichero, onProgreso) {
   if (!window.Tesseract) await cargarScript(`${OCR}tesseract.min.js`);
@@ -2624,6 +2754,11 @@ async function leerTextoDeImagen(fichero, onProgreso) {
   const ctx = lienzo.getContext('2d');
   ctx.filter = 'grayscale(1) contrast(1.3)';
   ctx.drawImage(bmp, 0, 0, lienzo.width, lienzo.height);
+  // Capturas en modo oscuro (letra clara sobre fondo negro): se invierten, el lector lee mejor negro sobre blanco
+  if (brilloMedio(ctx, lienzo) < 110) {
+    ctx.filter = 'grayscale(1) invert(1) contrast(1.3)';
+    ctx.drawImage(bmp, 0, 0, lienzo.width, lienzo.height);
+  }
   const { data } = await lector.recognize(lienzo);
   return data.text;
 }
@@ -3001,6 +3136,7 @@ function App({ almacen, sesion }) {
   const [pestana, setPestana] = useState(() => { try { return localStorage.getItem('pestana') || 'lista'; } catch { return 'lista'; } });
   const [receta, setReceta] = useState(null); // { id, raciones }
   const [editando, setEditando] = useState(undefined); // undefined = cerrado, null = nueva, id = editar
+  const [capturas, setCapturas] = useState(null);      // capturas de una receta para leer al abrir el editor
   const [ajustes, setAjustes] = useState(false);
 
   useEffect(() => { setDatos(almacen.datos); return almacen.escuchar(setDatos); }, []);
@@ -3013,7 +3149,7 @@ function App({ almacen, sesion }) {
   const props = {
     almacen, datos, sesion,
     abrirReceta: (id, raciones) => setReceta({ id, raciones }),
-    editarReceta: (id) => setEditando(id),
+    editarReceta: (id, fotos = null) => { setCapturas(fotos); setEditando(id); },
   };
   return html`
     <header class="cabecera">
@@ -3037,8 +3173,8 @@ function App({ almacen, sesion }) {
     </nav>
     ${receta && html`<${VerReceta} ...${props} id=${receta.id} racionesIniciales=${receta.raciones}
       onCerrar=${() => setReceta(null)} onEditar=${(id) => { setReceta(null); setEditando(id); }} />`}
-    ${editando !== undefined && html`<${EditarReceta} ...${props} id=${editando}
-      onCerrar=${(id) => { setEditando(undefined); if (id) setReceta({ id }); }} />`}
+    ${editando !== undefined && html`<${EditarReceta} ...${props} id=${editando} capturas=${capturas}
+      onCerrar=${(id) => { setEditando(undefined); setCapturas(null); if (id) setReceta({ id }); }} />`}
     ${ajustes && html`<${PantallaAjustes} almacen=${almacen} sesion=${sesion} onCerrar=${() => setAjustes(false)} />`}
     <${Aviso} />`;
 }
