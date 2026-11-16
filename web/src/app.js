@@ -1703,6 +1703,36 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
 
   const alCarro = () => onCarro(fila, { producto, envases, precioEnvase: Number.isFinite(precioNum) ? precioNum : null });
 
+  /** Foto del código de barras: busca ese producto en este súper y lo deja elegido para la próxima vez. */
+  const [leyendo, setLeyendo] = useState(false);
+  const porFoto = async (fichero) => {
+    if (!sesion || sesion.hogarId === 'demo') { mostrarAviso('En la versión de prueba la cámara no busca productos.'); return; }
+    setLeyendo(true);
+    try {
+      const ean = await leerCodigoDeBarras(fichero);
+      if (!ean) { mostrarAviso('No veo el código de barras. Probad otra foto o elegidlo de la lista.'); return; }
+      const r = await preguntarPorCodigo(sesion, ean);
+      const deEste = [...(r.conocidos ?? []), ...(Array.isArray(r.parecidos?.[s]) && r.exacto === s ? r.parecidos[s] : [])]
+        .find((p) => p.supermercado_id === s);
+      if (!deEste) {
+        mostrarAviso(`No encuentro ese código en ${nombreSuper(s)}. Elegidlo de la lista.`);
+        setCambiar(s);
+        return;
+      }
+      const enlaces = datos.equivalencias.filter((e) => e.articulo_id === item.articulo_id
+        && catalogo.productos.get(e.producto_id)?.supermercado_id === s);
+      if (enlaces.length) await almacen.borrar('equivalencias', enlaces.map((e) => e.id));
+      await almacen.insertar('equivalencias', { articulo_id: item.articulo_id, producto_id: deEste.id, auto: false });
+      await catalogo.cargar([deEste.id]);
+      mostrarAviso(`Guardado: ${item.nombre} en ${nombreSuper(s)} es ${deEste.nombre}`);
+    } catch (e) {
+      console.error(e);
+      mostrarAviso(`No se pudo leer: ${e.message ?? e}`);
+    } finally {
+      setLeyendo(false);
+    }
+  };
+
   return html`<${Hoja} titulo=${a?.nombre ?? ''} onCerrar=${onCerrar}>
     ${compra && html`
       <div class="en-este">
@@ -1714,7 +1744,8 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
           : html`<p class="nota">Aún no sabemos qué producto es en ${nombreSuper(s)}. Elegidlo o hacedle una foto y quedará guardado.</p>`}
         <div class="acciones">
           <button class="chip" onClick=${() => setCambiar(s)}>${producto ? '¿Es otro? Elegir' : 'Elegir el producto'}</button>
-          <button class="chip" onClick=${() => mostrarAviso('En la versión real se abre la cámara y se lee el código de barras.')}>📷 Hacerle una foto</button>
+          <label class="chip foto-chip">${leyendo ? 'Leyendo…' : '📷 Hacerle una foto'}
+            <input type="file" accept="image/*" capture="environment" hidden onChange=${(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) porFoto(f); }} /></label>
         </div>
         <div class="dos">
           <label>Cuántos cogéis<${Contador} valor=${envases} onCambio=${setEnvases} /></label>

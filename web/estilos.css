@@ -480,3 +480,4 @@ li.hecho { opacity: 0.8; }
 .comparar-ficha li.mejor b { color: var(--verde); }
 .comparar-ficha .cant small { color: var(--suave); font-size: 0.78rem; }
 .en-este .dos label { margin-top: 0; }
+.foto-chip { display: inline-flex; align-items: center; cursor: pointer; margin: 0; font-weight: 400; }
