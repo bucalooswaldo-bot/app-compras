@@ -167,3 +167,30 @@ test('el aviso como un solo valor: sin aviso, cuando no quede, al quedar X', () 
   assert.deepEqual(camposAviso(0), { minimo: 0, avisar_agotado: true });
   assert.deepEqual(camposAviso(3), { minimo: 3, avisar_agotado: false });
 });
+
+test('¿Tengo todo para…?: separa lo que hay, lo apuntado y lo que falta', async () => {
+  const { tengoTodo } = await import('../web/src/logica.js');
+  const d = base();
+  d.despensa.push({ id: 'd1', articulo_id: 'arroz', cantidad: 500, minimo: 0 });
+  d.despensa.push({ id: 'd2', articulo_id: 'huevos', cantidad: 1, minimo: 0 });
+  // 4 raciones -> 2 en la receta original (320 g de arroz, 4 huevos) -> a 2 raciones: 160 g, 2 huevos
+  let r = tengoTodo(d, 'r1', 2);
+  const de = (id) => r.find((x) => x.articulo_id === id);
+  assert.equal(de('arroz').estado, 'hay');
+  assert.equal(de('huevos').estado, 'falta');
+  assert.equal(de('huevos').falta, 1);
+  assert.equal(de('aceite').estado, 'basico'); // sin cantidad y básico: se da por hecho
+  assert.equal(r[0].articulo_id, 'huevos'); // lo que falta va primero
+  // Si ya está apuntado en la lista, no se pide otra vez
+  d.lista.push({ id: 'l1', articulo_id: 'huevos', cantidad: 6, origen: 'manual', comprado: false });
+  r = tengoTodo(d, 'r1', 2);
+  assert.equal(r.find((x) => x.articulo_id === 'huevos').estado, 'en_lista');
+});
+
+test('pendienteHoy: solo lo apartado para hoy y sin comprar', async () => {
+  const { pendienteHoy } = await import('../web/src/logica.js');
+  assert.equal(pendienteHoy({ para_hoy: true, comprado: false }), true);
+  assert.equal(pendienteHoy({ para_hoy: true, comprado: true }), false);
+  assert.equal(pendienteHoy({ para_hoy: false, comprado: false }), false);
+  assert.equal(pendienteHoy({ comprado: false }), false);
+});

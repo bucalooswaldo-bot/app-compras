@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -1204,31 +1204,70 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
 const PLAZOS = [[3, '3 días'], [7, '1 semana'], [14, '2 semanas']];
 const leerPlazo = () => { try { return Number(localStorage.getItem('plazo-lista')) || 7; } catch { return 7; } };
 
+const leerVista = () => { try { return localStorage.getItem('vista-lista'); } catch { return null; } };
+
+/** Lo que se pasa a "¿Dónde sale más barato?" y al precio de hoy. */
+const itemsComparar = (datos, filas) => filas.map((f) => {
+  const a = articulo(datos, f.articulo_id);
+  return { clave: f.clave, articulo_id: f.articulo_id, nombre: a?.nombre ?? '¿?', unidad: a?.unidad ?? 'ud',
+    cantidad: f.cantidad ?? null, detalle: f.marca ?? null };
+});
+
 function PantallaLista({ almacen, datos, sesion }) {
   const hoy = fechaISO();
   const [plazo, setPlazo] = useState(leerPlazo());
   const [texto, setTexto] = useState('');
   const [editar, setEditar] = useState(null);
-  const [comparar, setComparar] = useState(false);
+  const [comparar, setComparar] = useState(null); // filas que se comparan
+  const [tengo, setTengo] = useState(false);
+  const [ficha, setFicha] = useState(null);
+  const [compra, setCompraEstado] = useState(leerCompra);
+  const setCompra = (c) => { setCompraEstado(c); guardarCompra(c); };
+  const [elegirSuper, setElegirSuper] = useState(false);
+  const [pagando, setPagando] = useState(false);
   const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
-  const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
+  const hasta = sumarDias(hoy, plazo - 1);
+  const auto = faltas(datos, hoy, hasta);
   const manual = datos.lista.filter(pendienteManual);
   const descartes = datos.lista.filter((l) => descarteVigente(l, hoy));
   const caducados = datos.lista.filter((l) => esDescarte(l) && !descarteVigente(l, hoy)).map((l) => l.id).join(',');
   // Los "hoy no" de otros días ya no valen: se borran.
   useEffect(() => { if (caducados) almacen.borrar('lista', caducados.split(',')); }, [caducados]);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
-  const tachados = comprado.map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
-  const pendientes = [
-    ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
-    ...manual.map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
-  ];
 
-  const enListaIds = new Set([...pendientes.map((f) => f.articulo_id), ...descartes.map((l) => l.articulo_id)]);
+  // Para qué receta hace falta cada cosa (también lo que ya se pasó a "Para hoy").
+  const motivos = useMemo(() => new Map(faltas({ ...datos, lista: datos.lista.filter((l) => !l.para_hoy) }, hoy, hasta)
+    .map((f) => [f.articulo_id, f])), [datos, hoy, hasta]);
+
+  const filasHoy = manual.filter((l) => l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id }));
+  const filasLuego = [
+    ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
+    ...manual.filter((l) => !l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
+  ];
+  const [vista, setVista] = useState(() => leerVista() ?? (filasHoy.length ? 'hoy' : 'luego'));
+  const elegirVista = (v) => { setVista(v); try { localStorage.setItem('vista-lista', v); } catch { /* nada */ } };
+  const enHoy = vista === 'hoy';
+  const catalogo = useCatalogo(datos, sesion, [...filasHoy, ...filasLuego].map((f) => f.articulo_id));
+  const comprando = enHoy && compra;
+  const carro = datos.lista.filter((l) => l.comprado && l.por_pagar);
+  const pendientes = enHoy ? filasHoy : filasLuego;
+  const tachados = comprado.filter((l) => !!l.para_hoy === enHoy).map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
+
+  const enListaIds = new Set([...filasHoy, ...filasLuego].map((f) => f.articulo_id).concat(descartes.map((l) => l.articulo_id)));
   const sugeridas = sugerirCompra(datos, enListaIds);
   const hoyNo = (f) => almacen.insertar('lista', { articulo_id: f.articulo_id, cantidad: null, origen: 'auto', comprado: false,
     creado_en: new Date().toISOString() });
-  const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
+  const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false,
+    para_hoy: enHoy });
+
+  /** Pasa cosas a "Para hoy". Lo que sale de las recetas se apunta con lo que falta en ese momento. */
+  const aHoy = async (filas) => {
+    const nuevas = filas.filter((f) => f.tipo === 'auto').map((f) => ({ articulo_id: f.articulo_id, cantidad: f.cantidad,
+      marca: null, origen: 'manual', comprado: false, para_hoy: true }));
+    if (nuevas.length) await almacen.insertar('lista', nuevas);
+    for (const f of filas.filter((x) => x.tipo === 'manual')) await almacen.actualizar('lista', f.id, { para_hoy: true });
+  };
+  const aLuego = (f) => almacen.actualizar('lista', f.id, { para_hoy: false });
 
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
@@ -1239,17 +1278,17 @@ function PantallaLista({ almacen, datos, sesion }) {
     // "Necesito aceite, sal, tomate triturado y 2 kilos de papas" -> cinco cosas
     const cosas = entenderDictado(frase, datos.articulos, marcasConocidas());
     if (!cosas.length) return;
-    const nombres = await anadirCosas(cosas);
+    const nombres = await anadirCosas(cosas, enHoy);
     setTexto('');
     if (cosas.length > 1) mostrarAviso(`Añadido: ${nombres.join(', ')}`);
   };
 
-  const anadirCosas = async (cosas) => {
+  const anadirCosas = async (cosas, paraHoy = false) => {
     const nombres = [];
     for (const c of cosas) {
       const a = c.articulo ?? await obtenerArticulo(almacen, c.nombre, unidadNueva(c), 'Otros');
       await almacen.insertar('lista', { articulo_id: a.id, cantidad: cantidadParaArticulo(c, a.unidad),
-        marca: c.detalle, origen: 'manual', comprado: false });
+        marca: c.detalle, origen: 'manual', comprado: false, para_hoy: paraHoy });
       nombres.push(c.detalle ? `${a.nombre} (${c.detalle})` : a.nombre);
     }
     return nombres;
@@ -1263,7 +1302,7 @@ function PantallaLista({ almacen, datos, sesion }) {
       const a = articulo(datos, l.articulo_id);
       const cosas = entenderDictado(a.nombre, almacen.datos.articulos, marcasConocidas());
       if (!cosas.length) continue;
-      nombres.push(...await anadirCosas(cosas));
+      nombres.push(...await anadirCosas(cosas, !!l.para_hoy));
       const enUso = almacen.datos.despensa.some((x) => x.articulo_id === a.id)
         || almacen.datos.ingredientes.some((x) => x.articulo_id === a.id);
       if (enUso) await almacen.borrar('lista', l.id);
@@ -1285,19 +1324,81 @@ function PantallaLista({ almacen, datos, sesion }) {
     if (cantidad) await almacen.sumarDespensa(f.articulo_id, cantidad);
   };
 
+  /** En el súper: al carro con su producto, cantidad y precio (a la despensa al pagar). */
+  const alCarro = async (f, elegido) => {
+    const a = articulo(datos, f.articulo_id);
+    const item = itemsComparar(datos, [f])[0];
+    const o = elegido ?? (() => { const x = opcionEn(datos, catalogo, item, compra.super); return x ? { producto: x.producto, envases: x.envases, precioEnvase: x.producto.precio } : {}; })();
+    const envases = o.envases ?? 1;
+    await almacen.actualizar('lista', f.id, {
+      comprado: true, comprado_en: new Date().toISOString(), por_pagar: true, super_id: compra.super,
+      producto_id: o.producto?.id ?? null, envases,
+      precio: o.precioEnvase != null ? redondear(o.precioEnvase * envases) : null,
+      cantidad: cantidadDeEnvases(a, o.producto, envases, f.cantidad),
+    });
+    setFicha(null);
+  };
+
   const deshacer = async (l) => {
+    if (l.por_pagar) {
+      await almacen.actualizar('lista', l.id, { comprado: false, comprado_en: null, por_pagar: false, super_id: null,
+        producto_id: null, envases: null, precio: null });
+      return;
+    }
     if (l.cantidad) await almacen.sumarDespensa(l.articulo_id, -l.cantidad);
     if (l.origen === 'auto') await almacen.borrar('lista', l.id);
     else await almacen.actualizar('lista', l.id, { comprado: false, comprado_en: null });
   };
 
-  const vaciarComprado = () => almacen.borrar('lista', [...comprado, ...descartes].map((l) => l.id));
+  const vaciarComprado = () => almacen.borrar('lista', [...comprado.filter((l) => !l.por_pagar), ...descartes].map((l) => l.id));
+  const precioEn = (f) => (comprando && catalogo ? opcionEn(datos, catalogo, itemsComparar(datos, [f])[0], compra.super) : null);
+
+  const motivoDe = (f) => {
+    if (f.tipo === 'auto') return [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
+    const m = motivos.get(f.articulo_id);
+    const porque = m ? [m.recetas.length && m.recetas.join(', '), m.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ') : '';
+    return porque || 'a mano';
+  };
+
+  const fila = (f) => {
+    const a = articulo(datos, f.articulo_id);
+    if (f.tipo === 'comprado') {
+      return html`<li key=${f.clave} class="hecho">
+        <button class="marcar marcado" aria-label=${`Desmarcar: ${a?.nombre}`} onClick=${() => deshacer(f)}>✓</button>
+        <button class="enlace nombre" onClick=${() => (f.por_pagar ? setFicha(f) : setEditar(f))}>
+          <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${f.por_pagar
+            ? `en el carro${f.envases > 1 ? ` · ${f.envases} ×` : ''}` : 'en el carro · toca ✓ para desmarcar'}</small>
+        </button>
+        <span class="cant">${f.por_pagar && f.precio != null ? euros(f.precio) : f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
+      </li>`;
+    }
+    const o = precioEn(f);
+    return html`<li key=${f.clave}>
+      <button class="marcar" aria-label=${`Comprado: ${a?.nombre}`} onClick=${() => (comprando ? alCarro(f) : comprar(f))}></button>
+      <button class="enlace nombre" onClick=${() => setFicha(f)}>
+        ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${comprando ? (o ? o.producto.nombre : 'toca para elegir el producto') : motivoDe(f)}</small>
+      </button>
+      <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}${o && html`<b class="precio-fila">${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>`}</span>
+      ${comprando ? null : enHoy
+        ? html`<button class="mover" aria-label=${`Dejar para otro día: ${a?.nombre}`} onClick=${() => aLuego(f)}>Otro día</button>`
+        : html`<button class="mover hoy" aria-label=${`Pasar a hoy: ${a?.nombre}`} onClick=${() => aHoy([f])}>Hoy</button>
+          ${f.tipo === 'manual'
+            ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
+            : html`<button class="icono peq" aria-label=${`No hace falta hoy: ${a?.nombre}`} onClick=${() => hoyNo(f)}>✕</button>`}`}
+    </li>`;
+  };
 
   return html`
     <section>
+      <div class="partes" role="tablist">
+        <button role="tab" aria-selected=${enHoy} class=${enHoy ? 'activa' : ''} onClick=${() => elegirVista('hoy')}>
+          🛒 Compra de hoy${filasHoy.length > 0 && html` <b>${filasHoy.length}</b>`}</button>
+        <button role="tab" aria-selected=${!enHoy} class=${!enHoy ? 'activa' : ''} onClick=${() => elegirVista('luego')}>
+          📝 Falta en casa${filasLuego.length > 0 && html` <b>${filasLuego.length}</b>`}</button>
+      </div>
       <form class="fila-campo" onSubmit=${anadir}>
         <datalist id="articulos-compra">${datos.articulos.map((a) => html`<option value=${a.nombre} />`)}</datalist>
-        <input list="articulos-compra" placeholder="Añadir (o dictar: leche, 2 kg de papas…)" value=${texto}
+        <input list="articulos-compra" placeholder=${enHoy ? 'Añadir para hoy (o dictar)' : 'Añadir (o dictar: leche, 2 kg de papas…)'} value=${texto}
           onInput=${(e) => setTexto(e.target.value)} />
         <${BotonDictar} onTexto=${(t) => setTexto((x) => (x ? `${x}, ${t}` : t))} />
         <button class="boton" type="submit">Añadir</button>
@@ -1306,43 +1407,41 @@ function PantallaLista({ almacen, datos, sesion }) {
         <span>${juntas.length === 1 ? 'Hay una línea con varias cosas juntas.' : `Hay ${juntas.length} líneas con varias cosas juntas.`}</span>
         <button class="boton" onClick=${separar}>Separarlas</button></div>`}
       ${previa.length > 1 && html`<p class="previa">Se añadirán ${previa.length}: ${previa.map((c) => c.detalle ? `${c.nombre} (${c.detalle})` : c.nombre).join(' · ')}</p>`}
-      ${pendientes.length > 0 && html`<button class="boton grande comparar" onClick=${() => setComparar(true)}>💶 ¿Dónde sale más barato?</button>`}
-      <div class="chips">
-        <span class="chips-label">Recetas de:</span>
-        ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
-      </div>
-      ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
-      ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
-        <p><small>La lista se llena sola con las recetas del plan y con lo que baje del mínimo en la despensa.</small></p></div>`}
+      <button class="boton secundario tengo" onClick=${() => setTengo(true)}>🍳 ¿Tengo todo para…?</button>
+
+      ${enHoy ? html`
+        ${compra ? html`<div class="en-super">
+            <span>🛒 Comprando en <b>${nombreSuper(compra.super)}</b><small>Tocad cada cosa para ver su foto, cuántas y el precio.</small></span>
+            <button class="chip" onClick=${() => setElegirSuper(true)}>Cambiar</button>
+          </div>`
+          : pendientes.length > 0 && html`
+          <${PrecioHoy} datos=${datos} sesion=${sesion} items=${itemsComparar(datos, pendientes)} onDetalle=${() => setComparar(pendientes)} />
+          <button class="boton grande empezar" onClick=${() => setElegirSuper(true)}>🛒 Empezar la compra</button>`}
+        ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
+        ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio">
+          <p>Aún no hay nada en la compra de hoy.</p>
+          <p><small>En «Falta en casa» toca <b>Hoy</b> en lo que vayáis a comprar ahora, o usa «¿Tengo todo para…?» con una receta.</small></p>
+          ${filasLuego.length > 0 && html`<button class="boton" onClick=${() => elegirVista('luego')}>Ver lo que falta (${filasLuego.length})</button>`}
+        </div>`}
+      ` : html`
+        <div class="chips">
+          <span class="chips-label">Recetas de:</span>
+          ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
+        </div>
+        ${pendientes.length > 1 && html`<div class="todo-hoy">
+          <button class="chip" onClick=${async () => { await aHoy(pendientes); mostrarAviso('Todo pasado a la compra de hoy'); elegirVista('hoy'); }}>Todo a la compra de hoy</button>
+          <button class="chip" onClick=${() => setComparar(pendientes)}>💶 Comparar precios</button>
+        </div>`}
+        ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
+          <p><small>Esta lista se llena sola con las recetas del plan y con lo que baje del aviso en la despensa.</small></p></div>`}
+      `}
+
       ${agruparPorCategoria([...pendientes, ...tachados], datos.articulos).map(([cat, grupo]) => html`
         <h3 class="categoria">${cat}</h3>
         <ul class="filas compra">
-          ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map((f) => {
-            const a = articulo(datos, f.articulo_id);
-            if (f.tipo === 'comprado') {
-              return html`<li key=${f.clave} class="hecho">
-                <button class="marcar marcado" aria-label=${`Desmarcar: ${a?.nombre}`} onClick=${() => deshacer(f)}>✓</button>
-                <button class="enlace nombre" onClick=${() => setEditar(f)}>
-                  <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>en el carro · toca ✓ para desmarcar</small>
-                </button>
-                <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
-              </li>`;
-            }
-            const motivo = f.tipo === 'manual' ? 'a mano'
-              : [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
-            return html`<li key=${f.clave}>
-              <button class="marcar" aria-label=${`Comprado: ${a?.nombre}`} onClick=${() => comprar(f)}></button>
-              <button class="enlace nombre" onClick=${() => f.tipo === 'manual' && setEditar(f)}>
-                ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${motivo}</small>
-              </button>
-              <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
-              ${f.tipo === 'manual'
-                ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
-                : html`<button class="icono peq" aria-label=${`Hoy no: ${a?.nombre}`} onClick=${() => hoyNo(f)}>✕</button>`}
-            </li>`;
-          })}
+          ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map(fila)}
         </ul>`)}
-      ${descartes.length > 0 && html`
+      ${!enHoy && descartes.length > 0 && html`
         <div class="quitado">
           <p class="meta">Quitado de la lista de hoy (toca para volver a ponerlo):</p>
           <div class="acciones">
@@ -1356,19 +1455,408 @@ function PantallaLista({ almacen, datos, sesion }) {
             ${sugeridas.map((id) => html`<button class="chip" onClick=${() => apuntar(id)}>+ ${nombreArticulo(datos, id)}</button>`)}
           </div>
         </div>`}
-      ${comprado.length > 0 && html`
+      ${comprando && html`<div class="barra-pagar">
+        ${carro.length > 0
+          ? html`<button class="boton grande" onClick=${() => setPagando(true)}>Ya hemos pagado · ${carro.length} ${carro.length === 1 ? 'cosa' : 'cosas'} · ${euros(redondear(carro.reduce((t, l) => t + (l.precio ?? 0), 0)))}</button>`
+          : html`<p class="meta">Marcad el círculo de lo que vayáis cogiendo.</p>`}
+        <button class="enlace" onClick=${() => setCompra(null)}>Salir del modo compra</button>
+      </div>`}
+      ${comprado.filter((l) => !l.por_pagar).length > 0 && !comprando && html`
         <div class="terminar">
           <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
           <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Quitar lo tachado? Toca otra vez" onClick=${vaciarComprado} />
         </div>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
-      ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(false)}
-        items=${pendientes.map((f) => {
-          const a = articulo(datos, f.articulo_id);
-          return { clave: f.clave, articulo_id: f.articulo_id, nombre: a?.nombre ?? '¿?', unidad: a?.unidad ?? 'ud',
-            cantidad: f.cantidad ?? null, detalle: f.marca ?? null };
-        })} />`}
+      ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(null)}
+        items=${itemsComparar(datos, comparar)} />`}
+      ${ficha && html`<${FichaLista} almacen=${almacen} datos=${datos} sesion=${sesion} catalogo=${catalogo} fila=${ficha}
+        compra=${comprando ? compra : null} onCerrar=${() => setFicha(null)} onCarro=${alCarro} onHoy=${(f) => aHoy([f])} />`}
+      ${elegirSuper && html`<${ElegirSuper} datos=${datos} catalogo=${catalogo} items=${itemsComparar(datos, filasHoy)} actual=${compra?.super}
+        onCerrar=${() => setElegirSuper(false)} onElegir=${(su) => { setCompra({ super: su, desde: new Date().toISOString() }); setElegirSuper(false); }} />`}
+      ${pagando && html`<${Pagar} almacen=${almacen} datos=${datos} sesion=${sesion} catalogo=${catalogo} compra=${compra} carro=${carro}
+        onCerrar=${() => setPagando(false)} onListo=${() => { setPagando(false); setCompra(null); }} />`}
+      ${tengo && html`<${TengoTodo} almacen=${almacen} datos=${datos} onCerrar=${() => setTengo(false)}
+        onListo=${() => { setTengo(false); elegirVista('hoy'); }} />`}
     </section>`;
+}
+
+/**
+ * Cuánto sale lo de "Para hoy" en Mercadona y en HiperDino, con los productos ya enlazados
+ * (no busca en las webs: eso lo hace "Ver detalle"). Respeta lo que no os gusta.
+ */
+let lidlCargado = false;
+/** Catálogo de precios con los productos enlazados a estos artículos (y los de Lidl) ya cargados. */
+function useCatalogo(datos, sesion, articuloIds) {
+  const [, setCargado] = useState(0);
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+  const ids = datos.equivalencias.filter((e) => articuloIds.includes(e.articulo_id)).map((e) => e.producto_id);
+  const clave = [...new Set(ids)].sort().join(',');
+  useEffect(() => {
+    if (!catalogo || !clave) return;
+    let vivo = true;
+    catalogo.cargar(clave.split(',')).then(() => vivo && setCargado((n) => n + 1)).catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, [clave]);
+  // Lidl: sus precios salen de vuestros tiques (no vende comida en su web).
+  useEffect(() => {
+    if (!catalogo) return;
+    let vivo = true;
+    const listo = () => vivo && setCargado((n) => n + 1);
+    if (lidlCargado) listo();
+    else catalogo.cargarLidl().then(() => { lidlCargado = true; listo(); }).catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, []);
+  return catalogo;
+}
+
+/** Lo que costaría una cosa de la lista en un súper (el producto elegido o el más barato que encaja). */
+function opcionEn(datos, catalogo, item, s) {
+  if (!catalogo) return null;
+  const linea = calcularCesta([{ ...item, candidatos: { [s]: candidatosDe(datos, catalogo, item, s) } }], [s]).lineas[0];
+  return linea.porSuper[s] ?? null;
+}
+
+/** Cuánto entra en la despensa al coger `envases` de un producto. */
+function cantidadDeEnvases(articulo, producto, envases, porDefecto) {
+  if (producto?.cantidad > 0 && producto.unidad === articulo?.unidad) return redondear(producto.cantidad * envases, 3);
+  if (articulo?.unidad === 'ud') return envases;
+  return porDefecto ?? null;
+}
+
+function PrecioHoy({ datos, sesion, items, onDetalle }) {
+  const catalogo = useCatalogo(datos, sesion, items.map((i) => i.articulo_id));
+  if (!catalogo) return null;
+
+  const conCandidatos = items.map((item) => ({
+    ...item,
+    candidatos: Object.fromEntries(SUPERS.map(([s]) => [s, candidatosDe(datos, catalogo, item, s)])),
+  }));
+  // Lidl entra en la cuenta solo si tiene precio de todo lo que se compara; si no, se compararía menos cosas.
+  const sinLidl = calcularCesta(conCandidatos, SUPERS_WEB);
+  const conLidl = calcularCesta(conCandidatos, SUPERS.map(([s]) => s));
+  const cesta = conLidl.activos.includes('lidl') && conLidl.comunes >= sinLidl.comunes ? conLidl : sinLidl;
+  const nLidl = conLidl.lineas.filter((l) => l.porSuper.lidl).length;
+  const cajaLidl = !cesta.activos.includes('lidl') && html`<span class="ph-futuro">
+    <small>Lidl</small><b>${nLidl ? `${nLidl} de ${items.length}` : '–'}</b>
+    <small>${nLidl ? 'precios de tiques' : 'con vuestros tiques'}</small></span>`;
+  const r = cesta.recomendacion;
+  if (r.tipo === 'sin_datos') {
+    return html`<button class="precio-hoy vacio-precio" onClick=${onDetalle}>
+      <span>💶 ¿Cuánto sale lo de hoy?</span><small>Aún no hay precios para esto. Toca para buscarlos.</small></button>`;
+  }
+  const orden = [...cesta.activos].sort((a, b) => cesta.totales[a] - cesta.totales[b]);
+  return html`<button class="precio-hoy" onClick=${onDetalle}>
+    <span class="ph-titulo">Lo de hoy, aproximado</span>
+    <span class="ph-supers">
+      ${orden.map((s, i) => html`<span class=${i === 0 && orden.length > 1 && cesta.totales[s] < cesta.totales[orden[1]] ? 'ph-mejor' : ''}>
+        <small>${nombreSuper(s)}</small><b>${euros(cesta.totales[s])}</b></span>`)}
+      ${cajaLidl}
+    </span>
+    <span class="ph-veredicto">${r.tipo === 'repartir'
+      ? `Repartiendo entre los dos ahorras ${euros(cesta.ahorro)}`
+      : orden.length > 1 && cesta.totales[orden[0]] === cesta.totales[orden[1]] ? 'Sale igual en los dos'
+      : orden.length > 1 ? `Más barato en ${nombreSuper(r.supermercado)}${r.diferencia > 0 ? `: ${euros(r.diferencia)} menos` : ''}`
+        : `Solo hay precios de ${nombreSuper(r.supermercado)}`}</span>
+    <small>Con precio ${cesta.comunes} de ${items.length} cosas · Ver detalle ›</small>
+  </button>`;
+}
+
+/** "¿Tengo todo para…?": elegir receta y ver qué hay en casa y qué falta. */
+function TengoTodo({ almacen, datos, onCerrar, onListo }) {
+  const hoy = fechaISO();
+  const [receta, setReceta] = useState(null);
+  const [raciones, setRaciones] = useState(2);
+  const [buscar, setBuscar] = useState('');
+  const delPlan = [...new Map(datos.plan
+    .filter((c) => !c.cocinado && c.fecha >= hoy && c.fecha <= sumarDias(hoy, 7))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map((c) => [c.receta_id, c])).values()]
+    .map((c) => ({ comida: c, receta: datos.recetas.find((r) => r.id === c.receta_id) }))
+    .filter((x) => x.receta);
+  const lista = datos.recetas
+    .filter((r) => normalizar(r.nombre).includes(normalizar(buscar)))
+    .sort((a, b) => (b.favorita - a.favorita) || a.nombre.localeCompare(b.nombre, 'es'));
+  const fotos = useFotos(almacen, (receta ? [] : [...delPlan.map((x) => x.receta), ...lista]).map((r) => r.foto_path));
+  const elegir = (r, n) => { setReceta(r); setRaciones(n ?? leerRaciones() ?? r.raciones ?? 2); };
+
+  if (!receta) {
+    const tarjeta = (r, extra, n) => html`<li><button class="tarjeta con-foto" onClick=${() => elegir(r, n)}>
+      <${Miniatura} receta=${r} url=${r.foto_path ? fotos[r.foto_path] : null} />
+      <span class="texto-tarjeta"><strong>${r.favorita ? '★ ' : ''}${r.nombre}</strong><small>${extra}</small></span>
+    </button></li>`;
+    return html`<${Hoja} titulo="¿Tengo todo para…?" onCerrar=${onCerrar}>
+      ${delPlan.length > 0 && !buscar && html`<h3>Del plan de estos días</h3>
+        <ul class="lista-recetas">${delPlan.map(({ comida, receta: r }) => tarjeta(r,
+          `${nombreDia(comida.fecha, hoy)} · ${nombreMomento(comida.momento)} · ${comida.raciones} raciones`, comida.raciones))}</ul>
+        <h3>Otra receta</h3>`}
+      <input type="search" placeholder="Buscar receta" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
+      ${lista.length === 0 && html`<p class="vacio">No hay recetas con ese nombre.</p>`}
+      <ul class="lista-recetas">${lista.map((r) => tarjeta(r, [r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas].filter(Boolean).join(' · ')))}</ul>
+    </${Hoja}>`;
+  }
+
+  const filas = tengoTodo(datos, receta.id, raciones);
+  const faltan = filas.filter((f) => f.estado === 'falta');
+  const enLista = filas.filter((f) => f.estado === 'en_lista');
+  const listaLuego = (f) => datos.lista.filter((l) => pendienteManual(l) && !l.para_hoy && l.articulo_id === f.articulo_id);
+  const porMover = enLista.flatMap(listaLuego);
+  const anadir = async () => {
+    if (faltan.length) {
+      await almacen.insertar('lista', faltan.map((f) => ({ articulo_id: f.articulo_id, cantidad: f.falta, marca: null,
+        origen: 'manual', comprado: false, para_hoy: true })));
+    }
+    for (const l of porMover) await almacen.actualizar('lista', l.id, { para_hoy: true });
+    const n = faltan.length + porMover.length;
+    mostrarAviso(`${n === 1 ? 'Pasada 1 cosa' : `Pasadas ${n} cosas`} a la compra de hoy`);
+    onListo();
+  };
+  const icono = { hay: '✅', basico: '🧂', en_lista: '📝', falta: '❌' };
+  const texto = (f) => {
+    const cuanto = (n) => formatoCantidad(n, f.unidad);
+    if (f.estado === 'hay') return f.necesita != null ? `Hace falta ${cuanto(f.necesita)} · en casa ${cuanto(f.hay)}` : `En casa ${cuanto(f.hay)}`;
+    if (f.estado === 'basico') return 'Se da por hecho que hay';
+    const falta = f.falta != null ? `Falta ${cuanto(f.falta)}` : 'No hay en casa';
+    return f.estado === 'en_lista' ? `${falta} · ya está en la lista` : `${falta}${f.hay > 0 ? ` (hay ${cuanto(f.hay)})` : ''}`;
+  };
+  return html`<${Hoja} titulo=${receta.nombre} onCerrar=${onCerrar}>
+    <button class="enlace" onClick=${() => setReceta(null)}>‹ Otra receta</button>
+    <div class="fila-campo"><label>Raciones</label><${Contador} valor=${raciones} onCambio=${setRaciones} /></div>
+    <div class="veredicto ${faltan.length ? 'falta' : ''}">
+      <b>${faltan.length === 0 ? (enLista.length ? 'Lo que falta ya está en la lista' : 'Tenéis todo 🎉')
+        : faltan.length === 1 ? 'Falta 1 cosa' : `Faltan ${faltan.length} cosas`}</b>
+    </div>
+    <ul class="filas tengo-todo">
+      ${filas.map((f) => html`<li class=${`tt-${f.estado}`}>
+        <span class="tt-ico" aria-hidden="true">${icono[f.estado]}</span>
+        <span class="nombre">${f.nombre}<small>${texto(f)}</small></span>
+      </li>`)}
+    </ul>
+    ${(faltan.length > 0 || porMover.length > 0) && html`<button class="boton grande" onClick=${anadir}>
+      Añadir lo que falta a la compra de hoy (${faltan.length + porMover.length})</button>`}
+    <p class="meta">Mira la despensa tal como está ahora; no descuenta otras comidas del plan.</p>
+  </${Hoja}>`;
+}
+
+// ---------------------------------------------------------------------------
+// En el súper: elegir súper, ficha de cada cosa, al carro y «Ya hemos pagado»
+// ---------------------------------------------------------------------------
+const leerCompra = () => { try { return JSON.parse(localStorage.getItem('compra-en-curso')) || null; } catch { return null; } };
+const guardarCompra = (c) => { try { if (c) localStorage.setItem('compra-en-curso', JSON.stringify(c)); else localStorage.removeItem('compra-en-curso'); } catch { /* nada */ } };
+
+/** "¿En qué súper estáis?": con lo que costaría lo de hoy en cada uno. */
+function ElegirSuper({ datos, catalogo, items, actual, onElegir, onCerrar }) {
+  const total = (s) => {
+    let suma = 0, n = 0;
+    for (const item of items) {
+      const o = opcionEn(datos, catalogo, item, s);
+      if (o) { suma += o.total; n++; }
+    }
+    return { suma: redondear(suma), n };
+  };
+  const filas = SUPERS.map(([s, nombre]) => ({ s, nombre, ...total(s) }));
+  const conTodo = filas.filter((f) => f.n === items.length);
+  const mejor = conTodo.length > 1 ? conTodo.reduce((a, b) => (b.suma < a.suma ? b : a)).s : null;
+  return html`<${Hoja} titulo="¿En qué súper estáis?" onCerrar=${onCerrar}>
+    <p class="meta">Lo que cojáis se apunta a ese súper, con su precio. Al pagar, pasa a la despensa y a Gastos.</p>
+    <div class="supers-elegir">
+      ${filas.map((f) => html`<button class="super-boton ${actual === f.s ? 'activo' : ''}" onClick=${() => onElegir(f.s)}>
+        <b>${f.nombre}</b>
+        <span>${f.n ? `${f.n < items.length ? '≈ ' : ''}${euros(f.suma)}` : 'Sin precios aún'}</span>
+        <small>${f.n === items.length ? `Todo lo de hoy${mejor === f.s ? ' · el más barato' : ''}` : f.n ? `Precio de ${f.n} de ${items.length} cosas` : f.s === 'lidl' ? 'Los precios salen de vuestros tiques' : 'Se apuntan al coger cada cosa'}</small>
+      </button>`)}
+    </div>
+  </${Hoja}>`;
+}
+
+/**
+ * Ficha de una cosa de la lista: lo que cuesta en cada súper y, si estáis comprando,
+ * el producto de ese súper con su foto, cuántos cogéis y a qué precio.
+ */
+function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, onCarro, onHoy }) {
+  const a = articulo(datos, fila.articulo_id);
+  const item = { clave: fila.clave, articulo_id: fila.articulo_id, nombre: a?.nombre ?? '¿?', unidad: a?.unidad ?? 'ud',
+    cantidad: fila.cantidad ?? null, detalle: fila.marca ?? null };
+  const [cambiar, setCambiar] = useState(null); // súper en el que elegir otro producto
+  const s = compra?.super;
+  const opcion = s ? opcionEn(datos, catalogo, item, s) : null;
+  const producto = opcion?.producto ?? null;
+  const [envases, setEnvases] = useState(fila.envases ?? opcion?.envases ?? 1);
+  const [precio, setPrecio] = useState(() => {
+    const p = fila.precio != null && fila.envases ? fila.precio / fila.envases : producto?.precio;
+    return p != null ? String(redondear(p)).replace('.', ',') : '';
+  });
+  // Al cambiar de producto, su precio.
+  const idProducto = producto?.id;
+  const primera = useRef(true);
+  useEffect(() => {
+    if (primera.current) { primera.current = false; return; }
+    setPrecio(producto?.precio != null ? String(redondear(producto.precio)).replace('.', ',') : '');
+    setEnvases(opcion?.envases ?? 1);
+  }, [idProducto]);
+  const precioNum = leerImporte(precio);
+  const total = Number.isFinite(precioNum) ? redondear(precioNum * envases) : null;
+  const cambiado = producto && Number.isFinite(precioNum) && Math.abs(precioNum - producto.precio) > 0.004;
+
+  const otros = catalogo ? SUPERS.map(([id, nombre]) => ({ id, nombre, o: opcionEn(datos, catalogo, item, id) })) : [];
+  const conPrecio = otros.filter((x) => x.o);
+  const masBarato = conPrecio.length ? conPrecio.reduce((m, x) => (x.o.total < m.o.total ? x : m)) : null;
+
+  const alCarro = () => onCarro(fila, { producto, envases, precioEnvase: Number.isFinite(precioNum) ? precioNum : null });
+
+  /** Foto del código de barras: busca ese producto en este súper y lo deja elegido para la próxima vez. */
+  const [leyendo, setLeyendo] = useState(false);
+  const porFoto = async (fichero) => {
+    if (!sesion || sesion.hogarId === 'demo') { mostrarAviso('En la versión de prueba la cámara no busca productos.'); return; }
+    setLeyendo(true);
+    try {
+      const ean = await leerCodigoDeBarras(fichero);
+      if (!ean) { mostrarAviso('No veo el código de barras. Probad otra foto o elegidlo de la lista.'); return; }
+      const r = await preguntarPorCodigo(sesion, ean);
+      const deEste = [...(r.conocidos ?? []), ...(Array.isArray(r.parecidos?.[s]) && r.exacto === s ? r.parecidos[s] : [])]
+        .find((p) => p.supermercado_id === s);
+      if (!deEste) {
+        mostrarAviso(`No encuentro ese código en ${nombreSuper(s)}. Elegidlo de la lista.`);
+        setCambiar(s);
+        return;
+      }
+      const enlaces = datos.equivalencias.filter((e) => e.articulo_id === item.articulo_id
+        && catalogo.productos.get(e.producto_id)?.supermercado_id === s);
+      if (enlaces.length) await almacen.borrar('equivalencias', enlaces.map((e) => e.id));
+      await almacen.insertar('equivalencias', { articulo_id: item.articulo_id, producto_id: deEste.id, auto: false });
+      await catalogo.cargar([deEste.id]);
+      mostrarAviso(`Guardado: ${item.nombre} en ${nombreSuper(s)} es ${deEste.nombre}`);
+    } catch (e) {
+      console.error(e);
+      mostrarAviso(`No se pudo leer: ${e.message ?? e}`);
+    } finally {
+      setLeyendo(false);
+    }
+  };
+
+  return html`<${Hoja} titulo=${a?.nombre ?? ''} onCerrar=${onCerrar}>
+    ${compra && html`
+      <div class="en-este">
+        <p class="meta">En ${nombreSuper(s)}</p>
+        ${producto ? html`<div class="producto-ficha">
+            <${FotoProducto} url=${producto.imagen_url} clase="grande" />
+            <div><b>${producto.nombre}</b><small>${[formatoDe(producto), Number.isFinite(precioUnidad(producto)) && `${precioUnidad(producto).toFixed(2).replace('.', ',')} ${etiquetaUnidad(producto.unidad)}`].filter(Boolean).join(' · ')}</small></div>
+          </div>`
+          : html`<p class="nota">Aún no sabemos qué producto es en ${nombreSuper(s)}. Elegidlo o hacedle una foto y quedará guardado.</p>`}
+        <div class="acciones">
+          <button class="chip" onClick=${() => setCambiar(s)}>${producto ? '¿Es otro? Elegir' : 'Elegir el producto'}</button>
+          <label class="chip foto-chip">${leyendo ? 'Leyendo…' : '📷 Hacerle una foto'}
+            <input type="file" accept="image/*" capture="environment" hidden onChange=${(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) porFoto(f); }} /></label>
+        </div>
+        <div class="dos">
+          <label>Cuántos cogéis<${Contador} valor=${envases} onCambio=${setEnvases} /></label>
+          <label>Precio${producto ? '' : ' (opcional)'}
+            <input inputmode="decimal" value=${precio} placeholder="0,00" onInput=${(e) => setPrecio(e.target.value)} /></label>
+        </div>
+        ${cambiado && html`<p class="nota">Precio distinto al guardado (${euros(producto.precio)}): se guardará el nuevo.</p>`}
+        ${producto?.cantidad > 0 && html`<p class="meta">${envases} × ${formatoDe(producto) ?? formatoCantidad(producto.cantidad, producto.unidad)} = ${formatoCantidad(producto.cantidad * envases, producto.unidad)}</p>`}
+        <button class="boton grande" onClick=${alCarro}>${fila.comprado ? 'Guardar' : 'Al carro'}${total != null ? ` · ${euros(total)}` : ''}</button>
+      </div>`}
+
+    <h3>Precio en cada súper</h3>
+    ${!catalogo && html`<p class="meta">En la versión de prueba no hay precios.</p>`}
+    ${catalogo && conPrecio.length === 0 && html`<p class="meta">Todavía no hay precios para esto. Elegid el producto en un súper para guardarlo.</p>`}
+    ${conPrecio.length > 0 && html`<ul class="filas comparar-ficha">
+      ${otros.map(({ id, nombre, o }) => html`<li class=${masBarato?.id === id && conPrecio.length > 1 ? 'mejor' : ''}>
+        <${FotoProducto} url=${o?.producto.imagen_url} clase="mini" />
+        <button class="enlace nombre" onClick=${() => setCambiar(id)}>${nombre}
+          <small>${o ? `${o.envases > 1 ? `${o.envases} × ` : ''}${o.producto.nombre}` : id === 'lidl' ? 'Sin precio: sale de vuestros tiques' : 'Sin producto: toca para elegirlo'}</small></button>
+        <span class="cant">${o ? html`<b>${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>${masBarato && masBarato.id !== id
+          ? html`<small>+${euros(redondear(o.total - masBarato.o.total))}</small>` : conPrecio.length > 1 ? html`<small>el más barato</small>` : ''}` : '–'}</span>
+      </li>`)}
+    </ul>`}
+
+    ${!compra && fila.tipo === 'auto' && html`<button class="boton grande" onClick=${() => { onHoy(fila); onCerrar(); }}>Pasar a la compra de hoy</button>`}
+    ${!compra && fila.tipo === 'manual' && html`<${CamposLista} almacen=${almacen} datos=${datos} fila=${fila} onCerrar=${onCerrar} />`}
+
+    ${cambiar && catalogo && html`<${ElegirProducto} almacen=${almacen} datos=${datos} catalogo=${catalogo} item=${item}
+      linea=${{ mejor: cambiar, porSuper: Object.fromEntries(otros.filter((x) => x.o).map((x) => [x.id, x.o])) }}
+      onCerrar=${() => setCambiar(null)} onCambio=${() => setCambiar(null)} />`}
+  </${Hoja}>`;
+}
+
+/** «Ya hemos pagado»: lo del carro pasa a la despensa y la compra queda en Gastos. */
+function Pagar({ almacen, datos, sesion, catalogo, compra, carro, onCerrar, onListo }) {
+  const [guardando, setGuardando] = useState(false);
+  const suma = redondear(carro.reduce((t, l) => t + (l.precio ?? 0), 0));
+  const [total, setTotal] = useState(suma.toFixed(2).replace('.', ','));
+  const sinPrecio = carro.filter((l) => l.precio == null);
+  const pagar = async () => {
+    setGuardando(true);
+    try {
+      const t = Number.isFinite(leerImporte(total)) ? leerImporte(total) : suma;
+      const nombre = (l) => (l.producto_id && catalogo?.productos.get(l.producto_id)?.nombre) || nombreArticulo(datos, l.articulo_id);
+      const lineas = carro.filter((l) => l.precio != null).map((l) => ({
+        texto: nombre(l), cantidad: l.envases ?? 1, precio_unidad: l.envases ? redondear(l.precio / l.envases) : l.precio,
+        importe: l.precio, descuento: 0, kg: false, articulo_id: l.articulo_id,
+      }));
+      const ahora = new Date().toISOString();
+      if (sesion?.hogarId && sesion.hogarId !== 'demo') {
+        const { error } = await sesion.cliente.rpc('guardar_tique', {
+          p_hogar: sesion.hogarId, p_super: compra.super, p_fecha: ahora, p_total: t, p_lineas: lineas,
+        });
+        if (error) throw error;
+        // Precios que habéis visto distintos en la estantería (Mercadona e HiperDino; Lidl ya va con el tique).
+        const nuevos = carro.filter((l) => l.producto_id && l.envases && compra.super !== 'lidl')
+          .map((l) => ({ l, p: catalogo?.productos.get(l.producto_id), precio: redondear(l.precio / l.envases) }))
+          .filter(({ p, precio }) => p && Math.abs(p.precio - precio) > 0.004);
+        if (nuevos.length) {
+          await sesion.cliente.from('precios').insert(nuevos.map(({ p, precio }) => ({
+            producto_id: p.id, precio, origen: 'manual', visto_en: ahora, hogar_id: sesion.hogarId })));
+          for (const { p, precio } of nuevos) catalogo.productos.set(p.id, { ...p, precio, visto_en: ahora });
+        }
+      } else {
+        const [tique] = await almacen.insertar('tiques', { supermercado_id: compra.super, fecha: ahora, total: t, estado: 'revisado' });
+        await almacen.insertar('tique_lineas', lineas.map((f) => ({ ...f, tique_id: tique.id })));
+        for (const l of carro) {
+          const p = l.producto_id && catalogo?.productos.get(l.producto_id);
+          if (p && l.envases && l.precio != null) catalogo.productos.set(p.id, { ...p, precio: redondear(l.precio / l.envases) });
+        }
+      }
+      for (const l of carro) if (l.cantidad) await almacen.sumarDespensa(l.articulo_id, l.cantidad);
+      await almacen.borrar('lista', carro.map((l) => l.id));
+      mostrarAviso(`Compra guardada: ${euros(t)} en ${nombreSuper(compra.super)}. La despensa ya está al día.`);
+      onListo();
+    } catch (e) {
+      console.error(e);
+      mostrarAviso(`No se pudo guardar: ${e.message ?? e}`);
+      setGuardando(false);
+    }
+  };
+  return html`<${Hoja} titulo=${`Pagar en ${nombreSuper(compra.super)}`} onCerrar=${onCerrar}>
+    <ul class="filas">
+      ${carro.map((l) => html`<li>
+        <span class="nombre">${nombreArticulo(datos, l.articulo_id)}<small>${[l.envases > 1 && `${l.envases} ×`, l.producto_id && catalogo?.productos.get(l.producto_id)?.nombre].filter(Boolean).join(' ')}</small></span>
+        <span class="cant">${l.precio != null ? euros(l.precio) : 'sin precio'}</span>
+      </li>`)}
+    </ul>
+    <label>Total pagado (cámbialo si el tique dice otra cosa)
+      <input inputmode="decimal" value=${total} onInput=${(e) => setTotal(e.target.value)} /></label>
+    ${sinPrecio.length > 0 && html`<p class="nota">Sin precio: ${sinPrecio.map((l) => nombreArticulo(datos, l.articulo_id)).join(', ')}. Pasan a la despensa pero no suman en Gastos.</p>`}
+    <p class="meta">Al confirmar: lo del carro pasa a la despensa con lo que habéis cogido, la compra queda en Gastos y los precios nuevos se guardan.</p>
+    <button class="boton grande" disabled=${guardando} onClick=${pagar}>${guardando ? 'Guardando…' : `Ya hemos pagado · ${euros(Number.isFinite(leerImporte(total)) ? leerImporte(total) : suma)}`}</button>
+  </${Hoja}>`;
+}
+
+/** Cantidad y marca de una cosa apuntada a mano (dentro de la ficha). */
+function CamposLista({ almacen, datos, fila, onCerrar }) {
+  const a = articulo(datos, fila.articulo_id);
+  const [cantidad, setCantidad] = useState(fila.cantidad);
+  const [marca, setMarca] = useState(fila.marca ?? '');
+  const guardar = async () => {
+    await almacen.actualizar('lista', fila.id, { cantidad, marca: marca.trim() || null });
+    onCerrar();
+  };
+  return html`<h3>En la lista</h3>
+    <label>Cantidad</label>
+    <${CampoCantidad} unidad=${a?.unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Sin indicar" />
+    <label>Marca o tipo (opcional)
+      <input placeholder="Por ejemplo: Puleva, sin lactosa…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
+    <button class="boton grande" onClick=${guardar}>Guardar</button>`;
 }
 
 function CantidadLista({ almacen, datos, fila, onCerrar }) {
