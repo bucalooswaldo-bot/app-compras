@@ -18,6 +18,7 @@ import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
+import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
 import * as config from '../config.js';
 
 // ---------------------------------------------------------------------------
@@ -558,6 +559,8 @@ function PantallaDespensa({ almacen, datos, sesion }) {
   const [revisar, setRevisar] = useState(null);   // lo gastado, entendido, para confirmar
   const [repasar, setRepasar] = useState(false);
   const [marcas, setMarcas] = useState(null);     // articulo_id cuyas marcas se ven
+  const [porFoto, setPorFoto] = useState(null);   // foto de un producto para añadirlo
+  const camaraProducto = useRef(null);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
   const [, setCatalogoListo] = useState(0);
   useEffect(() => {
@@ -583,6 +586,9 @@ function PantallaDespensa({ almacen, datos, sesion }) {
         <input type="search" placeholder="Buscar en la despensa" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
         <button class="boton" onClick=${() => setEditar('nuevo')}>+ Añadir</button>
       </div>
+      <button class="boton boton-foto" onClick=${() => camaraProducto.current.click()}>📷 Añadir con una foto</button>
+      <input ref=${camaraProducto} type="file" accept="image/*" capture="environment" hidden
+        onChange=${(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setPorFoto(f); }} />
       <form class="gastado" onSubmit=${restar}>
         <input placeholder="He gastado… (bote de tomate, bolsa de papas)" value=${gastado}
           onInput=${(e) => setGastado(e.target.value)} aria-label="Lo que habéis gastado" />
@@ -629,7 +635,207 @@ function PantallaDespensa({ almacen, datos, sesion }) {
         onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
       ${repasar && html`<${RepasarDespensa} almacen=${almacen} datos=${datos} onCerrar=${() => setRepasar(false)} />`}
       ${marcas && html`<${MarcasArticulo} almacen=${almacen} datos=${datos} sesion=${sesion} articuloId=${marcas} onCerrar=${() => setMarcas(null)} />`}
+      ${porFoto && html`<${AnadirPorFoto} key=${porFoto.name + porFoto.lastModified} almacen=${almacen} datos=${datos} sesion=${sesion}
+        foto=${porFoto} onOtra=${() => camaraProducto.current.click()} onCerrar=${() => setPorFoto(null)} />`}
     </section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Añadir a la despensa con una foto del producto
+// ---------------------------------------------------------------------------
+/** Lee el código de barras de la foto en el propio móvil (Android/Chrome lo trae de serie). */
+async function leerCodigoDeBarras(fichero) {
+  if (!('BarcodeDetector' in window)) return null;
+  try {
+    const admitidos = await window.BarcodeDetector.getSupportedFormats();
+    const formatos = ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter((f) => admitidos.includes(f));
+    if (!formatos.length) return null;
+    const lector = new window.BarcodeDetector({ formats: formatos });
+    const bmp = await createImageBitmap(fichero);
+    const leidos = await lector.detect(bmp);
+    bmp.close?.();
+    const codigo = leidos.map((x) => x.rawValue).find((v) => /^\d{8}$|^\d{12,13}$/.test(v));
+    return codigo?.length === 12 ? `0${codigo}` : codigo ?? null;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+async function preguntarPorCodigo(sesion, ean, texto = '') {
+  const { data, error } = await sesion.cliente.functions.invoke('precios', { body: { accion: 'codigo', ean, texto } });
+  if (error) throw error;
+  return data;
+}
+
+const SUPERS_FOTO = [...SUPERS, ['otro', 'Otro']];
+
+/** Hoja: qué producto es la foto, en qué súper se compró y a qué artículo de la despensa se suma. Nada se guarda sin confirmar. */
+function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
+  const [paso, setPaso] = useState('Buscando el código de barras…');
+  const [leido, setLeido] = useState(null);  // { ean, ficha, productos, parecidos, exacto, texto }
+  const [articuloId, setArticuloId] = useState('');      // '' = nuevo
+  const [nombreNuevo, setNombreNuevo] = useState('');
+  const [seccion, setSeccion] = useState('Otros');
+  const [cantidad, setCantidad] = useState(1);
+  const [supermercado, setSupermercado] = useState(null);
+  const [motivo, setMotivo] = useState(null);
+  const [productoId, setProductoId] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const urlFoto = useMemo(() => URL.createObjectURL(foto), [foto]);
+  useEffect(() => () => URL.revokeObjectURL(urlFoto), [urlFoto]);
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      const ean = await leerCodigoDeBarras(foto);
+      let r = { ean, ficha: null, conocidos: [], parecidos: {}, exacto: null, texto: '' };
+      if (ean && sesion) {
+        setPaso('Buscando qué es y su precio en Mercadona e HiperDino…');
+        try { r = { ...r, ...(await preguntarPorCodigo(sesion, ean)) }; } catch (e) { console.error(e); }
+      }
+      const sabido = r.ficha?.nombre || r.conocidos?.[0]?.nombre;
+      if (!sabido) {
+        // Sin código o sin ficha: se lee el texto de la etiqueta (en el móvil)
+        setPaso(ean ? 'No lo conozco por el código. Leyendo la etiqueta…' : 'No veo código de barras. Leyendo la etiqueta…');
+        try {
+          r.texto = nombreDeEtiqueta(await leerTextoDeImagen(foto, (n) => vivo && setPaso(`Leyendo la etiqueta… ${n}%`)));
+        } catch (e) { console.error(e); }
+        if (r.texto && sesion) {
+          setPaso('Buscando en Mercadona e HiperDino…');
+          try {
+            if (ean) r = { ...r, ...(await preguntarPorCodigo(sesion, ean, r.texto)), texto: r.texto };
+            else {
+              const [x] = await catalogo.buscar([{ texto: r.texto, supers: SUPERS_WEB }]);
+              r.parecidos = { mercadona: x?.mercadona, hiperdino: x?.hiperdino };
+            }
+          } catch (e) { console.error(e); }
+        }
+      }
+      if (!vivo) return;
+      // Lo que se sabe del producto
+      const productos = [...(r.conocidos ?? []), ...(r.exacto && Array.isArray(r.parecidos?.[r.exacto]) ? r.parecidos[r.exacto] : [])];
+      const base = productos[0] ?? null;
+      const nombre = r.ficha?.nombre ?? base?.nombre ?? r.texto ?? '';
+      const marca = r.ficha?.marca ?? base?.marca ?? null;
+      const corto = nombreSencillo(nombre, marca) || nombre;
+      const { articulo: a } = elegirArticulo({ nombre: corto, productoIds: productos.map((p) => p.id), datos });
+      const sup = superProbable({ marca, nombre, exacto: r.exacto ?? base?.supermercado_id, articuloId: a?.id, datos });
+      setLeido({ ...r, nombre, marca, productos });
+      setArticuloId(a?.id ?? '');
+      setNombreNuevo(corto);
+      setSeccion(seccionDe(corto, r.ficha?.categorias ?? []));
+      setSupermercado(sup.supermercado);
+      setMotivo(sup.motivo);
+      const delSuper = productos.find((p) => p.supermercado_id === sup.supermercado);
+      setProductoId(delSuper?.id ?? null);
+      setCantidad(cantidadASumar(a?.unidad ?? 'ud', delSuper ?? r.ficha ?? base));
+      setPaso(null);
+    })();
+    return () => { vivo = false; };
+  }, [foto]);
+
+  const art = articuloId ? articulo(datos, articuloId) : null;
+  const unidad = art?.unidad ?? 'ud';
+  const opciones = leido && supermercado && Array.isArray(leido.parecidos?.[supermercado])
+    ? [...new Map([...leido.productos.filter((p) => p.supermercado_id === supermercado), ...leido.parecidos[supermercado]]
+      .map((p) => [p.id, p])).values()].slice(0, 4)
+    : [];
+  const elegido = opciones.find((p) => p.id === productoId) ?? null;
+  const elegirSuper = (s) => {
+    setSupermercado(s); setMotivo(null);
+    setProductoId(leido?.productos.find((p) => p.supermercado_id === s)?.id ?? null);
+  };
+  const cambiarArticulo = (id) => {
+    setArticuloId(id);
+    const a = id ? articulo(datos, id) : null;
+    setCantidad(cantidadASumar(a?.unidad ?? 'ud', elegido ?? leido?.ficha));
+  };
+  const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
+  const ordenados = [...datos.articulos].sort((x, y) => (enDespensa.has(y.id) - enDespensa.has(x.id)) || x.nombre.localeCompare(y.nombre, 'es'));
+  const hay = art ? datos.despensa.find((d) => d.articulo_id === art.id)?.cantidad ?? 0 : 0;
+
+  const guardar = async () => {
+    if (!art && !nombreNuevo.trim()) return mostrarAviso('Escribe qué es');
+    if (!(cantidad > 0)) return mostrarAviso('Pon cuánto sumar');
+    setGuardando(true);
+    try {
+      const a = art ?? await obtenerArticulo(almacen, mayusculaInicial(nombreNuevo.trim()), 'ud', seccion);
+      await almacen.sumarDespensa(a.id, cantidad);
+      if (elegido) {
+        if (!datos.equivalencias.some((e) => e.articulo_id === a.id && e.producto_id === elegido.id)) {
+          await almacen.insertar('equivalencias', { articulo_id: a.id, producto_id: elegido.id, auto: false });
+        }
+        if (!a.foto_producto_id && elegido.imagen_url) await almacen.actualizar('articulos', a.id, { foto_producto_id: elegido.id });
+        if (leido.ean && !elegido.ean && sesion) {
+          sesion.cliente.functions.invoke('precios', { body: { accion: 'recordar', ean: leido.ean, producto_id: elegido.id } }).catch(() => {});
+        }
+      }
+      mostrarAviso(`Añadido a la despensa: ${a.nombre} (+${formatoCantidad(cantidad, a.unidad)})`);
+      onCerrar();
+    } catch (e) {
+      mostrarAviso(`No se pudo guardar: ${e.message ?? e}`);
+      setGuardando(false);
+    }
+  };
+
+  return html`
+    <${Hoja} titulo="Añadir con una foto" onCerrar=${onCerrar}>
+      <div class="foto-leida">
+        <img src=${urlFoto} alt="Tu foto" />
+        ${leido && html`<div>
+          <b>${leido.nombre || 'No he sabido leerlo'}</b>
+          ${leido.marca && html`<small>${leido.marca}${leido.ficha?.formato ? ` · ${leido.ficha.formato}` : ''}</small>`}
+          ${leido.ean && html`<small class="meta">Código ${leido.ean}</small>`}
+        </div>`}
+      </div>
+      ${paso && html`<p class="cargando">${paso}</p>`}
+      ${leido && html`
+        ${!leido.nombre && html`<p class="texto-suave">No he podido leer qué es. Escríbelo abajo, o haz otra foto más cerca
+          del código de barras.</p>`}
+        ${!sesion && html`<p class="texto-suave">En el modo de prueba no se busca en los súper: solo se lee la foto.</p>`}
+
+        <label>Va en la despensa como
+          <select value=${articuloId} onChange=${(e) => cambiarArticulo(e.target.value)}>
+            <option value="">Nuevo producto…</option>
+            ${ordenados.map((a) => html`<option value=${a.id}>${a.nombre}${enDespensa.has(a.id) ? '' : ' (no está en la despensa)'}</option>`)}
+          </select></label>
+        ${!art && html`
+          <label>Nombre<input value=${nombreNuevo} onInput=${(e) => setNombreNuevo(e.target.value)} placeholder="Ej.: Patatas fritas" /></label>
+          <label>Sección<select value=${seccion} onChange=${(e) => setSeccion(e.target.value)}>
+            ${CATEGORIAS.map((c) => html`<option value=${c}>${c}</option>`)}</select></label>`}
+
+        <label>Sumar</label>
+        <div class="ing-datos">
+          <${CampoCantidad} unidad=${unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Cantidad" />
+          ${art && html`<small class="meta">ahora hay ${formatoCantidad(hay, unidad)}</small>`}
+        </div>
+
+        <label>¿Dónde lo comprasteis?</label>
+        <div class="acciones">
+          ${SUPERS_FOTO.map(([id, nombre]) => html`<button class="chip ${supermercado === id ? 'activo' : ''}" onClick=${() => elegirSuper(id)}>${nombre}</button>`)}
+        </div>
+        ${motivo && supermercado && html`<p class="texto-suave">${nombreSuper(supermercado)}: ${motivo}. Si no es, toca otro.</p>`}
+        ${!supermercado && html`<p class="texto-suave">Toca el súper (no es obligatorio).</p>`}
+        ${opciones.length > 0 && html`
+          <p class="texto-suave">¿Es alguno de estos? Así tendrá su foto y su precio.</p>
+          <ul class="marcas">
+            ${opciones.map((p) => html`<li class=${productoId === p.id ? 'principal' : ''} onClick=${() => setProductoId(productoId === p.id ? null : p.id)}>
+              <${FotoProducto} url=${p.imagen_url} emoji="🛒" clase="grande" />
+              <div class="marca-datos">
+                <b>${p.nombre}</b>
+                <small>${nombreSuper(p.supermercado_id)}${formatoDe(p) ? ` · ${formatoDe(p)}` : ''}${p.ean && p.ean === leido.ean ? ' · mismo código ✓' : ''}</small>
+                <span>${Number.isFinite(Number(p.precio)) && p.precio != null ? euros(Number(p.precio)) : ''}</span>
+                <div class="marca-acciones"><span class="enlace">${productoId === p.id ? '✓ Es este' : 'Es este'}</span></div>
+              </div>
+            </li>`)}
+          </ul>`}
+
+        <button class="boton grande" disabled=${guardando || !!paso} onClick=${guardar}>
+          ${guardando ? 'Guardando…' : `Añadir a la despensa`}</button>
+        <p class="pie"><button class="enlace" onClick=${onOtra}>📷 Hacer otra foto</button></p>`}
+    </${Hoja}>`;
 }
 
 /** Confirmar lo gastado antes de restarlo. Lo que no se reconoce se pregunta. */
