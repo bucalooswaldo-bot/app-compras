@@ -622,11 +622,9 @@ function PantallaDespensa({ almacen, datos, sesion }) {
             const a = articulo(datos, d.articulo_id);
             const paso = pasoDespensa(a.unidad, d.cantidad);
             const bajo = estaBajo(d);
-            const nMarcas = catalogo ? marcasDe(datos, catalogo, a.id).length : 0;
             return html`<li class=${bajo ? 'bajo' : ''}>
-              <button class="foto-boton" aria-label=${`Marcas y fotos de ${a.nombre}`} onClick=${() => setMarcas(a.id)}>
+              <button class="foto-boton" aria-label=${`Abrir ${a.nombre}`} onClick=${() => setEditar(a.id)}>
                 <${FotoProducto} url=${fotoDeArticulo(datos, catalogo, a.id, fotosCasa)} emoji=${emojiDe(a)} />
-                ${nMarcas > 1 && html`<b class="globo-marcas">${nMarcas}</b>`}
               </button>
               <button class="enlace nombre" onClick=${() => setEditar(d.articulo_id)}>
                 <span>${a.nombre} <span class="lapiz" aria-hidden="true">✏️</span></span>
@@ -643,7 +641,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
       ${buscando && html`<${OtrasOpciones} key=${normalizar(buscar.trim())} texto=${buscar.trim()} almacen=${almacen} datos=${datos}
         catalogo=${catalogo} onEscribir=${() => { setNuevoNombre(mayusculaInicial(buscar.trim())); setEditar('nuevo'); }} />`}
       ${editar && html`<${EditarDespensa} almacen=${almacen} datos=${datos} articuloId=${editar === 'nuevo' ? null : editar} nombreInicial=${nuevoNombre}
-        onCerrar=${() => setEditar(null)} />`}
+        sesion=${sesion} onCambiarSuper=${(id) => setMarcas(id)} onCerrar=${() => setEditar(null)} />`}
       ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
         onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
       ${repasar && html`<${RepasarDespensa} almacen=${almacen} datos=${datos} onCerrar=${() => setRepasar(false)} />`}
@@ -1097,7 +1095,10 @@ function RepasarDespensa({ almacen, datos, onCerrar }) {
     </${Hoja}>`;
 }
 
-function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', onCerrar }) {
+function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion, onCambiarSuper, onCerrar }) {
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+  const marcasA = articuloId && catalogo ? marcasDe(datos, catalogo, articuloId) : [];
+  const fotosMarcas = useFotos(almacen, marcasA.map((m) => m.e.foto_path));
   const a0 = articuloId ? articulo(datos, articuloId) : null;
   const d0 = articuloId ? datos.despensa.find((d) => d.articulo_id === articuloId) : null;
   const [nombre, setNombre] = useState(a0?.nombre ?? nombreInicial);
@@ -1153,6 +1154,17 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', onCerr
       <label>Avisar cuando quede esto o menos <small>(opcional)</small></label>
       <${CampoCantidad} key=${`m${clavesCampos}${u}`} unidad=${u} valor=${minimo} onCambio=${setMinimo} placeholder="Sin mínimo" />
       <button class="boton grande" onClick=${guardar}>Guardar</button>
+      ${a0 && catalogo && (() => {
+        const art = articulo(datos, a0.id) ?? a0;
+        const m = marcasA.find((x) => x.p.id === art.foto_producto_id) ?? marcasA.find((x) => urlDeMarca(x, fotosMarcas)) ?? marcasA[0];
+        return html`<div class="del-super">
+          ${m ? html`<${FotoProducto} url=${urlDeMarca(m, fotosMarcas)} emoji=${emojiDe(art)} />
+            <span class="del-super-datos"><small>De ${nombreSuper(m.p.supermercado_id)}</small>
+              <span>${m.p.nombre}${Number.isFinite(m.p.precio) ? ` · ${euros(m.p.precio)}` : ''}</span></span>`
+          : html`<span class="del-super-datos"><small>Sin producto del súper</small><span>Elige cuál compráis para ver su foto y su precio</span></span>`}
+          <button class="enlace" onClick=${() => onCambiarSuper?.(a0.id)}>${m ? 'Cambiar' : 'Elegir'}</button>
+        </div>`;
+      })()}
       ${d0 && html`<p class="pie"><button class="enlace peligro" onClick=${quitar}>Quitar de la despensa</button></p>`}
     </${Hoja}>`;
 }
