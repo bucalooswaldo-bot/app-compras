@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'compras-v26';
+const VERSION = 'compras-v27';
 const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
@@ -24,7 +24,8 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request)
+    // no-cache: pregunta siempre si hay versión nueva (si no la hay, la respuesta es mínima)
+    fetch(e.request, { cache: 'no-cache' })
       .then((r) => { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, copia)); return r; })
       .catch(() => caches.match(e.request, { ignoreSearch: true })),
   );

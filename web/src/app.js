@@ -2796,8 +2796,11 @@ async function leerRecetaDeImagen(fichero, onProgreso) {
   const grande = lienzoParaLeer(bmp);
   const { data } = await lector.recognize(grande, {}, { blocks: true, text: true });
   progresoOCR = (p) => onProgreso?.(80 + Math.round(p * 0.2));
-  const { data: dataPeq } = await lector.recognize(lienzoParaLeer(bmp, 0.5), {}, { blocks: true });
-  const lineas = juntarLecturas(lineasDe(data), lineasDe(dataPeq), 0.5);
+  // Los títulos muy grandes se leen bien con la captura a unos 420 px de ancho
+  const pequeno = lienzoParaLeer(bmp, Math.min(1, 420 / grande.width));
+  const escala = pequeno.width / grande.width;
+  const { data: dataPeq } = await lector.recognize(pequeno, {}, { blocks: true });
+  const lineas = juntarLecturas(lineasDe(data), lineasDe(dataPeq), escala);
   return lineas.length ? textoPorColumnas(lineas, grande.height) : data.text;
 }
 
