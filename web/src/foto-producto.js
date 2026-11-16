@@ -59,7 +59,7 @@ const FORMATO = /\b\d+(?:[.,]\d+)?\s*(?:x\s*\d+(?:[.,]\d+)?\s*)?(kg|grs?|g|mg|li
 
 /** Nombre corto para la despensa: sin marca ni formato, con mayúscula inicial. */
 export function nombreSencillo(nombre, marca) {
-  let t = String(nombre ?? '').replace(FORMATO, ' ');
+  let t = String(nombre ?? '').replace(FORMATO, ' ').replace(/\b(al peso|a granel|kg)\b/gi, ' ');
   if (marca) {
     const m = String(marca).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     t = t.replace(new RegExp(`(^|\\s)${m}(?=\\s|$)`, 'gi'), ' ');
