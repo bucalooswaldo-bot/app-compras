@@ -17,7 +17,7 @@ import {
 import { proponerMenu } from './menu.js';
 import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
-import { entenderReceta } from './receta-texto.js';
+import { entenderReceta, textoPorColumnas, juntarLecturas } from './receta-texto.js';
 import { prepararVideo, megas } from './video.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
@@ -596,7 +596,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
       for (let k = 0; k < ficheros.length; k++) {
         const cual = ficheros.length > 1 ? `Leyendo captura ${k + 1} de ${ficheros.length}` : 'Leyendo la captura';
         setLeyendo(`${cual}…`);
-        texto += `\n${await leerTextoDeImagen(ficheros[k], (p) => setLeyendo(`${cual}… ${p} %`))}`;
+        texto += `\n${await leerRecetaDeImagen(ficheros[k], (p) => setLeyendo(`${cual}… ${p} %`))}`;
       }
       const r = entenderReceta(texto);
       setTextoLeido(texto.trim());
@@ -2730,37 +2730,75 @@ function cargarScript(src) {
   });
 }
 
-function brilloMedio(ctx, lienzo) {
+/** ¿Es una captura en modo oscuro? (poca zona clara; un trozo negro abajo de la pantalla no cuenta como oscuro) */
+function esOscura(ctx, lienzo) {
   const { data } = ctx.getImageData(0, 0, lienzo.width, lienzo.height);
-  let suma = 0, n = 0;
-  for (let i = 0; i < data.length; i += 4 * 37) { suma += data[i]; n++; }
-  return n ? suma / n : 255;
+  let claros = 0, n = 0;
+  for (let i = 0; i < data.length; i += 4 * 37) { if (data[i] > 160) claros++; n++; }
+  return n > 0 && claros / n < 0.2;
 }
 
-/** Lee el texto de una foto en el propio móvil (sin mandar la foto a nadie). */
-async function leerTextoDeImagen(fichero, onProgreso) {
+let progresoOCR = null;
+async function lectorDeTexto(onProgreso) {
+  progresoOCR = onProgreso;
   if (!window.Tesseract) await cargarScript(`${OCR}tesseract.min.js`);
   lectorOCR ??= window.Tesseract.createWorker('spa', 1, {
     workerPath: `${OCR}worker.min.js`, corePath: OCR, langPath: OCR, gzip: true, workerBlobURL: false,
-    logger: (m) => m.status === 'recognizing text' && onProgreso?.(Math.round(m.progress * 100)),
+    logger: (m) => m.status === 'recognizing text' && progresoOCR?.(Math.round(m.progress * 100)),
   });
-  const lector = await lectorOCR;
-  // Fotos grandes: a 2000 px de ancho como mucho (más rápido y lee igual de bien)
-  const bmp = await createImageBitmap(fichero);
-  const escala = Math.min(1, 2000 / bmp.width);
+  return lectorOCR;
+}
+
+/** Dibuja la foto en gris y con más contraste, a `escala` de 2000 px de ancho como mucho. */
+function lienzoParaLeer(bmp, escala = 1) {
+  const e = Math.min(1, 2000 / bmp.width) * escala;
   const lienzo = document.createElement('canvas');
-  lienzo.width = Math.round(bmp.width * escala);
-  lienzo.height = Math.round(bmp.height * escala);
+  lienzo.width = Math.round(bmp.width * e);
+  lienzo.height = Math.round(bmp.height * e);
   const ctx = lienzo.getContext('2d');
   ctx.filter = 'grayscale(1) contrast(1.3)';
   ctx.drawImage(bmp, 0, 0, lienzo.width, lienzo.height);
   // Capturas en modo oscuro (letra clara sobre fondo negro): se invierten, el lector lee mejor negro sobre blanco
-  if (brilloMedio(ctx, lienzo) < 110) {
+  if (esOscura(ctx, lienzo)) {
     ctx.filter = 'grayscale(1) invert(1) contrast(1.3)';
     ctx.drawImage(bmp, 0, 0, lienzo.width, lienzo.height);
   }
-  const { data } = await lector.recognize(lienzo);
+  return lienzo;
+}
+
+/** Lee el texto de una foto en el propio móvil (sin mandar la foto a nadie). */
+async function leerTextoDeImagen(fichero, onProgreso) {
+  const lector = await lectorDeTexto(onProgreso);
+  const bmp = await createImageBitmap(fichero);
+  const { data } = await lector.recognize(lienzoParaLeer(bmp));
   return data.text;
+}
+
+/** Líneas con la posición de cada palabra, como las usa receta-texto.js. */
+function lineasDe(data) {
+  const lineas = [];
+  for (const b of data.blocks ?? []) for (const p of b.paragraphs ?? []) for (const l of p.lines ?? []) {
+    lineas.push({
+      y0: l.bbox.y0, y1: l.bbox.y1, confianza: l.confidence,
+      palabras: l.words.map((w) => ({ texto: w.text, x0: w.bbox.x0, x1: w.bbox.x1 })),
+    });
+  }
+  return lineas;
+}
+
+/**
+ * Lee una captura de receta: una lectura normal y otra a la mitad de tamaño (pilla los títulos grandes),
+ * sin las zonas de foto y con las columnas rehechas.
+ */
+async function leerRecetaDeImagen(fichero, onProgreso) {
+  const lector = await lectorDeTexto((p) => onProgreso?.(Math.round(p * 0.8)));
+  const bmp = await createImageBitmap(fichero);
+  const grande = lienzoParaLeer(bmp);
+  const { data } = await lector.recognize(grande, {}, { blocks: true, text: true });
+  progresoOCR = (p) => onProgreso?.(80 + Math.round(p * 0.2));
+  const { data: dataPeq } = await lector.recognize(lienzoParaLeer(bmp, 0.5), {}, { blocks: true });
+  const lineas = juntarLecturas(lineasDe(data), lineasDe(dataPeq), 0.5);
+  return lineas.length ? textoPorColumnas(lineas, grande.height) : data.text;
 }
 
 const NOMBRE_PERIODO = { semana: 'Semana', mes: 'Mes', anio: 'Año' };
