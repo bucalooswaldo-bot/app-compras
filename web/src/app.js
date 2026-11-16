@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, enCasa, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -1355,7 +1355,12 @@ function PantallaLista({ almacen, datos, sesion }) {
   const precioEn = (f) => (comprando && catalogo ? opcionEn(datos, catalogo, itemsComparar(datos, [f])[0], compra.super) : null);
 
   const motivoDe = (f) => {
-    if (f.tipo === 'auto') return [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
+    if (f.tipo === 'auto') {
+      const casa = enCasa(datos, f.articulo_id);
+      const a = datos.articulos.find((x) => x.id === f.articulo_id);
+      const tenemos = casa.hay > 0 ? `tenemos ${formatoCantidad(casa.hay, a?.unidad)}` : null;
+      return [f.recetas.length && f.recetas.join(', '), tenemos, f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
+    }
     const m = motivos.get(f.articulo_id);
     const porque = m ? [m.recetas.length && m.recetas.join(', '), m.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ') : '';
     return porque || 'a mano';
@@ -1614,7 +1619,7 @@ function TengoTodo({ almacen, datos, onCerrar, onListo }) {
     mostrarAviso(`${n === 1 ? 'Pasada 1 cosa' : `Pasadas ${n} cosas`} a la compra de hoy`);
     onListo();
   };
-  const icono = { hay: '✅', basico: '🧂', en_lista: '📝', falta: '❌' };
+  const icono = { hay: '✅', basico: '🧂', en_lista: '📝', falta: '🛒' };
   const texto = (f) => {
     const cuanto = (n) => formatoCantidad(n, f.unidad);
     // Si lo que hay es otra variante ("Huevos medianos m"), se dice cuál.
@@ -1625,15 +1630,20 @@ function TengoTodo({ almacen, datos, onCerrar, onListo }) {
       return f.necesita != null ? `Hace falta ${cuanto(f.necesita)} · en casa ${cuanto(f.hay)}` : `En casa ${cuanto(f.hay)}`;
     }
     if (f.estado === 'basico') return 'No está en la despensa; se da por hecho que hay';
-    const falta = f.falta != null ? `Falta ${cuanto(f.falta)}` : 'No hay en casa';
-    return f.estado === 'en_lista' ? `${falta} · ya está en la lista` : `${falta}${f.hay > 0 ? ` (hay ${cuanto(f.hay)})` : ''}`;
+    // Sin ser tajante: lo que pide, lo que tenemos y lo que falta.
+    const tenemos = variantes ? `tenemos ${variantes}` : f.hay > 0 ? `tenemos ${cuanto(f.hay)}` : 'en la despensa no queda';
+    const partes = f.falta != null
+      ? [`Hace falta ${cuanto(f.necesita)}`, tenemos, `faltan ${cuanto(f.falta)}`]
+      : [f.hay > 0 || variantes ? tenemos : 'No aparece en la despensa'];
+    if (f.estado === 'en_lista') partes.push('ya está en la lista');
+    return partes.join(' · ');
   };
   return html`<${Hoja} titulo=${receta.nombre} onCerrar=${onCerrar}>
     <button class="enlace" onClick=${() => setReceta(null)}>‹ Otra receta</button>
     <div class="fila-campo"><label>Raciones</label><${Contador} valor=${raciones} onCambio=${setRaciones} /></div>
     <div class="veredicto ${faltan.length ? 'falta' : ''}">
       <b>${faltan.length === 0 ? (enLista.length ? 'Lo que falta ya está en la lista' : 'Tenéis todo 🎉')
-        : faltan.length === 1 ? 'Falta 1 cosa' : `Faltan ${faltan.length} cosas`}</b>
+        : faltan.length === 1 ? 'Hay que comprar 1 cosa' : `Hay que comprar ${faltan.length} cosas`}</b>
     </div>
     <ul class="filas tengo-todo">
       ${filas.map((f) => html`<li class=${`tt-${f.estado}`}>
