@@ -214,3 +214,25 @@ test('cotejarTique: empareja por nombre o precio y separa lo de más y lo de men
   assert.deepEqual(r.soloCarro.map((f) => f.id), ['d']);
   assert.deepEqual(r.soloTique.map((l) => l.texto), ['CHOCOLATE NEGRO']);
 });
+
+test('variantes: lo que hay con un nombre más concreto vale para la receta', async () => {
+  const { tengoTodo, variantesDe } = await import('../web/src/logica.js');
+  const d = base();
+  d.articulos.push(
+    { id: 'huevosM', nombre: 'Huevos medianos m', unidad: 'ud', categoria: 'Lácteos y huevos' },
+    { id: 'aceiteS', nombre: 'Aceite de oliva suave', unidad: 'ud', categoria: 'Despensa' },
+    { id: 'mantequilla', nombre: 'Mantequilla con sal', unidad: 'ud', categoria: 'Lácteos y huevos' },
+    { id: 'sal', nombre: 'Sal', unidad: 'ud', categoria: 'Despensa' },
+  );
+  assert.deepEqual(variantesDe(d.articulos, 'sal').map((a) => a.id), ['sal']); // la mantequilla con sal no es sal
+  d.despensa.push({ id: 'd1', articulo_id: 'huevosM', cantidad: 20, minimo: 4 });
+  d.despensa.push({ id: 'd2', articulo_id: 'aceiteS', cantidad: 3, minimo: 1 });
+  d.despensa.push({ id: 'd3', articulo_id: 'arroz', cantidad: 1000, minimo: 0 });
+  const r = tengoTodo(d, 'r1', 4);
+  const de = (id) => r.find((x) => x.articulo_id === id);
+  assert.equal(de('huevos').estado, 'hay');
+  assert.equal(de('aceite').estado, 'hay'); // aceite en otra unidad (botellas): hay
+  // Y la lista de la compra tampoco pide huevos
+  d.plan.push({ id: 'p1', fecha: HOY, momento: 'cena', receta_id: 'r1', raciones: 4, cocinado: false });
+  assert.ok(!faltas(d, HOY, HOY).some((f) => f.articulo_id === 'huevos'));
+});
