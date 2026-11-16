@@ -555,6 +555,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
   const [buscar, setBuscar] = useState('');
   const [soloFaltan, setSoloFaltan] = useState(false);
   const [editar, setEditar] = useState(null); // articulo_id o 'nuevo'
+  const [nuevoNombre, setNuevoNombre] = useState('');
   const [gastado, setGastado] = useState('');
   const [revisar, setRevisar] = useState(null);   // lo gastado, entendido, para confirmar
   const [repasar, setRepasar] = useState(false);
@@ -579,13 +580,36 @@ function PantallaDespensa({ almacen, datos, sesion }) {
     .filter((d) => normalizar(nombreArticulo(datos, d.articulo_id)).includes(normalizar(buscar)))
     .filter((d) => !soloFaltan || estaBajo(d));
   const faltanN = datos.despensa.filter(estaBajo).length;
+  // Lo que la casa conoce (recetas, lista, tiques…) y aún no está en la despensa
+  const enDespensa = new Set(datos.despensa.map((d) => d.articulo_id));
+  const sugeridos = normalizar(buscar).length >= 2
+    ? datos.articulos.filter((a) => !enDespensa.has(a.id) && !pareceFrase(a.nombre) && normalizar(a.nombre).includes(normalizar(buscar)))
+      .sort((x, y) => normalizar(x.nombre).indexOf(normalizar(buscar)) - normalizar(y.nombre).indexOf(normalizar(buscar)) || x.nombre.localeCompare(y.nombre, 'es'))
+      .slice(0, 8)
+    : [];
 
   return html`
     <section>
       <div class="fila-campo">
-        <input type="search" placeholder="Buscar en la despensa" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
-        <button class="boton" onClick=${() => setEditar('nuevo')}>+ Añadir</button>
+        <form class="buscar-despensa" onSubmit=${(e) => {
+          e.preventDefault(); e.target.querySelector('input')?.blur();
+          if (filas.length === 1) setEditar(filas[0].articulo_id);
+          else if (!filas.length && sugeridos.length === 1) setEditar(sugeridos[0].id);
+        }}>
+          <input type="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar en la despensa" value=${buscar}
+            onInput=${(e) => setBuscar(e.target.value)} />
+        </form>
+        <button class="boton" onClick=${() => { setNuevoNombre(''); setEditar('nuevo'); }}>+ Añadir</button>
       </div>
+      ${sugeridos.length > 0 && html`
+        <div class="sugeridos">
+          <small class="meta">Añadir a la despensa:</small>
+          ${sugeridos.map((a) => html`<button class="sugerido" onClick=${() => setEditar(a.id)}>
+            <span aria-hidden="true">${emojiDe(a)}</span> ${a.nombre}<b>+</b></button>`)}
+        </div>`}
+      ${buscar.trim() && !datos.articulos.some((a) => normalizar(a.nombre) === normalizar(buscar)) && html`
+        <button class="boton boton-foto" onClick=${() => { setNuevoNombre(mayusculaInicial(buscar.trim())); setEditar('nuevo'); }}>
+          + Añadir «${buscar.trim()}» a la despensa</button>`}
       <button class="boton boton-foto" onClick=${() => camaraProducto.current.click()}>📷 Añadir con una foto</button>
       <input ref=${camaraProducto} type="file" accept="image/*" capture="environment" hidden
         onChange=${(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setPorFoto(f); }} />
@@ -629,7 +653,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
             </li>`;
           })}
         </ul>`)}
-      ${editar && html`<${EditarDespensa} almacen=${almacen} datos=${datos} articuloId=${editar === 'nuevo' ? null : editar}
+      ${editar && html`<${EditarDespensa} almacen=${almacen} datos=${datos} articuloId=${editar === 'nuevo' ? null : editar} nombreInicial=${nuevoNombre}
         onCerrar=${() => setEditar(null)} />`}
       ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
         onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
@@ -959,10 +983,10 @@ function RepasarDespensa({ almacen, datos, onCerrar }) {
     </${Hoja}>`;
 }
 
-function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
+function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', onCerrar }) {
   const a0 = articuloId ? articulo(datos, articuloId) : null;
   const d0 = articuloId ? datos.despensa.find((d) => d.articulo_id === articuloId) : null;
-  const [nombre, setNombre] = useState(a0?.nombre ?? '');
+  const [nombre, setNombre] = useState(a0?.nombre ?? nombreInicial);
   const existente = a0 ?? buscarArticulo(datos.articulos, nombre);
   const [unidad, setUnidad] = useState(a0?.unidad ?? 'ud');
   const [categoria, setCategoria] = useState(a0?.categoria ?? 'Otros');
@@ -971,7 +995,14 @@ function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
   const u = unidad;
   const enRecetas = existente ? datos.ingredientes.filter((i) => i.articulo_id === existente.id && i.cantidad != null).length : 0;
 
-  useEffect(() => { if (existente && !a0) { setCategoria(existente.categoria); setUnidad(existente.unidad); } }, [existente?.id]);
+  const [clavesCampos, setClavesCampos] = useState(0);
+  useEffect(() => {
+    if (!existente || a0) return;
+    setCategoria(existente.categoria); setUnidad(existente.unidad);
+    // Si ya estaba en la despensa, se ven su cantidad y su aviso (y se cambian, no se pierden)
+    const d = datos.despensa.find((x) => x.articulo_id === existente.id);
+    if (d) { setCantidad(d.cantidad); setMinimo(d.minimo || null); setClavesCampos((n) => n + 1); }
+  }, [existente?.id]);
 
   const guardar = async () => {
     if (!nombre.trim()) return mostrarAviso('Escribe el nombre');
@@ -1004,9 +1035,9 @@ function EditarDespensa({ almacen, datos, articuloId, onCerrar }) {
       <label>Sección<select value=${categoria} onChange=${(e) => setCategoria(e.target.value)}>
         ${CATEGORIAS.map((c) => html`<option value=${c}>${c}</option>`)}</select></label>
       <label>Hay en casa</label>
-      <${CampoCantidad} unidad=${u} valor=${cantidad} onCambio=${setCantidad} placeholder="0" />
+      <${CampoCantidad} key=${`c${clavesCampos}${u}`} unidad=${u} valor=${cantidad} onCambio=${setCantidad} placeholder="0" />
       <label>Avisar cuando quede esto o menos <small>(opcional)</small></label>
-      <${CampoCantidad} unidad=${u} valor=${minimo} onCambio=${setMinimo} placeholder="Sin mínimo" />
+      <${CampoCantidad} key=${`m${clavesCampos}${u}`} unidad=${u} valor=${minimo} onCambio=${setMinimo} placeholder="Sin mínimo" />
       <button class="boton grande" onClick=${guardar}>Guardar</button>
       ${d0 && html`<p class="pie"><button class="enlace peligro" onClick=${quitar}>Quitar de la despensa</button></p>`}
     </${Hoja}>`;
