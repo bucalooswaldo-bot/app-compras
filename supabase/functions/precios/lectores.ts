@@ -218,3 +218,56 @@ export async function fichaHiperDino(idExterno: string, url: string | null, actu
   return p ?? 'no_existe';
 }
 
+
+// ---------------------------------------------------------------------------
+// Open Food Facts: base de datos libre de productos por código de barras (nombre, marca, formato, foto).
+// Sirve para saber qué es un producto a partir de la foto de su código.
+// ---------------------------------------------------------------------------
+export type Ficha = {
+  nombre: string | null;
+  marca: string | null;
+  formato: string | null;
+  cantidad: number | null;
+  unidad: Unidad | null;
+  imagen_url: string | null;
+  tiendas: string | null;
+  categorias: string[];
+};
+
+export const codigoValido = (ean: unknown) => /^\d{8}$|^\d{12,14}$/.test(String(ean ?? ''));
+
+// deno-lint-ignore no-explicit-any
+export function deOpenFoodFacts(p: any): Ficha | null {
+  if (!p) return null;
+  const nombre = String(p.product_name_es || p.product_name || p.generic_name_es || '').trim() || null;
+  const marca = String(p.brands ?? '').split(',')[0].trim() || null;
+  const formato = String(p.quantity ?? '').trim() || null;
+  const tam = formato ? tamanoDesdeNombre(formato) : null;
+  if (!nombre && !marca) return null;
+  return {
+    nombre, marca, formato,
+    cantidad: tam?.cantidad ?? null,
+    unidad: tam?.unidad ?? null,
+    imagen_url: p.image_front_small_url ?? p.image_small_url ?? null,
+    tiendas: String(p.stores ?? '').trim() || null,
+    categorias: Array.isArray(p.categories_tags) ? p.categories_tags.slice(0, 12) : [],
+  };
+}
+
+export async function fichaPorCodigo(ean: string): Promise<Ficha | null> {
+  const campos = 'product_name,product_name_es,generic_name_es,brands,quantity,image_front_small_url,image_small_url,stores,categories_tags';
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${ean}.json?fields=${campos}`, {
+    headers: { 'User-Agent': 'AppCompras/1.0 (uso personal)' },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Open Food Facts respondió ${res.status}`);
+  const datos = await res.json();
+  return datos.status === 1 ? deOpenFoodFacts(datos.product) : null;
+}
+
+/** Texto para buscar en los súper: "Patatas fritas clásicas" + marca, sin el formato. */
+export function textoParaBuscar(nombre: string | null, marca: string | null) {
+  let t = String(nombre ?? '').replace(/\d+(?:[.,]\d+)?\s*(kg|grs?|g|mg|litros?|lt|l|cl|ml|uds?|u)\b\.?/gi, ' ');
+  if (marca && !t.toLowerCase().includes(marca.toLowerCase())) t = `${t} ${marca}`;
+  return t.replace(/\s+/g, ' ').trim().slice(0, 80);
+}

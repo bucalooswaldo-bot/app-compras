@@ -353,3 +353,10 @@ li.hecho { opacity: 0.8; }
 .marca-datos small { color: var(--suave); }
 .marca-acciones { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; }
 .marca-acciones .boton { margin: 0; }
+
+/* Añadir a la despensa con una foto */
+.boton-foto { width: 100%; margin: 8px 0 2px; }
+.foto-leida { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.foto-leida img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; flex: none; }
+.foto-leida div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.marcas li { cursor: pointer; }

@@ -3,6 +3,10 @@
 //
 //   accion "buscar":     la app (con sesión) busca productos, p. ej. "leche entera".
 //                        Devuelve lo que vende cada súper con su precio y lo guarda en el catálogo.
+//   accion "codigo":     la app manda el código de barras de una foto (y lo leído en la etiqueta).
+//                        Devuelve qué producto es (Open Food Facts) y sus parecidos en Mercadona e HiperDino;
+//                        en Mercadona se comprueba en su ficha si el código coincide exactamente.
+//   accion "recordar":   guarda el código de barras en un producto que la casa ha confirmado (HiperDino no lo da).
 //   accion "actualizar": la tarea programada (pg_cron, una vez al día) refresca el precio de los
 //                        productos que alguna casa tiene enlazados y cuyo precio tiene más de 6 días.
 //                        Así cada producto se consulta como mucho una vez por semana.
@@ -13,6 +17,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   Rechazo, type Producto, porUnidad, buscarMercadona, buscarHiperDino, fichaMercadona, fichaHiperDino,
+  codigoValido, fichaPorCodigo, textoParaBuscar,
 } from './lectores.ts';
 
 const DIAS_PARA_REFRESCAR = 6;
@@ -36,12 +41,18 @@ async function guardar(productos: Producto[]) {
   if (!productos.length) return [];
   const unicos = [...new Map(productos.map((p) => [`${p.supermercado_id}|${p.id_externo}`, p])).values()];
   const ahora = new Date().toISOString();
-  const { data: filas, error } = await db.from('productos_super')
-    .upsert(unicos.map(({ precio: _p, precio_anterior: _a, ...p }) => ({ ...p, activo: true, actualizado_en: ahora })),
-      { onConflict: 'supermercado_id,id_externo' })
-    .select('id, supermercado_id, id_externo');
-  if (error) throw error;
-  const idDe = new Map(filas!.map((f) => [`${f.supermercado_id}|${f.id_externo}`, f.id]));
+  // El buscador de Mercadona no trae el código de barras: si no viene, no se toca el que ya hubiera.
+  const filas = [];
+  for (const conEan of [true, false]) {
+    const grupo = unicos.filter((p) => !!p.ean === conEan)
+      .map(({ precio: _p, precio_anterior: _a, ean, ...p }) => ({ ...p, ...(conEan ? { ean } : {}), activo: true, actualizado_en: ahora }));
+    if (!grupo.length) continue;
+    const { data, error } = await db.from('productos_super').upsert(grupo, { onConflict: 'supermercado_id,id_externo' })
+      .select('id, supermercado_id, id_externo');
+    if (error) throw error;
+    filas.push(...data!);
+  }
+  const idDe = new Map(filas.map((f) => [`${f.supermercado_id}|${f.id_externo}`, f.id]));
   const ids = [...idDe.values()];
   const { data: ultimos, error: e2 } = await db.from('precio_actual').select('producto_id, precio, visto_en').in('producto_id', ids);
   if (e2) throw e2;
@@ -93,6 +104,42 @@ async function buscar(consultas: { texto: string; supers?: string[] }[]) {
     resultados.push(fila);
   }
   return { resultados };
+}
+
+/** Lo que se sabe de un código de barras: la ficha libre y los productos de cada súper. */
+async function porCodigo(ean: string, leido: string) {
+  const salida: Record<string, unknown> = { ean };
+  // Ya visto antes (por esta u otra casa)
+  const { data: conocidos } = await db.from('productos_super').select('*').eq('ean', ean).eq('activo', true);
+  salida.conocidos = conocidos ?? [];
+  let ficha = null;
+  try { ficha = await fichaPorCodigo(ean); } catch (e) { salida.aviso = e instanceof Error ? e.message : String(e); }
+  salida.ficha = ficha;
+  const conocido = (conocidos ?? [])[0];
+  const texto = textoParaBuscar(ficha?.nombre ?? conocido?.nombre ?? (leido || null), ficha?.marca ?? conocido?.marca ?? null);
+  salida.texto = texto;
+  if (!texto) return salida;
+  const parecidos: Record<string, unknown> = {};
+  try {
+    const lista = await buscarMercadona(texto);
+    // Su buscador no da el código: se mira en la ficha de los primeros si coincide.
+    const exactos: Producto[] = [];
+    for (const p of lista.slice(0, 3)) {
+      const f = await fichaMercadona(p.id_externo).catch(() => null);
+      if (f && f !== 'no_existe' && f.ean) {
+        const i = lista.indexOf(p);
+        lista[i] = f;
+        if (f.ean === ean) { exactos.push(f); break; }
+      }
+    }
+    parecidos.mercadona = await guardar(exactos.length ? exactos : lista.slice(0, 6));
+    if (exactos.length) salida.exacto = 'mercadona';
+  } catch (e) { parecidos.mercadona = { error: e instanceof Error ? e.message : String(e) }; }
+  try {
+    parecidos.hiperdino = await guardar((await buscarHiperDino(texto)).slice(0, 6));
+  } catch (e) { parecidos.hiperdino = { error: e instanceof Error ? e.message : String(e) }; }
+  salida.parecidos = parecidos;
+  return salida;
 }
 
 async function actualizar() {
@@ -149,13 +196,25 @@ Deno.serve(async (req) => {
       if (!esTarea) return responder({ error: 'No autorizado' }, 401);
       return responder(await actualizar());
     }
+    if (['buscar', 'codigo', 'recordar'].includes(cuerpo.accion) && !esTarea) {
+      const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+      const { data, error } = await db.auth.getUser(token);
+      if (error || !data.user) return responder({ error: 'Hace falta iniciar sesión' }, 401);
+    }
     if (cuerpo.accion === 'buscar') {
-      if (!esTarea) {
-        const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-        const { data, error } = await db.auth.getUser(token);
-        if (error || !data.user) return responder({ error: 'Hace falta iniciar sesión' }, 401);
-      }
       return responder(await buscar(Array.isArray(cuerpo.consultas) ? cuerpo.consultas : []));
+    }
+    if (cuerpo.accion === 'codigo') {
+      if (!codigoValido(cuerpo.ean)) return responder({ error: 'Código de barras no válido' }, 400);
+      return responder(await porCodigo(String(cuerpo.ean), String(cuerpo.texto ?? '').slice(0, 80)));
+    }
+    if (cuerpo.accion === 'recordar') {
+      if (!codigoValido(cuerpo.ean) || typeof cuerpo.producto_id !== 'string') return responder({ error: 'Faltan datos' }, 400);
+      // Solo si el producto aún no tiene código (el de Mercadona viene de su web y manda).
+      const { error } = await db.from('productos_super').update({ ean: String(cuerpo.ean) })
+        .eq('id', cuerpo.producto_id).is('ean', null);
+      if (error) throw error;
+      return responder({ ok: true });
     }
     return responder({ error: 'Acción desconocida' }, 400);
   } catch (e) {
