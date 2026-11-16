@@ -481,3 +481,16 @@ li.hecho { opacity: 0.8; }
 .comparar-ficha .cant small { color: var(--suave); font-size: 0.78rem; }
 .en-este .dos label { margin-top: 0; }
 .foto-chip { display: inline-flex; align-items: center; cursor: pointer; margin: 0; font-weight: 400; }
+.boton.coger { width: 100%; margin-top: 8px; }
+.subir-tique { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--verde); background: var(--panel); }
+.subir-tique small { color: var(--suave); }
+.subir-tique .acciones { margin-top: 4px; }
+.subir-tique .foto-chip { min-height: 44px; padding: 0 14px; font-weight: 600; }
+.foto-chip.centrado { justify-content: center; margin-top: 12px; }
+.cotejo .cant small { font-size: 0.78rem; }
+.cotejo .sube { color: var(--aviso); }
+.cotejo .baja { color: var(--verde); }
+.filas.extra li { flex-wrap: wrap; }
+.filas.extra select { flex: 1 1 100%; margin-bottom: 4px; }
+.filas input[type="checkbox"] { width: 22px; height: 22px; flex: none; accent-color: var(--verde); }
+.filas label.nombre { margin: 0; font-weight: 400; font-size: 1rem; }
