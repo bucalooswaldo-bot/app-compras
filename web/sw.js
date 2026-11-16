@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'compras-v28';
+const VERSION = 'compras-v29';
 const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
@@ -10,7 +10,7 @@ const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webm
 // instalar: se guardan la primera vez que se usan.
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(ARCHIVOS.map((a) => new Request(a, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

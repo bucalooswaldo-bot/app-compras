@@ -27,6 +27,8 @@ import * as config from '../config.js';
 // Utilidades de pantalla
 // ---------------------------------------------------------------------------
 let mostrarAviso = () => {};
+// Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
+const VERSION_APP = 29;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -2532,7 +2534,7 @@ function PantallaAjustes({ almacen, sesion, onCerrar }) {
       `}
       <h3>Instalar en el móvil</h3>
       <p>En Chrome para Android: menú ⋮ → <b>Añadir a pantalla de inicio</b> (o <b>Instalar aplicación</b>).</p>
-      <p class="meta">Versión ${config.VERSION}</p>
+      <p class="meta">Versión ${VERSION_APP}</p>
     </${Hoja}>`;
 }
 
@@ -3337,5 +3339,13 @@ const prueba = new URLSearchParams(location.search).has('prueba') || config.MODO
 });
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Al publicar una versión nueva: se busca al abrir o volver a la app y, cuando llega, se recarga sola.
+  const habia = !!navigator.serviceWorker.controller;
+  let recargado = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (habia && !recargado) { recargado = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+  }).catch(() => {});
 }
