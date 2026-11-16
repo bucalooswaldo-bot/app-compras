@@ -52,13 +52,27 @@ export function dibujoReceta(receta) {
   return '🍽️';
 }
 
-/** Dibuja el fotograma que se ve ahora en un <video> y lo pasa a JPEG (para la portada de la receta). */
+/**
+ * Zona del fotograma que se queda para la portada: 4:3 como el hueco de la ficha, sin bandas.
+ * En vídeos verticales se corta arriba y abajo, un poco por encima del centro (ahí suele estar el plato).
+ */
+export function recortePortada(ancho, alto, proporcion = 4 / 3) {
+  if (ancho / alto < proporcion) {
+    const h = Math.round(ancho / proporcion);
+    return { x: 0, y: Math.round((alto - h) * 0.45), w: ancho, h };
+  }
+  const w = Math.round(alto * proporcion);
+  return { x: Math.round((ancho - w) / 2), y: 0, w, h: alto };
+}
+
+/** Dibuja el fotograma que se ve ahora en un <video>, recortado a 4:3, y lo pasa a JPEG (portada de la receta). */
 export function fotoDeFotograma(video, max = 1280, calidad = 0.8) {
-  const escala = Math.min(1, max / Math.max(video.videoWidth, video.videoHeight));
+  const r = recortePortada(video.videoWidth, video.videoHeight);
+  const escala = Math.min(1, max / Math.max(r.w, r.h));
   const lienzo = document.createElement('canvas');
-  lienzo.width = Math.round(video.videoWidth * escala);
-  lienzo.height = Math.round(video.videoHeight * escala);
-  lienzo.getContext('2d').drawImage(video, 0, 0, lienzo.width, lienzo.height);
+  lienzo.width = Math.round(r.w * escala);
+  lienzo.height = Math.round(r.h * escala);
+  lienzo.getContext('2d').drawImage(video, r.x, r.y, r.w, r.h, 0, 0, lienzo.width, lienzo.height);
   return new Promise((ok, mal) =>
     lienzo.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo sacar la foto del vídeo'))), 'image/jpeg', calidad));
 }
