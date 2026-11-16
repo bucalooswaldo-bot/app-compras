@@ -15,9 +15,9 @@ import {
   tiqueRepetido, lineasQueSobran, cotejarTique,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
-import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma } from './fotos.js';
+import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma, portadaDeCaptura } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
-import { entenderReceta, textoPorColumnas, juntarLecturas } from './receta-texto.js';
+import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano } from './receta-texto.js';
 import { prepararVideo, megas } from './video.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
@@ -28,7 +28,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 29;
+const VERSION_APP = 30;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -486,8 +486,8 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
           const hay = datos.despensa.find((d) => d.articulo_id === i.articulo_id);
           const c = escalar(i.cantidad, r.raciones, raciones);
           return html`<li>
-            <span>${a?.nombre}${i.nota ? html` <small>(${i.nota})</small>` : ''}</span>
-            <span class="cant">${c == null ? 'al gusto' : formatoCantidad(c, a?.unidad)}
+            <span>${a?.nombre}${i.nota && c != null ? html` <small>(${i.nota})</small>` : ''}</span>
+            <span class="cant">${c == null ? (i.nota || 'al gusto') : formatoCantidad(c, a?.unidad)}
               ${hay && hay.cantidad > 0 && html`<small class="en-casa" title="En casa">🏠 ${formatoCantidad(hay.cantidad, a?.unidad)}</small>`}</span>
           </li>`;
         })}
@@ -553,6 +553,95 @@ function ElegirIngredientes({ datos, elegidos, onElegir, onCerrar }) {
     </${Hoja}>`;
 }
 
+// Unidades para elegir en cada ingrediente: las de compra (se suman en la lista) y las caseras (van como nota).
+const UNIDAD_FAMILIA = { g: 'g', kg: 'g', ml: 'ml', l: 'ml', ud: 'ud' };
+const CASERAS = ['cda', 'cdta', 'taza', 'vaso', 'pizca', 'puñado', 'chorrito', 'al gusto'];
+const CASERA_DE = (u) => {
+  const n = normalizar(u);
+  if (/^(cucharadas?|cdas?)$/.test(n)) return 'cda';
+  if (/^(cucharaditas?|cditas?|cdtas?)$/.test(n)) return 'cdta';
+  return CASERAS.find((c) => normalizar(c) === n.replace(/s$/, '')) ?? null;
+};
+
+/** "1 cdta, picado" -> { medida: '1 cdta', nota: 'picado' } (la medida casera se elige con el desplegable). */
+function separarMedida(nota) {
+  const t = String(nota ?? '').trim();
+  if (/^al gusto\b/i.test(t)) return { medida: 'al gusto', nota: t.replace(/^al gusto\s*,?\s*/i, '') };
+  const m = t.match(/^(\d+(?:[.,/]\d+)?|un|una|medio|media)\s+([a-zñ]+)\b\s*,?\s*(.*)$/i);
+  const u = m && CASERA_DE(m[2]);
+  if (!u) return { medida: '', nota: t };
+  const n = { un: '1', una: '1', medio: '1/2', media: '1/2' }[m[1].toLowerCase()] ?? m[1];
+  return { medida: `${n} ${u}`, nota: m[3] };
+}
+
+/**
+ * Cantidad y unidad de un ingrediente de receta. g/kg/ml/l/ud cuentan para la lista de la compra;
+ * cucharadas, pizcas… se guardan como nota. Si el artículo ya existe y se compra de otra forma
+ * (p. ej. por peso y se elige ml), también va como nota.
+ */
+function CantidadIngrediente({ ing, existe, onCambio }) {
+  const inicial = () => {
+    if (ing.medida === 'al gusto') return ['', 'al gusto'];
+    if (ing.medida) { const [n, ...u] = ing.medida.split(' '); return [n, u.join(' ')]; }
+    return aEntrada(ing.cantidad, ing.unidad);
+  };
+  const [texto, setTexto] = useState(() => inicial()[0]);
+  const [u, setU] = useState(() => inicial()[1]);
+  const cambiar = (t, unidad) => {
+    setTexto(t); setU(unidad);
+    const fam = UNIDAD_FAMILIA[unidad];
+    if (unidad === 'al gusto') onCambio({ cantidad: null, medida: 'al gusto' });
+    else if (!fam) onCambio({ cantidad: null, medida: `${t} ${unidad}`.trim() });
+    else onCambio({ unidad: fam, cantidad: deEntrada(t, unidad), medida: '' });
+  };
+  const otraForma = existe && UNIDAD_FAMILIA[u] && UNIDAD_FAMILIA[u] !== existe.unidad;
+  return html`
+    <div class="cantidad-ing">
+      <div class="fila-campo">
+        <input inputmode="decimal" placeholder="Cantidad" value=${texto} disabled=${u === 'al gusto'}
+          onInput=${(e) => cambiar(e.target.value, u)} />
+        <select value=${u} aria-label="Unidad" onChange=${(e) => cambiar(texto, e.target.value)}>
+          ${Object.keys(UNIDAD_FAMILIA).map((x) => html`<option value=${x}>${x}</option>`)}
+          ${CASERAS.map((x) => html`<option value=${x}>${x}</option>`)}
+        </select>
+      </div>
+      ${otraForma && html`<small class="meta">${existe.nombre} se compra por ${UNIDAD_LARGA[existe.unidad]}: irá como nota</small>`}
+    </div>`;
+}
+
+const ETIQUETAS_BASE = ['Cuchara', 'Rápida', 'Ligera', 'Cena', 'Pescado', 'Carne', 'Pollo', 'Verdura', 'Pasta', 'Arroz', 'Postre', 'Canaria'];
+
+/** Etiquetas para tocar (las que ya se usan y unas cuantas habituales) y un hueco para añadir otra. */
+function ElegirEtiquetas({ datos, valor, onCambio }) {
+  const [nueva, setNueva] = useState('');
+  const elegidas = valor.split(',').map((x) => x.trim()).filter(Boolean);
+  const tiene = (e) => elegidas.some((x) => normalizar(x) === normalizar(e));
+  const todas = [];
+  for (const e of [...datos.recetas.flatMap((r) => r.etiquetas ?? []), ...ETIQUETAS_BASE, ...elegidas]) {
+    if (!todas.some((x) => normalizar(x) === normalizar(e))) todas.push(e);
+  }
+  todas.sort((a, b) => a.localeCompare(b, 'es'));
+  const poner = (lista) => onCambio(lista.join(', '));
+  const alternar = (e) => poner(tiene(e) ? elegidas.filter((x) => normalizar(x) !== normalizar(e)) : [...elegidas, e]);
+  const anadir = () => {
+    const e = mayusculaInicial(nueva.trim());
+    if (e && !tiene(e)) poner([...elegidas, e]);
+    setNueva('');
+  };
+  return html`
+    <div class="etiquetas-editor">
+      <span class="etiqueta-titulo">Etiquetas <small>(toca para poner o quitar)</small></span>
+      <div class="chips">
+        ${todas.map((e) => html`<button type="button" class="chip ${tiene(e) ? 'activo' : ''}" aria-pressed=${tiene(e)} onClick=${() => alternar(e)}>${tiene(e) ? '✓ ' : ''}${e}</button>`)}
+      </div>
+      <div class="fila-campo">
+        <input placeholder="Otra etiqueta" value=${nueva} onInput=${(e) => setNueva(e.target.value)}
+          onKeyDown=${(e) => { if (e.key === 'Enter') { e.preventDefault(); anadir(); } }} />
+        <button type="button" class="chip" disabled=${!nueva.trim()} onClick=${anadir}>+ Añadir</button>
+      </div>
+    </div>`;
+}
+
 const mayusculaInicial = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
 const UNIDAD_LARGA = { g: 'peso', ml: 'líquido', ud: 'unidades' };
 
@@ -565,13 +654,14 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
   });
   const [ings, setIngs] = useState(ingOriginales.map((i) => {
     const a = articulo(datos, i.articulo_id);
-    return { clave: i.id, nombre: a?.nombre ?? '', cantidad: i.cantidad, unidad: a?.unidad ?? 'ud', categoria: a?.categoria, nota: i.nota ?? '' };
+    return { clave: i.id, nombre: a?.nombre ?? '', cantidad: i.cantidad, unidad: a?.unidad ?? 'ud', categoria: a?.categoria, ...separarMedida(i.nota) };
   }));
   const [elegir, setElegir] = useState(false);
   const [pegar, setPegar] = useState(null); // texto que se está pegando
   const [guardando, setGuardando] = useState(false);
   const [leyendo, setLeyendo] = useState(null);       // texto del progreso al leer capturas
   const [textoLeido, setTextoLeido] = useState('');
+  const [portada, setPortada] = useState(null);       // { blob, url } foto del plato sacada de la captura
   const entradaCaptura = useRef(null);
   const cambiarIng = (k, cambios) => setIngs((xs) => xs.map((x) => (x.clave === k ? { ...x, ...cambios } : x)));
   const elegidos = new Set(ings.map((i) => normalizar(i.nombre)));
@@ -583,7 +673,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
   const separar = () => {
     const leidos = entenderIngredientes(pegar, datos.articulos);
     setIngs((xs) => [...xs, ...leidos.map((l) => ({
-      clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, nota: l.nota ?? '', categoria: l.categoria,
+      clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, ...separarMedida(l.nota),
     }))]);
     setPegar(null);
     mostrarAviso(`${leidos.length} ingredientes añadidos. Revisa las cantidades.`);
@@ -595,12 +685,20 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
     setLeyendo('Leyendo la captura…');
     try {
       let texto = '';
+      const titulos = [];
+      let hayPortada = !!portada;
       for (let k = 0; k < ficheros.length; k++) {
         const cual = ficheros.length > 1 ? `Leyendo captura ${k + 1} de ${ficheros.length}` : 'Leyendo la captura';
         setLeyendo(`${cual}…`);
-        texto += `\n${await leerRecetaDeImagen(ficheros[k], (p) => setLeyendo(`${cual}… ${p} %`))}`;
+        const leido = await leerRecetaDeImagen(ficheros[k], (p) => setLeyendo(`${cual}… ${p} %`));
+        texto += `\n${leido.texto}`;
+        titulos.push(...leido.titulos);
+        if (leido.portada && !hayPortada) {
+          hayPortada = true;
+          setPortada({ blob: leido.portada, url: URL.createObjectURL(leido.portada) });
+        }
       }
-      const r = entenderReceta(texto);
+      const r = entenderReceta(texto, { titulos });
       setTextoLeido(texto.trim());
       setF((prev) => ({
         ...prev,
@@ -613,7 +711,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
       setIngs((xs) => [...xs, ...leidos
         .filter((l, k) => !xs.some((x) => normalizar(x.nombre) === normalizar(l.nombre))
           && leidos.findIndex((o) => normalizar(o.nombre) === normalizar(l.nombre)) === k)
-        .map((l) => ({ clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, nota: l.nota ?? '', categoria: l.categoria }))]);
+        .map((l) => ({ clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, ...separarMedida(l.nota) }))]);
       mostrarAviso(r.nombre || leidos.length || r.pasos.length
         ? `Leído: ${leidos.length} ingredientes y ${r.pasos.length} pasos. Revísalo antes de guardar.`
         : 'No se ha entendido bien la captura. Abajo tienes el texto leído para copiarlo.');
@@ -642,9 +740,25 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
     for (const i of ings) {
       if (!i.nombre.trim()) continue;
       const a = await obtenerArticulo(almacen, i.nombre, i.unidad, i.categoria ?? adivinarCategoria(i.nombre));
-      filas.push({ receta_id: recetaId, articulo_id: a.id, cantidad: i.cantidad, nota: i.nota?.trim() || null, orden: orden++ });
+      // Si se eligió una unidad que no es la del artículo (p. ej. ml para algo que se compra por peso), va como nota
+      const cantidad = a.unidad === i.unidad ? i.cantidad : null;
+      const medida = a.unidad === i.unidad ? i.medida : (i.medida || (i.cantidad != null ? formatoCantidad(i.cantidad, i.unidad) : ''));
+      const nota = [medida, i.nota?.trim()].filter(Boolean).join(', ') || null;
+      filas.push({ receta_id: recetaId, articulo_id: a.id, cantidad, nota, orden: orden++ });
     }
     if (filas.length) await almacen.insertar('ingredientes', filas);
+    if (portada) {
+      try {
+        const prueba = almacen.motor.modo === 'prueba';
+        const blob = prueba ? await reducirFoto(portada.blob, 640, 0.7) : portada.blob;
+        const ruta = await almacen.motor.subirFoto(blob);
+        await almacen.actualizar('recetas', recetaId, { foto_path: ruta });
+        if (original?.foto_path) almacen.motor.borrarFoto(original.foto_path).catch(() => {});
+      } catch (err) {
+        console.error(err);
+        mostrarAviso(`Receta guardada, pero no la foto: ${err.message ?? err}`);
+      }
+    }
     setGuardando(false);
     onCerrar(recetaId);
   };
@@ -661,13 +775,20 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
         <textarea rows="8" readonly value=${textoLeido}></textarea>
         <small>Si falta algo, cópialo de aquí y pégalo donde toque.</small>
       </details>`}
+      ${portada && html`
+        <div class="portada-captura">
+          <img src=${portada.url} alt="Foto del plato sacada de la captura" />
+          <div class="acciones">
+            <small class="meta">Portada sacada de la captura${original?.foto_path ? ' (cambiará la que tiene)' : ''}</small>
+            <button class="enlace" onClick=${() => { URL.revokeObjectURL(portada.url); setPortada(null); }}>Quitar</button>
+          </div>
+        </div>`}
       <label>Nombre<input value=${f.nombre} onInput=${(e) => setF({ ...f, nombre: e.target.value })} /></label>
       <div class="dos">
         <label>Raciones<input inputmode="numeric" value=${f.raciones} onInput=${(e) => setF({ ...f, raciones: e.target.value })} /></label>
         <label>Minutos<input inputmode="numeric" value=${f.tiempo_min} onInput=${(e) => setF({ ...f, tiempo_min: e.target.value })} /></label>
       </div>
-      <label>Etiquetas <small>(separadas por comas)</small>
-        <input value=${f.etiquetas} placeholder="Cuchara, Rápida, Postre…" onInput=${(e) => setF({ ...f, etiquetas: e.target.value })} /></label>
+      <${ElegirEtiquetas} datos=${datos} valor=${f.etiquetas} onCambio=${(etiquetas) => setF((prev) => ({ ...prev, etiquetas }))} />
       <h3>Ingredientes</h3>
       ${ings.length === 0 && html`<p class="meta">Añádelos uno a uno desde el listado, o pega un texto con todos.</p>`}
       ${ings.map((i) => html`
@@ -678,8 +799,8 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
             <button class="icono peq" aria-label=${`Quitar ${i.nombre}`} onClick=${() => setIngs(ings.filter((x) => x.clave !== i.clave))}>✕</button>
           </div>
           <div class="ing-datos">
-            <${CampoCantidad} unidad=${i.unidad} valor=${i.cantidad} placeholder="Cantidad" onCambio=${(c) => cambiarIng(i.clave, { cantidad: c })} />
-            <input class="ing-nota" placeholder="Nota (1 cdta, picado…)" value=${i.nota} onInput=${(e) => cambiarIng(i.clave, { nota: e.target.value })} />
+            <${CantidadIngrediente} ing=${i} existe=${buscarArticulo(datos.articulos, i.nombre)} onCambio=${(c) => cambiarIng(i.clave, c)} />
+            <input class="ing-nota" placeholder="Nota (picado…)" value=${i.nota} onInput=${(e) => cambiarIng(i.clave, { nota: e.target.value })} />
           </div>
         </div>`)}
       <div class="acciones">
@@ -2782,7 +2903,7 @@ function lineasDe(data) {
   for (const b of data.blocks ?? []) for (const p of b.paragraphs ?? []) for (const l of p.lines ?? []) {
     lineas.push({
       y0: l.bbox.y0, y1: l.bbox.y1, confianza: l.confidence,
-      palabras: l.words.map((w) => ({ texto: w.text, x0: w.bbox.x0, x1: w.bbox.x1 })),
+      palabras: l.words.map((w) => ({ texto: w.text, x0: w.bbox.x0, x1: w.bbox.x1, conf: w.confidence })),
     });
   }
   return lineas;
@@ -2798,12 +2919,20 @@ async function leerRecetaDeImagen(fichero, onProgreso) {
   const grande = lienzoParaLeer(bmp);
   const { data } = await lector.recognize(grande, {}, { blocks: true, text: true });
   progresoOCR = (p) => onProgreso?.(80 + Math.round(p * 0.2));
-  // Los títulos muy grandes se leen bien con la captura a unos 420 px de ancho
-  const pequeno = lienzoParaLeer(bmp, Math.min(1, 420 / grande.width));
-  const escala = pequeno.width / grande.width;
-  const { data: dataPeq } = await lector.recognize(pequeno, {}, { blocks: true });
-  const lineas = juntarLecturas(lineasDe(data), lineasDe(dataPeq), escala);
-  return lineas.length ? textoPorColumnas(lineas, grande.height) : data.text;
+  // Los títulos muy grandes (y con letra de adorno) se leen mejor con la captura pequeña: a 420 y a 280 px
+  let lineas = lineasDe(data);
+  for (const ancho of [420, 280]) {
+    const pequeno = lienzoParaLeer(bmp, Math.min(1, ancho / grande.width));
+    const { data: dataPeq } = await lector.recognize(pequeno, {}, { blocks: true });
+    lineas = juntarLecturas(lineas, lineasDe(dataPeq), pequeno.width / grande.width);
+  }
+  // Portada: la foto del plato que haya en la captura (lo que no es texto), recortada a 4:3
+  // Texto seguro (palabras, no líneas enteras: una línea puede cruzar la foto con letras inventadas)
+  const cajas = lineasDe(data).flatMap((l) => l.palabras.filter((p) => p.conf >= 75 && /[a-záéíóúñ0-9]{2}/i.test(p.texto))
+    .map((p) => ({ x0: p.x0, x1: p.x1, y0: l.y0, y1: l.y1 })));
+  const portada = await portadaDeCaptura(bmp, cajas, grande.width).catch(() => null);
+  if (!lineas.length) return { texto: data.text, titulos: [], portada };
+  return { texto: textoPorColumnas(lineas, grande.height), titulos: tituloPorTamano(lineas, grande.height), portada };
 }
 
 const NOMBRE_PERIODO = { semana: 'Semana', mes: 'Mes', anio: 'Año' };

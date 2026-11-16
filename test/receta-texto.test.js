@@ -103,3 +103,16 @@ test('captura con ingredientes en columnas (infografía) y zonas de foto', async
   assert.equal(r.raciones, 4);
   assert.equal(r.ingredientes.length, 5);
 });
+
+test('título: se elige el grande que encaja con la receta, y si ninguno encaja se deja vacío', () => {
+  const texto = 'Ingredientes\n600 g de solomillo de cerdo ibérico\n400 g de setas';
+  assert.equal(entenderReceta(texto, { titulos: ['Y lleno de color', 'Solomillo ibérico'] }).nombre, 'Solomillo ibérico');
+  assert.equal(entenderReceta(texto, { titulos: ['Sazuela de'] }).nombre, '');
+});
+
+test('varios ingredientes en un renglón, medidas sin número y letras mal leídas', async () => {
+  const { partirVarios } = await import('../web/src/receta-texto.js');
+  assert.deepEqual(partirVarios('700 g de papas 1 cebolla 1 pimiento'), ['700 g de papas', '1 cebolla', '1 pimiento']);
+  const r = entenderReceta('Ingredientes\n• 320 q de fideos\n• 100 mi de vino blanco\n• 3 gde sal\n• cucharadita de pimentón\n• 1,21 de caldo de pescado');
+  assert.deepEqual(r.ingredientes, ['320 g de fideos', '100 ml de vino blanco', '3 g de sal', '1 cucharadita de pimentón', '1,2 l de caldo de pescado']);
+});

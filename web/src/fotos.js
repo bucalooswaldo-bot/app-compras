@@ -110,3 +110,98 @@ export async function fotoDeVideo(archivo, segundo = 1.5, max = 1280, calidad = 
     URL.revokeObjectURL(url);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Portada sacada de la captura de una receta: se busca la foto del plato (la zona grande con color y
+// detalle que no es texto) y se recorta a 4:3.
+// ---------------------------------------------------------------------------
+
+/**
+ * La zona de foto más grande en una rejilla de casillas (true = parece foto).
+ * @returns {{ x0, y0, x1, y1, cx, cy, n } | null} en casillas (x1/y1 incluidas), con el centro de masas.
+ */
+export function mayorZona(rejilla, cols, filas) {
+  const visto = new Uint8Array(cols * filas);
+  let mejor = null;
+  for (let i = 0; i < cols * filas; i++) {
+    if (!rejilla[i] || visto[i]) continue;
+    const pila = [i];
+    visto[i] = 1;
+    const z = { x0: cols, y0: filas, x1: 0, y1: 0, sx: 0, sy: 0, n: 0 };
+    while (pila.length) {
+      const k = pila.pop();
+      const x = k % cols, y = Math.floor(k / cols);
+      z.x0 = Math.min(z.x0, x); z.x1 = Math.max(z.x1, x); z.y0 = Math.min(z.y0, y); z.y1 = Math.max(z.y1, y);
+      z.sx += x; z.sy += y; z.n++;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= cols || ny >= filas) continue;
+        const j = ny * cols + nx;
+        if (rejilla[j] && !visto[j]) { visto[j] = 1; pila.push(j); }
+      }
+    }
+    if (!mejor || z.n > mejor.n) mejor = z;
+  }
+  return mejor && { x0: mejor.x0, y0: mejor.y0, x1: mejor.x1, y1: mejor.y1, cx: mejor.sx / mejor.n, cy: mejor.sy / mejor.n, n: mejor.n };
+}
+
+/** El mayor 4:3 que cabe en la caja, centrado lo más posible en (cx, cy). */
+export function recorteEnCaja(caja, cx, cy, proporcion = 4 / 3) {
+  let w = caja.w, h = Math.round(w / proporcion);
+  if (h > caja.h) { h = caja.h; w = Math.round(h * proporcion); }
+  const x = Math.round(Math.min(Math.max(cx - w / 2, caja.x), caja.x + caja.w - w));
+  const y = Math.round(Math.min(Math.max(cy - h / 2, caja.y), caja.y + caja.h - h));
+  return { x, y, w, h };
+}
+
+/**
+ * Busca la foto del plato en una captura y la devuelve recortada a 4:3 (JPEG), o null si no hay.
+ * @param {ImageBitmap} bmp
+ * @param {Array<{x0,y0,x1,y1}>} cajasTexto zonas con texto, en píxeles de `anchoTexto`
+ */
+export async function portadaDeCaptura(bmp, cajasTexto = [], anchoTexto = bmp.width, max = 1280, calidad = 0.8) {
+  const CASILLA = 12;
+  const ancho = 240, alto = Math.round((bmp.height * ancho) / bmp.width);
+  const lienzo = document.createElement('canvas');
+  lienzo.width = ancho; lienzo.height = alto;
+  const ctx = lienzo.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(bmp, 0, 0, ancho, alto);
+  const { data } = ctx.getImageData(0, 0, ancho, alto);
+  const cols = Math.floor(ancho / CASILLA), filas = Math.floor(alto / CASILLA);
+  const rejilla = new Array(cols * filas).fill(false);
+  const e = ancho / anchoTexto;
+  const conTexto = (x, y) => cajasTexto.some((c) => x * CASILLA + CASILLA > c.x0 * e && x * CASILLA < c.x1 * e
+    && y * CASILLA + CASILLA > c.y0 * e && y * CASILLA < c.y1 * e);
+  for (let fy = 0; fy < filas; fy++) {
+    for (let fx = 0; fx < cols; fx++) {
+      let s = 0, s2 = 0, sat = 0, n = 0;
+      for (let y = fy * CASILLA; y < (fy + 1) * CASILLA; y += 2) {
+        for (let x = fx * CASILLA; x < (fx + 1) * CASILLA; x += 2) {
+          const i = (y * ancho + x) * 4;
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const l = 0.3 * r + 0.59 * g + 0.11 * b;
+          s += l; s2 += l * l; sat += Math.max(r, g, b) - Math.min(r, g, b); n++;
+        }
+      }
+      const media = s / n, varianza = s2 / n - media * media, saturacion = sat / n;
+      // Foto: con detalle (no un fondo liso) y con color o tonos medios (no texto negro sobre blanco)
+      rejilla[fy * cols + fx] = varianza > 150 && saturacion > 40 && !conTexto(fx, fy);
+    }
+  }
+  // Se quitan las casillas sueltas o en hilera (letras de colores, iconos pequeños): una casilla de foto
+  // tiene al menos 3 vecinas que también lo son
+  const vecinas = (i) => { const x = i % cols, y = Math.floor(i / cols); let n = 0;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < cols && ny < filas && rejilla[ny * cols + nx]) n++; } return n; };
+  const limpia = rejilla.map((v, i) => v && vecinas(i) >= 3);
+  const z = mayorZona(limpia, cols, filas);
+  if (!z || z.n < cols * filas * 0.06) return null;
+  const k = (CASILLA * bmp.width) / ancho;   // casilla -> píxeles de la captura
+  const caja = { x: z.x0 * k, y: z.y0 * k, w: (z.x1 - z.x0 + 1) * k, h: (z.y1 - z.y0 + 1) * k };
+  if (caja.w < bmp.width * 0.3) return null;
+  const r = recorteEnCaja(caja, (z.cx + 0.5) * k, (z.cy + 0.5) * k);
+  const escala = Math.min(1, max / r.w);
+  const salida = document.createElement('canvas');
+  salida.width = Math.round(r.w * escala); salida.height = Math.round(r.h * escala);
+  salida.getContext('2d').drawImage(bmp, r.x, r.y, r.w, r.h, 0, 0, salida.width, salida.height);
+  return new Promise((ok) => salida.toBlob((b) => ok(b), 'image/jpeg', calidad));
+}

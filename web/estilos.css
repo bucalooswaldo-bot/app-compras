@@ -511,3 +511,13 @@ li.hecho { opacity: 0.8; }
 .video-receta { margin: 8px -16px 12px; }
 .video-receta video { display: block; width: 100%; max-height: 70vh; background: #000; }
 .video-receta .acciones-foto { padding-top: 8px; }
+.portada-captura { margin: 8px 0; }
+.portada-captura img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; }
+.portada-captura .acciones { justify-content: space-between; align-items: center; }
+.etiquetas-editor { margin: 8px 0 12px; display: grid; gap: 6px; }
+.etiqueta-titulo { font-weight: 600; }
+.etiqueta-titulo small { font-weight: 400; color: var(--suave); }
+.cantidad-ing { display: grid; gap: 2px; min-width: 0; }
+.cantidad-ing .fila-campo input { min-width: 0; flex: 1; }
+.cantidad-ing .fila-campo select { width: auto; flex: none; }
+.etiquetas-editor .chips { flex-wrap: wrap; overflow: visible; }
