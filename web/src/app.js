@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -1204,31 +1204,62 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
 const PLAZOS = [[3, '3 días'], [7, '1 semana'], [14, '2 semanas']];
 const leerPlazo = () => { try { return Number(localStorage.getItem('plazo-lista')) || 7; } catch { return 7; } };
 
+const leerVista = () => { try { return localStorage.getItem('vista-lista'); } catch { return null; } };
+
+/** Lo que se pasa a "¿Dónde sale más barato?" y al precio de hoy. */
+const itemsComparar = (datos, filas) => filas.map((f) => {
+  const a = articulo(datos, f.articulo_id);
+  return { clave: f.clave, articulo_id: f.articulo_id, nombre: a?.nombre ?? '¿?', unidad: a?.unidad ?? 'ud',
+    cantidad: f.cantidad ?? null, detalle: f.marca ?? null };
+});
+
 function PantallaLista({ almacen, datos, sesion }) {
   const hoy = fechaISO();
   const [plazo, setPlazo] = useState(leerPlazo());
   const [texto, setTexto] = useState('');
   const [editar, setEditar] = useState(null);
-  const [comparar, setComparar] = useState(false);
+  const [comparar, setComparar] = useState(null); // filas que se comparan
+  const [tengo, setTengo] = useState(false);
   const previa = useMemo(() => (texto.trim() ? entenderDictado(texto, datos.articulos, marcasConocidas()) : []), [texto, datos.articulos]);
-  const auto = faltas(datos, hoy, sumarDias(hoy, plazo - 1));
+  const hasta = sumarDias(hoy, plazo - 1);
+  const auto = faltas(datos, hoy, hasta);
   const manual = datos.lista.filter(pendienteManual);
   const descartes = datos.lista.filter((l) => descarteVigente(l, hoy));
   const caducados = datos.lista.filter((l) => esDescarte(l) && !descarteVigente(l, hoy)).map((l) => l.id).join(',');
   // Los "hoy no" de otros días ya no valen: se borran.
   useEffect(() => { if (caducados) almacen.borrar('lista', caducados.split(',')); }, [caducados]);
   const comprado = datos.lista.filter((l) => l.comprado).sort((a, b) => (b.comprado_en ?? '').localeCompare(a.comprado_en ?? ''));
-  const tachados = comprado.map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
-  const pendientes = [
-    ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
-    ...manual.map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
-  ];
 
-  const enListaIds = new Set([...pendientes.map((f) => f.articulo_id), ...descartes.map((l) => l.articulo_id)]);
+  // Para qué receta hace falta cada cosa (también lo que ya se pasó a "Para hoy").
+  const motivos = useMemo(() => new Map(faltas({ ...datos, lista: datos.lista.filter((l) => !l.para_hoy) }, hoy, hasta)
+    .map((f) => [f.articulo_id, f])), [datos, hoy, hasta]);
+
+  const filasHoy = manual.filter((l) => l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id }));
+  const filasLuego = [
+    ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
+    ...manual.filter((l) => !l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
+  ];
+  const [vista, setVista] = useState(() => leerVista() ?? (filasHoy.length ? 'hoy' : 'luego'));
+  const elegirVista = (v) => { setVista(v); try { localStorage.setItem('vista-lista', v); } catch { /* nada */ } };
+  const enHoy = vista === 'hoy';
+  const pendientes = enHoy ? filasHoy : filasLuego;
+  const tachados = comprado.filter((l) => !!l.para_hoy === enHoy).map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
+
+  const enListaIds = new Set([...filasHoy, ...filasLuego].map((f) => f.articulo_id).concat(descartes.map((l) => l.articulo_id)));
   const sugeridas = sugerirCompra(datos, enListaIds);
   const hoyNo = (f) => almacen.insertar('lista', { articulo_id: f.articulo_id, cantidad: null, origen: 'auto', comprado: false,
     creado_en: new Date().toISOString() });
-  const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false });
+  const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false,
+    para_hoy: enHoy });
+
+  /** Pasa cosas a "Para hoy". Lo que sale de las recetas se apunta con lo que falta en ese momento. */
+  const aHoy = async (filas) => {
+    const nuevas = filas.filter((f) => f.tipo === 'auto').map((f) => ({ articulo_id: f.articulo_id, cantidad: f.cantidad,
+      marca: null, origen: 'manual', comprado: false, para_hoy: true }));
+    if (nuevas.length) await almacen.insertar('lista', nuevas);
+    for (const f of filas.filter((x) => x.tipo === 'manual')) await almacen.actualizar('lista', f.id, { para_hoy: true });
+  };
+  const aLuego = (f) => almacen.actualizar('lista', f.id, { para_hoy: false });
 
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
@@ -1239,17 +1270,17 @@ function PantallaLista({ almacen, datos, sesion }) {
     // "Necesito aceite, sal, tomate triturado y 2 kilos de papas" -> cinco cosas
     const cosas = entenderDictado(frase, datos.articulos, marcasConocidas());
     if (!cosas.length) return;
-    const nombres = await anadirCosas(cosas);
+    const nombres = await anadirCosas(cosas, enHoy);
     setTexto('');
     if (cosas.length > 1) mostrarAviso(`Añadido: ${nombres.join(', ')}`);
   };
 
-  const anadirCosas = async (cosas) => {
+  const anadirCosas = async (cosas, paraHoy = false) => {
     const nombres = [];
     for (const c of cosas) {
       const a = c.articulo ?? await obtenerArticulo(almacen, c.nombre, unidadNueva(c), 'Otros');
       await almacen.insertar('lista', { articulo_id: a.id, cantidad: cantidadParaArticulo(c, a.unidad),
-        marca: c.detalle, origen: 'manual', comprado: false });
+        marca: c.detalle, origen: 'manual', comprado: false, para_hoy: paraHoy });
       nombres.push(c.detalle ? `${a.nombre} (${c.detalle})` : a.nombre);
     }
     return nombres;
@@ -1263,7 +1294,7 @@ function PantallaLista({ almacen, datos, sesion }) {
       const a = articulo(datos, l.articulo_id);
       const cosas = entenderDictado(a.nombre, almacen.datos.articulos, marcasConocidas());
       if (!cosas.length) continue;
-      nombres.push(...await anadirCosas(cosas));
+      nombres.push(...await anadirCosas(cosas, !!l.para_hoy));
       const enUso = almacen.datos.despensa.some((x) => x.articulo_id === a.id)
         || almacen.datos.ingredientes.some((x) => x.articulo_id === a.id);
       if (enUso) await almacen.borrar('lista', l.id);
@@ -1293,11 +1324,50 @@ function PantallaLista({ almacen, datos, sesion }) {
 
   const vaciarComprado = () => almacen.borrar('lista', [...comprado, ...descartes].map((l) => l.id));
 
+  const motivoDe = (f) => {
+    if (f.tipo === 'auto') return [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
+    const m = motivos.get(f.articulo_id);
+    const porque = m ? [m.recetas.length && m.recetas.join(', '), m.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ') : '';
+    return porque || 'a mano';
+  };
+
+  const fila = (f) => {
+    const a = articulo(datos, f.articulo_id);
+    if (f.tipo === 'comprado') {
+      return html`<li key=${f.clave} class="hecho">
+        <button class="marcar marcado" aria-label=${`Desmarcar: ${a?.nombre}`} onClick=${() => deshacer(f)}>✓</button>
+        <button class="enlace nombre" onClick=${() => setEditar(f)}>
+          <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>en el carro · toca ✓ para desmarcar</small>
+        </button>
+        <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
+      </li>`;
+    }
+    return html`<li key=${f.clave}>
+      <button class="marcar" aria-label=${`Comprado: ${a?.nombre}`} onClick=${() => comprar(f)}></button>
+      <button class="enlace nombre" onClick=${() => f.tipo === 'manual' && setEditar(f)}>
+        ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${motivoDe(f)}</small>
+      </button>
+      <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
+      ${enHoy
+        ? html`<button class="mover" aria-label=${`Dejar para más adelante: ${a?.nombre}`} onClick=${() => aLuego(f)}>Luego</button>`
+        : html`<button class="mover hoy" aria-label=${`Pasar a hoy: ${a?.nombre}`} onClick=${() => aHoy([f])}>Hoy</button>
+          ${f.tipo === 'manual'
+            ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
+            : html`<button class="icono peq" aria-label=${`No hace falta hoy: ${a?.nombre}`} onClick=${() => hoyNo(f)}>✕</button>`}`}
+    </li>`;
+  };
+
   return html`
     <section>
+      <div class="partes" role="tablist">
+        <button role="tab" aria-selected=${enHoy} class=${enHoy ? 'activa' : ''} onClick=${() => elegirVista('hoy')}>
+          🛒 Para hoy${filasHoy.length > 0 && html` <b>${filasHoy.length}</b>`}</button>
+        <button role="tab" aria-selected=${!enHoy} class=${!enHoy ? 'activa' : ''} onClick=${() => elegirVista('luego')}>
+          🗓 Más adelante${filasLuego.length > 0 && html` <b>${filasLuego.length}</b>`}</button>
+      </div>
       <form class="fila-campo" onSubmit=${anadir}>
         <datalist id="articulos-compra">${datos.articulos.map((a) => html`<option value=${a.nombre} />`)}</datalist>
-        <input list="articulos-compra" placeholder="Añadir (o dictar: leche, 2 kg de papas…)" value=${texto}
+        <input list="articulos-compra" placeholder=${enHoy ? 'Añadir para hoy (o dictar)' : 'Añadir (o dictar: leche, 2 kg de papas…)'} value=${texto}
           onInput=${(e) => setTexto(e.target.value)} />
         <${BotonDictar} onTexto=${(t) => setTexto((x) => (x ? `${x}, ${t}` : t))} />
         <button class="boton" type="submit">Añadir</button>
@@ -1306,43 +1376,36 @@ function PantallaLista({ almacen, datos, sesion }) {
         <span>${juntas.length === 1 ? 'Hay una línea con varias cosas juntas.' : `Hay ${juntas.length} líneas con varias cosas juntas.`}</span>
         <button class="boton" onClick=${separar}>Separarlas</button></div>`}
       ${previa.length > 1 && html`<p class="previa">Se añadirán ${previa.length}: ${previa.map((c) => c.detalle ? `${c.nombre} (${c.detalle})` : c.nombre).join(' · ')}</p>`}
-      ${pendientes.length > 0 && html`<button class="boton grande comparar" onClick=${() => setComparar(true)}>💶 ¿Dónde sale más barato?</button>`}
-      <div class="chips">
-        <span class="chips-label">Recetas de:</span>
-        ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
-      </div>
-      ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
-      ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
-        <p><small>La lista se llena sola con las recetas del plan y con lo que baje del mínimo en la despensa.</small></p></div>`}
+      <button class="boton secundario tengo" onClick=${() => setTengo(true)}>🍳 ¿Tengo todo para…?</button>
+
+      ${enHoy ? html`
+        ${pendientes.length > 0 && html`<${PrecioHoy} datos=${datos} sesion=${sesion} items=${itemsComparar(datos, pendientes)}
+          onDetalle=${() => setComparar(pendientes)} />`}
+        ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
+        ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio">
+          <p>Aún no hay nada para hoy.</p>
+          <p><small>En «Más adelante» toca <b>Hoy</b> en lo que vayáis a comprar ahora, o usa «¿Tengo todo para…?» con una receta.</small></p>
+          ${filasLuego.length > 0 && html`<button class="boton" onClick=${() => elegirVista('luego')}>Ver lo que falta (${filasLuego.length})</button>`}
+        </div>`}
+      ` : html`
+        <div class="chips">
+          <span class="chips-label">Recetas de:</span>
+          ${PLAZOS.map(([p, t]) => html`<button class="chip ${plazo === p ? 'activo' : ''}" onClick=${() => elegirPlazo(p)}>${t}</button>`)}
+        </div>
+        ${pendientes.length > 1 && html`<div class="todo-hoy">
+          <button class="chip" onClick=${async () => { await aHoy(pendientes); mostrarAviso('Todo pasado a «Para hoy»'); elegirVista('hoy'); }}>Todo a «Para hoy»</button>
+          <button class="chip" onClick=${() => setComparar(pendientes)}>💶 Comparar precios</button>
+        </div>`}
+        ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
+          <p><small>Esta lista se llena sola con las recetas del plan y con lo que baje del aviso en la despensa.</small></p></div>`}
+      `}
+
       ${agruparPorCategoria([...pendientes, ...tachados], datos.articulos).map(([cat, grupo]) => html`
         <h3 class="categoria">${cat}</h3>
         <ul class="filas compra">
-          ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map((f) => {
-            const a = articulo(datos, f.articulo_id);
-            if (f.tipo === 'comprado') {
-              return html`<li key=${f.clave} class="hecho">
-                <button class="marcar marcado" aria-label=${`Desmarcar: ${a?.nombre}`} onClick=${() => deshacer(f)}>✓</button>
-                <button class="enlace nombre" onClick=${() => setEditar(f)}>
-                  <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>en el carro · toca ✓ para desmarcar</small>
-                </button>
-                <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
-              </li>`;
-            }
-            const motivo = f.tipo === 'manual' ? 'a mano'
-              : [f.recetas.length && f.recetas.join(', '), f.bajoMinimo && 'se acaba'].filter(Boolean).join(' · ');
-            return html`<li key=${f.clave}>
-              <button class="marcar" aria-label=${`Comprado: ${a?.nombre}`} onClick=${() => comprar(f)}></button>
-              <button class="enlace nombre" onClick=${() => f.tipo === 'manual' && setEditar(f)}>
-                ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${motivo}</small>
-              </button>
-              <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
-              ${f.tipo === 'manual'
-                ? html`<button class="icono peq" aria-label=${`Quitar ${a?.nombre}`} onClick=${() => almacen.borrar('lista', f.id)}>✕</button>`
-                : html`<button class="icono peq" aria-label=${`Hoy no: ${a?.nombre}`} onClick=${() => hoyNo(f)}>✕</button>`}
-            </li>`;
-          })}
+          ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map(fila)}
         </ul>`)}
-      ${descartes.length > 0 && html`
+      ${!enHoy && descartes.length > 0 && html`
         <div class="quitado">
           <p class="meta">Quitado de la lista de hoy (toca para volver a ponerlo):</p>
           <div class="acciones">
@@ -1362,13 +1425,129 @@ function PantallaLista({ almacen, datos, sesion }) {
           <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Quitar lo tachado? Toca otra vez" onClick=${vaciarComprado} />
         </div>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
-      ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(false)}
-        items=${pendientes.map((f) => {
-          const a = articulo(datos, f.articulo_id);
-          return { clave: f.clave, articulo_id: f.articulo_id, nombre: a?.nombre ?? '¿?', unidad: a?.unidad ?? 'ud',
-            cantidad: f.cantidad ?? null, detalle: f.marca ?? null };
-        })} />`}
+      ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(null)}
+        items=${itemsComparar(datos, comparar)} />`}
+      ${tengo && html`<${TengoTodo} almacen=${almacen} datos=${datos} onCerrar=${() => setTengo(false)}
+        onListo=${() => { setTengo(false); elegirVista('hoy'); }} />`}
     </section>`;
+}
+
+/**
+ * Cuánto sale lo de "Para hoy" en Mercadona y en HiperDino, con los productos ya enlazados
+ * (no busca en las webs: eso lo hace "Ver detalle"). Respeta lo que no os gusta.
+ */
+function PrecioHoy({ datos, sesion, items, onDetalle }) {
+  const [, setCargado] = useState(0);
+  const catalogo = sesion ? obtenerCatalogo(sesion) : null;
+  const ids = datos.equivalencias.filter((e) => items.some((i) => i.articulo_id === e.articulo_id)).map((e) => e.producto_id);
+  const clave = [...new Set(ids)].sort().join(',');
+  useEffect(() => {
+    if (!catalogo || !clave) return;
+    let vivo = true;
+    catalogo.cargar(clave.split(',')).then(() => vivo && setCargado((n) => n + 1)).catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, [clave]);
+  if (!catalogo) return null;
+
+  const cesta = calcularCesta(items.map((item) => ({
+    ...item,
+    candidatos: Object.fromEntries(SUPERS_WEB.map((s) => [s, candidatosDe(datos, catalogo, item, s)])),
+  })), SUPERS_WEB);
+  const r = cesta.recomendacion;
+  if (r.tipo === 'sin_datos') {
+    return html`<button class="precio-hoy vacio-precio" onClick=${onDetalle}>
+      <span>💶 ¿Cuánto sale lo de hoy?</span><small>Aún no hay precios para esto. Toca para buscarlos.</small></button>`;
+  }
+  const orden = [...cesta.activos].sort((a, b) => cesta.totales[a] - cesta.totales[b]);
+  return html`<button class="precio-hoy" onClick=${onDetalle}>
+    <span class="ph-titulo">Lo de hoy, aproximado</span>
+    <span class="ph-supers">
+      ${orden.map((s, i) => html`<span class=${i === 0 && orden.length > 1 && cesta.totales[s] < cesta.totales[orden[1]] ? 'ph-mejor' : ''}>
+        <small>${nombreSuper(s)}</small><b>${euros(cesta.totales[s])}</b></span>`)}
+    </span>
+    <span class="ph-veredicto">${r.tipo === 'repartir'
+      ? `Repartiendo entre los dos ahorras ${euros(cesta.ahorro)}`
+      : orden.length > 1 && cesta.totales[orden[0]] === cesta.totales[orden[1]] ? 'Sale igual en los dos'
+      : orden.length > 1 ? `Más barato en ${nombreSuper(r.supermercado)}${r.diferencia > 0 ? `: ${euros(r.diferencia)} menos` : ''}`
+        : `Solo hay precios de ${nombreSuper(r.supermercado)}`}</span>
+    <small>Con precio ${cesta.comunes} de ${items.length} cosas · Ver detalle ›</small>
+  </button>`;
+}
+
+/** "¿Tengo todo para…?": elegir receta y ver qué hay en casa y qué falta. */
+function TengoTodo({ almacen, datos, onCerrar, onListo }) {
+  const hoy = fechaISO();
+  const [receta, setReceta] = useState(null);
+  const [raciones, setRaciones] = useState(2);
+  const [buscar, setBuscar] = useState('');
+  const delPlan = [...new Map(datos.plan
+    .filter((c) => !c.cocinado && c.fecha >= hoy && c.fecha <= sumarDias(hoy, 7))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map((c) => [c.receta_id, c])).values()]
+    .map((c) => ({ comida: c, receta: datos.recetas.find((r) => r.id === c.receta_id) }))
+    .filter((x) => x.receta);
+  const lista = datos.recetas
+    .filter((r) => normalizar(r.nombre).includes(normalizar(buscar)))
+    .sort((a, b) => (b.favorita - a.favorita) || a.nombre.localeCompare(b.nombre, 'es'));
+  const fotos = useFotos(almacen, (receta ? [] : [...delPlan.map((x) => x.receta), ...lista]).map((r) => r.foto_path));
+  const elegir = (r, n) => { setReceta(r); setRaciones(n ?? leerRaciones() ?? r.raciones ?? 2); };
+
+  if (!receta) {
+    const tarjeta = (r, extra, n) => html`<li><button class="tarjeta con-foto" onClick=${() => elegir(r, n)}>
+      <${Miniatura} receta=${r} url=${r.foto_path ? fotos[r.foto_path] : null} />
+      <span class="texto-tarjeta"><strong>${r.favorita ? '★ ' : ''}${r.nombre}</strong><small>${extra}</small></span>
+    </button></li>`;
+    return html`<${Hoja} titulo="¿Tengo todo para…?" onCerrar=${onCerrar}>
+      ${delPlan.length > 0 && !buscar && html`<h3>Del plan de estos días</h3>
+        <ul class="lista-recetas">${delPlan.map(({ comida, receta: r }) => tarjeta(r,
+          `${nombreDia(comida.fecha, hoy)} · ${nombreMomento(comida.momento)} · ${comida.raciones} raciones`, comida.raciones))}</ul>
+        <h3>Otra receta</h3>`}
+      <input type="search" placeholder="Buscar receta" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
+      ${lista.length === 0 && html`<p class="vacio">No hay recetas con ese nombre.</p>`}
+      <ul class="lista-recetas">${lista.map((r) => tarjeta(r, [r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas].filter(Boolean).join(' · ')))}</ul>
+    </${Hoja}>`;
+  }
+
+  const filas = tengoTodo(datos, receta.id, raciones);
+  const faltan = filas.filter((f) => f.estado === 'falta');
+  const enLista = filas.filter((f) => f.estado === 'en_lista');
+  const listaLuego = (f) => datos.lista.filter((l) => pendienteManual(l) && !l.para_hoy && l.articulo_id === f.articulo_id);
+  const porMover = enLista.flatMap(listaLuego);
+  const anadir = async () => {
+    if (faltan.length) {
+      await almacen.insertar('lista', faltan.map((f) => ({ articulo_id: f.articulo_id, cantidad: f.falta, marca: null,
+        origen: 'manual', comprado: false, para_hoy: true })));
+    }
+    for (const l of porMover) await almacen.actualizar('lista', l.id, { para_hoy: true });
+    const n = faltan.length + porMover.length;
+    mostrarAviso(`${n === 1 ? 'Pasada 1 cosa' : `Pasadas ${n} cosas`} a «Para hoy»`);
+    onListo();
+  };
+  const icono = { hay: '✅', basico: '🧂', en_lista: '📝', falta: '❌' };
+  const texto = (f) => {
+    const cuanto = (n) => formatoCantidad(n, f.unidad);
+    if (f.estado === 'hay') return f.necesita != null ? `Hace falta ${cuanto(f.necesita)} · en casa ${cuanto(f.hay)}` : `En casa ${cuanto(f.hay)}`;
+    if (f.estado === 'basico') return 'Se da por hecho que hay';
+    const falta = f.falta != null ? `Falta ${cuanto(f.falta)}` : 'No hay en casa';
+    return f.estado === 'en_lista' ? `${falta} · ya está en la lista` : `${falta}${f.hay > 0 ? ` (hay ${cuanto(f.hay)})` : ''}`;
+  };
+  return html`<${Hoja} titulo=${receta.nombre} onCerrar=${onCerrar}>
+    <button class="enlace" onClick=${() => setReceta(null)}>‹ Otra receta</button>
+    <div class="fila-campo"><label>Raciones</label><${Contador} valor=${raciones} onCambio=${setRaciones} /></div>
+    <div class="veredicto ${faltan.length ? 'falta' : ''}">
+      <b>${faltan.length === 0 ? (enLista.length ? 'Lo que falta ya está en la lista' : 'Tenéis todo 🎉')
+        : faltan.length === 1 ? 'Falta 1 cosa' : `Faltan ${faltan.length} cosas`}</b>
+    </div>
+    <ul class="filas tengo-todo">
+      ${filas.map((f) => html`<li class=${`tt-${f.estado}`}>
+        <span class="tt-ico" aria-hidden="true">${icono[f.estado]}</span>
+        <span class="nombre">${f.nombre}<small>${texto(f)}</small></span>
+      </li>`)}
+    </ul>
+    ${(faltan.length > 0 || porMover.length > 0) && html`<button class="boton grande" onClick=${anadir}>
+      Añadir lo que falta a «Para hoy» (${faltan.length + porMover.length})</button>`}
+    <p class="meta">Mira la despensa tal como está ahora; no descuenta otras comidas del plan.</p>
+  </${Hoja}>`;
 }
 
 function CantidadLista({ almacen, datos, fila, onCerrar }) {

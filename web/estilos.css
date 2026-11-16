@@ -397,3 +397,47 @@ li.hecho { opacity: 0.8; }
 .opcion-aviso { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--suave); }
 .etiqueta-no-hay { display: inline-block; background: var(--aviso); color: #fff; font-size: 0.72rem; padding: 1px 7px; border-radius: 999px; letter-spacing: 0.02em; }
 .filas li.no-hay .nombre > span:first-child { color: var(--aviso); font-weight: 700; }
+
+/* --- Lista: «Para hoy» y «Más adelante» --- */
+.partes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 12px;
+  background: var(--linea); border-radius: 12px;
+}
+.partes button {
+  min-height: 44px; border: 0; border-radius: 9px; background: none; color: var(--suave); font-weight: 600; font-size: 0.95rem;
+}
+.partes button.activa { background: var(--panel); color: var(--texto); box-shadow: var(--sombra); }
+.partes b {
+  display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 4px; border-radius: 999px;
+  background: var(--verde); color: #fff; font-size: 0.8rem; line-height: 22px;
+}
+.boton.secundario { background: var(--panel); color: var(--verde); border: 1px solid var(--verde); }
+.boton.tengo { width: 100%; margin: 10px 0 4px; }
+.mover {
+  flex: none; min-height: 34px; padding: 0 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+  border: 1px solid var(--linea); background: var(--panel); color: var(--suave);
+}
+.mover.hoy { border-color: var(--verde); color: var(--verde); }
+.todo-hoy { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 0 4px; }
+.precio-hoy {
+  width: 100%; text-align: left; display: flex; flex-direction: column; gap: 6px; margin: 10px 0 2px; padding: 12px 14px;
+  border-radius: 12px; border: 1px solid var(--linea); background: var(--panel); box-shadow: var(--sombra); color: var(--texto);
+}
+.precio-hoy small { color: var(--suave); }
+.ph-titulo { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--suave); }
+.ph-supers { display: flex; gap: 8px; }
+.ph-supers > span {
+  flex: 1; display: flex; flex-direction: column; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--linea);
+}
+.ph-supers b { font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.ph-supers .ph-mejor { background: var(--verde-claro); border-color: var(--verde); }
+.ph-supers .ph-mejor b { color: var(--verde); }
+.ph-veredicto { font-weight: 600; color: var(--verde); }
+.vacio-precio span { font-weight: 600; }
+.veredicto.falta { background: var(--aviso-claro); border-color: var(--aviso); }
+.veredicto.falta b { color: var(--aviso); }
+.hoja-cuerpo > .veredicto { margin: 12px 0; }
+.tengo-todo li { min-height: 52px; }
+.tt-ico { flex: none; width: 26px; text-align: center; }
+.tengo-todo .tt-falta .nombre small { color: var(--aviso); }
+.tengo-todo .tt-hay .nombre, .tengo-todo .tt-basico .nombre { color: var(--suave); }

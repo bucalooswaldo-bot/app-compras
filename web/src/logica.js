@@ -180,6 +180,59 @@ export const esDescarte = (l) => l.origen === 'auto' && !l.comprado;
 export const descarteVigente = (l, hoy) => esDescarte(l) && (l.creado_en ?? '').slice(0, 10) >= hoy;
 /** Lo apuntado a mano y aún sin comprar. */
 export const pendienteManual = (l) => !l.comprado && l.origen !== 'auto';
+/** Apartado para la próxima compra ("Para hoy"), aún sin comprar. */
+export const pendienteHoy = (l) => !l.comprado && !!l.para_hoy;
+
+/**
+ * "¿Tengo todo para…?": cada ingrediente de una receta, para unas raciones, comparado con la despensa
+ * y con lo que ya está apuntado en la lista (sin comprar).
+ *   estado 'hay'      -> hay suficiente en casa
+ *   estado 'basico'   -> sal, aceite… sin cantidad: se da por hecho que hay
+ *   estado 'en_lista' -> no hay bastante, pero ya está en la lista
+ *   estado 'falta'    -> hay que comprarlo (falta = cuánto; null si la receta no dice cantidad)
+ */
+export function tengoTodo(datos, recetaId, raciones) {
+  const receta = datos.recetas.find((r) => r.id === recetaId);
+  if (!receta) return [];
+  const despensa = new Map(datos.despensa.map((d) => [d.articulo_id, d.cantidad ?? 0]));
+  const apuntado = new Map();
+  for (const l of datos.lista) {
+    if (!pendienteManual(l)) continue;
+    apuntado.set(l.articulo_id, (apuntado.get(l.articulo_id) ?? 0) + (l.cantidad ?? Infinity));
+  }
+  const filas = new Map();
+  for (const ing of datos.ingredientes.filter((i) => i.receta_id === recetaId)) {
+    const a = datos.articulos.find((x) => x.id === ing.articulo_id);
+    if (!a) continue;
+    const necesita = escalar(ing.cantidad, receta.raciones, raciones ?? receta.raciones);
+    const prev = filas.get(a.id);
+    if (prev) { // el mismo artículo dos veces en la receta: se suma
+      if (prev.necesita != null && necesita != null) prev.necesita = redondear(prev.necesita + necesita, 3);
+      continue;
+    }
+    filas.set(a.id, { articulo_id: a.id, nombre: a.nombre, unidad: a.unidad, necesita });
+  }
+  const resultado = [];
+  for (const f of filas.values()) {
+    const hay = despensa.get(f.articulo_id) ?? 0;
+    const enLista = apuntado.get(f.articulo_id) ?? 0;
+    let falta;
+    if (f.necesita == null) falta = hay > 0 ? 0 : null;
+    else {
+      falta = f.necesita - hay;
+      if (f.unidad === 'ud') falta = Math.ceil(falta - 1e-9);
+      falta = Math.max(0, redondear(falta, 3));
+    }
+    let estado;
+    if (falta === 0) estado = 'hay';
+    else if (f.necesita == null && esBasico(f.nombre) && !despensa.has(f.articulo_id)) estado = 'basico';
+    else if (enLista >= (falta ?? 1)) estado = 'en_lista';
+    else estado = 'falta';
+    resultado.push({ ...f, hay, falta, enLista, estado });
+  }
+  const orden = { falta: 0, en_lista: 1, hay: 2, basico: 3 };
+  return resultado.sort((x, y) => orden[x.estado] - orden[y.estado] || x.nombre.localeCompare(y.nombre, 'es'));
+}
 
 /**
  * Lo que soléis comprar (2 veces o más, por tiques o por la lista) y ahora no está en la lista
