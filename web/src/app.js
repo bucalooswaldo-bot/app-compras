@@ -33,7 +33,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 38;
+const VERSION_APP = 39;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -599,7 +599,7 @@ function DescontarCocinado({ almacen, datos, recetaId, raciones, comida, onCerra
       ].filter(Boolean).join(' ')}</p>`}
       ${delPlan && html`<p class="meta">Se marca como hecha en el plan (${nombreDia(delPlan.fecha).toLowerCase()}, ${nombreMomento(delPlan.momento).toLowerCase()}).</p>`}
       <button class="boton grande" disabled=${!listas.length} onClick=${() => terminar(true)}>
-        Restar ${listas.length || ''} de la despensa</button>
+        ${textoBotonRestar(listas)}</button>
       <p class="pie"><button class="enlace" onClick=${() => terminar(false)}>${delPlan ? 'Marcar como hecha sin restar nada' : 'No restar nada'}</button></p>
     </${Hoja}>`;
 }
@@ -1548,7 +1548,7 @@ function RevisarConsumo({ almacen, datos, cosas, onCerrar }) {
   const pendientes = filas.filter((f) => !f.saltar && !f.articulo).length;
   const aplicar = async () => {
     for (const f of listas) await almacen.sumarDespensa(f.articulo.id, -f.cantidad);
-    mostrarAviso(`Restado: ${listas.map((f) => f.articulo.nombre).join(', ')}`);
+    mostrarAviso(`Restado: ${listas.map((f) => `${formatoCantidad(f.cantidad, f.articulo.unidad)} de ${f.articulo.nombre}`).join(', ')}`);
     onCerrar(true);
   };
   return html`
@@ -1566,7 +1566,8 @@ function RevisarConsumo({ almacen, datos, cosas, onCerrar }) {
             <div class="ing-datos">
               <${CampoCantidad} unidad=${f.articulo.unidad} valor=${f.cantidad} onCambio=${(c) => cambiar(f.clave, { cantidad: c })} />
               <small class="meta">hay ${formatoCantidad(hay, f.articulo.unidad)}${hay === 0 ? ' (no estaba apuntado)' : ''}</small>
-            </div>`}
+            </div>
+            ${f.cantidad > hay && hay > 0 && html`<p class="aviso-restar">Solo hay ${formatoCantidad(hay, f.articulo.unidad)}. Si restas ${formatoCantidad(f.cantidad, f.articulo.unidad)}, se quedará en 0.</p>`}`}
           ${!f.saltar && !f.articulo && html`
             <p><b>¿Qué es?</b></p>
             <div class="acciones">
@@ -1580,8 +1581,18 @@ function RevisarConsumo({ almacen, datos, cosas, onCerrar }) {
       })}
       ${pendientes > 0 && html`<p class="meta">Elige qué es o pulsa Saltar en ${pendientes === 1 ? 'la que falta' : `las ${pendientes} que faltan`}.</p>`}
       <button class="boton grande" disabled=${!listas.length || pendientes > 0} onClick=${aplicar}>
-        Restar ${listas.length || ''} de la despensa</button>
+        ${textoBotonRestar(listas)}</button>
     </${Hoja}>`;
+}
+
+/** "Restar 6 ud de Merluza medallón" con una cosa; "Restar 3 productos" con varias. */
+function textoBotonRestar(listas) {
+  if (!listas.length) return 'Restar';
+  if (listas.length === 1) {
+    const f = listas[0];
+    return `Restar ${formatoCantidad(f.cantidad, f.articulo.unidad)} de ${f.articulo.nombre}`;
+  }
+  return `Restar ${listas.length} productos`;
 }
 
 /** Recorrer la despensa y mandar a la lista lo que falta o queda poco. */

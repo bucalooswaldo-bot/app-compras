@@ -678,3 +678,4 @@ body.arrastrando { -webkit-user-select: none; user-select: none; }
 .confirmar p { margin: 0 0 16px; font-size: 1.05rem; line-height: 1.4; }
 .confirmar-botones { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .boton.peligro { background: var(--peligro); color: var(--fondo); }
+.aviso-restar { margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--aviso-claro); color: var(--aviso); font-size: 0.9rem; }
