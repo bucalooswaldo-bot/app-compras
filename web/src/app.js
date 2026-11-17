@@ -33,7 +33,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 36;
+const VERSION_APP = 37;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -123,10 +123,35 @@ const textoAviso = (d, unidad) => {
   return v == null ? 'sin aviso' : v === 0 ? 'aviso cuando no quede' : `aviso al quedar ${formatoCantidad(v, unidad)}`;
 };
 
-function BotonSeguro({ texto, pregunta, onClick }) {
-  const [armado, setArmado] = useState(false);
-  useEffect(() => { if (!armado) return; const t = setTimeout(() => setArmado(false), 5000); return () => clearTimeout(t); }, [armado]);
-  return html`<button class="enlace peligro" onClick=${() => (armado ? onClick() : setArmado(true))}>${armado ? pregunta : texto}</button>`;
+/**
+ * Botón para borrar o quitar algo: antes pregunta en una ventana ("¿Quieres borrar la receta?")
+ * con "Cancelar" y "Sí, borrar", para que no se borre nada por un toque sin querer.
+ */
+function BotonSeguro({ texto, pregunta, si = 'Sí, borrar', onClick, clase = 'enlace peligro' }) {
+  const [abierta, setAbierta] = useState(false);
+  const [haciendo, setHaciendo] = useState(false);
+  useEffect(() => {
+    if (!abierta) return;
+    const esc = (e) => e.key === 'Escape' && setAbierta(false);
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [abierta]);
+  const confirmar = async () => {
+    setHaciendo(true);
+    try { await onClick(); } finally { setHaciendo(false); setAbierta(false); }
+  };
+  return html`
+    <button class=${clase} onClick=${() => setAbierta(true)}>${texto}</button>
+    ${abierta && html`
+      <div class="fondo confirmar-fondo" onClick=${(e) => e.target === e.currentTarget && !haciendo && setAbierta(false)}>
+        <div class="confirmar" role="alertdialog" aria-modal="true" aria-label=${pregunta}>
+          <p>${pregunta}</p>
+          <div class="confirmar-botones">
+            <button class="boton secundario" disabled=${haciendo} onClick=${() => setAbierta(false)}>Cancelar</button>
+            <button class="boton peligro" disabled=${haciendo} onClick=${confirmar}>${haciendo ? 'Un momento…' : si}</button>
+          </div>
+        </div>
+      </div>`}`;
 }
 
 const nombreArticulo = (datos, id) => datos.articulos.find((a) => a.id === id)?.nombre ?? '¿?';
@@ -417,7 +442,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
         <div class="acciones-foto">
           <button class="chip" disabled=${subiendo} onClick=${() => entradaFoto.current?.click()}>
             ${subiendo ? 'Guardando foto…' : r.foto_path ? '📷 Cambiar foto' : '📷 Añadir foto'}</button>
-          ${r.foto_path && !subiendo && html`<${BotonSeguro} texto="Quitar foto" pregunta="Toca otra vez para quitarla" onClick=${quitarFoto} />`}
+          ${r.foto_path && !subiendo && html`<${BotonSeguro} texto="Quitar foto" pregunta="¿Quieres quitar la foto de esta receta?" si="Sí, quitarla" onClick=${quitarFoto} />`}
         </div>
       </div>
       <div class="acciones">
@@ -438,7 +463,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
           ${!video && html`<div class="acciones-foto">
             <button class="chip" disabled=${subiendo || !urlVideo} onClick=${portadaDelVideo}>📸 Usar este momento de portada</button>
             <button class="chip" onClick=${() => entradaVideo.current?.click()}>🎬 Cambiar vídeo</button>
-            <${BotonSeguro} texto="Quitar vídeo" pregunta="Toca otra vez para quitarlo" onClick=${quitarVideo} />
+            <${BotonSeguro} texto="Quitar vídeo" pregunta="¿Quieres quitar el vídeo de esta receta?" si="Sí, quitarlo" onClick=${quitarVideo} />
           </div>`}
         </div>`}
       <p class="meta">${[r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas, r.origen === 'ia' ? 'Propuesta por la IA' : ''].filter(Boolean).join(' · ')}</p>
@@ -462,7 +487,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
         <button class="boton grande" onClick=${() => setCocinando(true)}>👩‍🍳 Modo cocina</button>
         <button class="boton grande secundario" onClick=${() => setCocinado(true)}>✅ La he cocinado</button>
       </div>
-      <p class="pie"><${BotonSeguro} texto="Borrar receta" pregunta="¿Seguro? También se quita del plan. Toca otra vez para borrar." onClick=${borrar} /></p>
+      <p class="pie"><${BotonSeguro} texto="Borrar receta" pregunta=${`¿Quieres realmente borrar la receta «${r.nombre}»? También se quita del plan.`} onClick=${borrar} /></p>
       ${cocinando && html`<${ModoCocina} datos=${datos} receta=${r} raciones=${raciones}
         onCerrar=${() => setCocinando(false)} onTerminar=${() => { setCocinando(false); setCocinado(true); }} />`}
       ${cocinado && html`<${DescontarCocinado} almacen=${almacen} datos=${datos} recetaId=${id} raciones=${raciones}
@@ -1682,7 +1707,7 @@ function EditarDespensa({ almacen, datos, articuloId, nombreInicial = '', sesion
           <button class="enlace" onClick=${() => onCambiarSuper?.(a0.id)}>${m ? 'Cambiar' : 'Elegir'}</button>
         </div>`;
       })()}
-      ${d0 && html`<p class="pie"><button class="enlace peligro" onClick=${quitar}>Quitar de la despensa</button></p>`}
+      ${d0 && html`<p class="pie"><${BotonSeguro} texto="Quitar de la despensa" pregunta=${`¿Quieres quitar «${a0?.nombre ?? 'esto'}» de la despensa?`} si="Sí, quitar" onClick=${quitar} /></p>`}
     </${Hoja}>`;
 }
 
@@ -1963,7 +1988,7 @@ function PantallaLista({ almacen, datos, sesion }) {
       ${comprado.filter((l) => !l.por_pagar).length > 0 && !comprando && html`
         <div class="terminar">
           <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
-          <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Quitar lo tachado? Toca otra vez" onClick=${vaciarComprado} />
+          <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Terminar la compra? Se quita de la lista todo lo tachado." si="Sí, terminar" onClick=${vaciarComprado} />
         </div>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
       ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(null)}
@@ -2897,7 +2922,7 @@ function PantallaAjustes({ almacen, datos, sesion, onCerrar }) {
       ` : html`
         <h3>Modo prueba</h3>
         <p>Los datos se guardan solo en este dispositivo y no se comparten. Sirve para probar la app.</p>
-        <${BotonSeguro} texto="Borrar datos de prueba" pregunta="¿Seguro? Se borra todo lo de este móvil. Toca otra vez." onClick=${borrarPrueba} />
+        <${BotonSeguro} texto="Borrar datos de prueba" pregunta="¿Quieres borrar todos los datos de prueba de este móvil?" onClick=${borrarPrueba} />
       `}
       <${Apariencia} />
       <${AjustesAvisos} datos=${datos} sesion=${sesion} />
@@ -3049,7 +3074,7 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
                 ${principal !== m.p.id && url && html`<button class="enlace" onClick=${() => almacen.actualizar('articulos', a.id, { foto_producto_id: m.p.id })}>⭐ Foto principal</button>`}
                 ${propia && html`<button class="enlace" disabled=${subiendo === m.e.id} onClick=${() => hacerFoto(m)}>
                   ${subiendo === m.e.id ? 'Guardando…' : m.e.foto_path ? '📷 Cambiar foto' : '📷 Hacer foto'}</button>`}
-                <button class="enlace peligro" onClick=${() => quitar(m)}>Quitar</button>
+                <${BotonSeguro} texto="Quitar" pregunta="¿Quieres quitar esta marca de este artículo?" si="Sí, quitar" onClick=${() => quitar(m)} />
               </div>
             </div>
           </li>`;
@@ -3577,7 +3602,7 @@ function VerTique({ almacen, datos, id, onCerrar }) {
         <div class="fila-gasto total"><span>Total</span><b>${euros(t.total ?? 0)}</b></div>
       </div>
       <div class="pie">
-        <${BotonSeguro} texto="Borrar este tique" pregunta="¿Seguro? Toca otra vez para borrarlo"
+        <${BotonSeguro} texto="Borrar este tique" pregunta="¿Quieres realmente borrar este tique?"
           onClick=${async () => { await almacen.borrar('tiques', id); onCerrar(); }} />
       </div>
     <//>`;
