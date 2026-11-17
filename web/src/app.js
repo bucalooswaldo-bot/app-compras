@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, enCasa, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, enCasa, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, iconoPasillo, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -19,6 +19,9 @@ import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma, portadaDeCaptu
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
 import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano, numerarPasos } from './receta-texto.js';
 import { prepararVideo, megas } from './video.js';
+import { PantallaInicio } from './inicio.js';
+import { PantallaPlan } from './planificador.js';
+import { Apariencia, aplicarApariencia, AjustesAvisos } from './apariencia.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
 import * as config from '../config.js';
@@ -26,9 +29,9 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 // Utilidades de pantalla
 // ---------------------------------------------------------------------------
-let mostrarAviso = () => {};
+export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 32;
+const VERSION_APP = 33;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -166,79 +169,24 @@ async function cargarRecetasInicio(almacen) {
 // ---------------------------------------------------------------------------
 // Plan semanal
 // ---------------------------------------------------------------------------
-function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
-  const hoy = fechaISO();
-  const [semana, setSemana] = useState(0);
-  const [elegir, setElegir] = useState(null); // { fecha, momento }
-  const [proponer, setProponer] = useState(false);
-  const inicio = sumarDias(hoy, semana * 7);
-  const dias = Array.from({ length: 7 }, (_, i) => sumarDias(inicio, i));
-
-  const cocinar = async (comida, hecho) => {
-    const signo = hecho ? -1 : 1;
-    for (const ing of ingredientesDeComida(datos, comida)) {
-      if (datos.despensa.some((x) => x.articulo_id === ing.articulo_id)) {
-        await almacen.sumarDespensa(ing.articulo_id, signo * ing.cantidad);
-      }
+/** Marca una comida del plan como cocinada (descuenta de la despensa) o lo deshace. */
+export async function cocinarComida(almacen, datos, comida, hecho) {
+  const signo = hecho ? -1 : 1;
+  for (const ing of ingredientesDeComida(datos, comida)) {
+    if (datos.despensa.some((x) => x.articulo_id === ing.articulo_id)) {
+      await almacen.sumarDespensa(ing.articulo_id, signo * ing.cantidad);
     }
-    await almacen.actualizar('plan', comida.id, { cocinado: hecho });
-    mostrarAviso(hecho ? 'Hecho. Se ha descontado de la despensa.' : 'Deshecho. Se ha devuelto a la despensa.');
-  };
-
-  return html`
-    <section>
-      <div class="barra-semana">
-        <button class="icono" aria-label="Semana anterior" onClick=${() => setSemana(semana - 1)}>‹</button>
-        <strong>${semana === 0 ? 'Próximos 7 días' : `${nombreDia(dias[0], hoy)} – ${nombreDia(dias[6], hoy)}`}</strong>
-        <button class="icono" aria-label="Semana siguiente" onClick=${() => setSemana(semana + 1)}>›</button>
-      </div>
-      ${datos.recetas.length === 0 && html`<p class="vacio">Primero carga o crea alguna receta en la pestaña Recetas.</p>`}
-      ${datos.recetas.length > 0 && html`<button class="boton proponer" onClick=${() => setProponer(true)}>✨ Proponer el menú de estos 7 días</button>`}
-      ${dias.map((fecha) => html`
-        <div class="dia ${fecha === hoy ? 'hoy' : ''}">
-          <h3>${nombreDia(fecha, hoy)}</h3>
-          ${MOMENTOS.map(([momento]) => {
-            const comidas = datos.plan.filter((p) => p.fecha === fecha && p.momento === momento);
-            return html`
-              <div class="momento">
-                <span class="etiqueta-momento">${nombreMomento(momento)}</span>
-                <div class="comidas">
-                  ${comidas.map((c) => {
-                    const r = datos.recetas.find((x) => x.id === c.receta_id);
-                    return html`
-                      <div class="comida ${c.cocinado ? 'hecha' : ''}">
-                        <button class="enlace" onClick=${() => r && abrirReceta(r.id, c.raciones)}>
-                          ${r?.nombre ?? 'Receta borrada'} <small>· ${c.raciones} rac.</small>
-                        </button>
-                        <button class="chip ${c.cocinado ? 'activo' : ''}" title="Marcar como cocinado"
-                          onClick=${() => cocinar(c, !c.cocinado)}>${c.cocinado ? '✓ Hecho' : 'Hecho'}</button>
-                        <button class="icono peq" aria-label="Quitar del plan"
-                          onClick=${() => almacen.borrar('plan', c.id)}>✕</button>
-                      </div>`;
-                  })}
-                  <button class="anadir" onClick=${() => setElegir({ fecha, momento })}>+ Añadir</button>
-                </div>
-              </div>`;
-          })}
-        </div>`)}
-      ${elegir && html`<${ElegirReceta} almacen=${almacen} datos=${datos} titulo=${`${nombreDia(elegir.fecha, hoy)}, ${nombreMomento(elegir.momento).toLowerCase()}`} momento=${elegir.momento}
-        onCerrar=${() => setElegir(null)}
-        onElegir=${(receta, raciones) => {
-          almacen.insertar('plan', { fecha: elegir.fecha, momento: elegir.momento, receta_id: receta.id, raciones, cocinado: false });
-          guardarRaciones(raciones);
-          setElegir(null);
-        }} />`}
-      ${proponer && html`<${ProponerSemana} almacen=${almacen} datos=${datos} sesion=${sesion} desde=${inicio}
-        onCerrar=${() => setProponer(false)} />`}
-    </section>`;
+  }
+  await almacen.actualizar('plan', comida.id, { cocinado: hecho });
+  mostrarAviso(hecho ? 'Hecho. Se ha descontado de la despensa.' : 'Deshecho. Se ha devuelto a la despensa.');
 }
 
-const leerRaciones = () => { try { return Number(localStorage.getItem('raciones-plan')) || null; } catch { return null; } };
-const guardarRaciones = (n) => { try { localStorage.setItem('raciones-plan', String(n)); } catch { /* nada */ } };
+export const leerRaciones = () => { try { return Number(localStorage.getItem('raciones-plan')) || null; } catch { return null; } };
+export const guardarRaciones = (n) => { try { localStorage.setItem('raciones-plan', String(n)); } catch { /* nada */ } };
 
 const ETIQUETA_MOMENTO = { postre: /postre|dulce/, tentempie: /tentempi|merienda|desayuno|snack/, cena: /cena|ligera/ };
 
-function ElegirReceta({ almacen, datos, titulo, momento, onCerrar, onElegir }) {
+export function ElegirReceta({ almacen, datos, titulo, momento, onCerrar, onElegir }) {
   const [buscar, setBuscar] = useState('');
   const [raciones, setRaciones] = useState(leerRaciones() ?? 2);
   const encaja = (r) => (ETIQUETA_MOMENTO[momento]?.test(normalizar(r.etiquetas.join(' '))) ? 1 : 0);
@@ -268,7 +216,7 @@ function ElegirReceta({ almacen, datos, titulo, momento, onCerrar, onElegir }) {
 // Recetas
 // ---------------------------------------------------------------------------
 /** Direcciones para ver las fotos de las recetas (se piden de una vez y se recuerdan). */
-function useFotos(almacen, rutas) {
+export function useFotos(almacen, rutas) {
   const [urls, setUrls] = useState({});
   const clave = [...new Set(rutas.filter(Boolean))].sort().join('|');
   useEffect(() => {
@@ -282,7 +230,7 @@ function useFotos(almacen, rutas) {
   return urls;
 }
 
-function Miniatura({ receta, url }) {
+export function Miniatura({ receta, url }) {
   return url
     ? html`<img class="miniatura" src=${url} alt="" loading="lazy" />`
     : html`<span class="miniatura sin-foto" aria-hidden="true">${dibujoReceta(receta)}</span>`;
@@ -540,7 +488,7 @@ function ElegirIngredientes({ datos, elegidos, onElegir, onCerrar }) {
           </div>
         </div>`}
       ${agruparPorCategoria(filtrados.map((a) => ({ articulo_id: a.id })), datos.articulos).map(([cat, grupo]) => html`
-        <h3 class="categoria">${cat}</h3>
+        <h3 class="categoria"><span class="ico-pasillo" aria-hidden="true">${iconoPasillo(cat)}</span>${cat}</h3>
         <ul class="lista-simple">
           ${grupo.map(({ articulo_id }) => {
             const a = articulo(datos, articulo_id);
@@ -892,7 +840,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
       ${buscando && html`<h3 class="titulo-casa">En casa</h3>
         ${!filas.length && html`<p class="vacio">No tenéis «${buscar.trim()}» en la despensa.</p>`}`}
       ${agruparPorCategoria(filas, datos.articulos).map(([cat, grupo]) => html`
-        <h3 class="categoria">${cat}</h3>
+        <h3 class="categoria"><span class="ico-pasillo" aria-hidden="true">${iconoPasillo(cat)}</span>${cat}</h3>
         <ul class="filas">
           ${grupo.map((d) => {
             const a = articulo(datos, d.articulo_id);
@@ -1349,7 +1297,7 @@ function RepasarDespensa({ almacen, datos, onCerrar }) {
       <input type="search" placeholder="Buscar" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
       ${datos.despensa.length === 0 && html`<p class="vacio">La despensa está vacía. Añade primero lo que soléis tener en casa.</p>`}
       ${agruparPorCategoria(filas, datos.articulos).map(([cat, grupo]) => html`
-        <h3 class="categoria">${cat}</h3>
+        <h3 class="categoria"><span class="ico-pasillo" aria-hidden="true">${iconoPasillo(cat)}</span>${cat}</h3>
         <ul class="filas repaso">
           ${grupo.map((d) => {
             const a = articulo(datos, d.articulo_id);
@@ -1690,7 +1638,7 @@ function PantallaLista({ almacen, datos, sesion }) {
       `}
 
       ${agruparPorCategoria([...pendientes, ...tachados], datos.articulos).map(([cat, grupo]) => html`
-        <h3 class="categoria">${cat}</h3>
+        <h3 class="categoria"><span class="ico-pasillo" aria-hidden="true">${iconoPasillo(cat)}</span>${cat}</h3>
         <ul class="filas compra">
           ${[...grupo.filter((f) => f.tipo !== 'comprado'), ...grupo.filter((f) => f.tipo === 'comprado')].map(fila)}
         </ul>`)}
@@ -2626,7 +2574,7 @@ function ElegirProducto({ almacen, datos, catalogo, item, linea, onCerrar, onCam
 // ---------------------------------------------------------------------------
 // Ajustes / casa
 // ---------------------------------------------------------------------------
-function PantallaAjustes({ almacen, sesion, onCerrar }) {
+function PantallaAjustes({ almacen, datos, sesion, onCerrar }) {
   const [casa, setCasa] = useState(null);
   useEffect(() => {
     if (!sesion) return;
@@ -2653,6 +2601,8 @@ function PantallaAjustes({ almacen, sesion, onCerrar }) {
         <p>Los datos se guardan solo en este dispositivo y no se comparten. Sirve para probar la app.</p>
         <${BotonSeguro} texto="Borrar datos de prueba" pregunta="¿Seguro? Se borra todo lo de este móvil. Toca otra vez." onClick=${borrarPrueba} />
       `}
+      <${Apariencia} />
+      <${AjustesAvisos} datos=${datos} sesion=${sesion} />
       <h3>Instalar en el móvil</h3>
       <p>En Chrome para Android: menú ⋮ → <b>Añadir a pantalla de inicio</b> (o <b>Instalar aplicación</b>).</p>
       <p class="meta">Versión ${VERSION_APP}</p>
@@ -2696,11 +2646,7 @@ function FotoProducto({ url, clase = '', emoji = '🛒' }) {
     : html`<span class="foto-producto sin ${clase}" aria-hidden="true">${emoji}</span>`;
 }
 
-const EMOJI_SECCION = {
-  'Frutas y verduras': '🥬', Carne: '🥩', Pescado: '🐟', 'Charcutería y quesos': '🧀', 'Lácteos y huevos': '🥛',
-  Panadería: '🥖', Despensa: '🫙', Conservas: '🥫', Congelados: '🧊', Bebidas: '🧃', Droguería: '🧴',
-};
-const emojiDe = (a) => EMOJI_SECCION[a?.categoria] ?? '🛒';
+const emojiDe = (a) => iconoPasillo(a?.categoria);
 
 /** Hoja con las marcas de un artículo: sus fotos, precio, veces compradas; buscar más y foto propia (Lidl). */
 function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
@@ -3239,7 +3185,7 @@ function VerTique({ almacen, datos, id, onCerrar }) {
 // ---------------------------------------------------------------------------
 // Proponer el menú de la semana
 // ---------------------------------------------------------------------------
-function ProponerSemana({ almacen, datos, sesion, desde, onCerrar }) {
+export function ProponerSemana({ almacen, datos, sesion, desde, onCerrar }) {
   const [ofertas, setOfertas] = useState(new Set());
   const [azar, setAzar] = useState(0);
   const [quitadas, setQuitadas] = useState(new Set());
@@ -3301,11 +3247,15 @@ function ProponerSemana({ almacen, datos, sesion, desde, onCerrar }) {
 // ---------------------------------------------------------------------------
 // App principal
 // ---------------------------------------------------------------------------
-const PESTANAS = [['plan', 'Plan', '📅'], ['recetas', 'Recetas', '📖'], ['despensa', 'Despensa', '🏠'], ['lista', 'Lista', '🛒'], ['gastos', 'Gastos', '💶']];
+const PESTANAS = [['inicio', 'Inicio', '🏠'], ['plan', 'Plan', '📅'], ['recetas', 'Recetas', '📖'], ['despensa', 'Despensa', '🧺'], ['lista', 'Lista', '🛒'], ['gastos', 'Gastos', '💶']];
 
 function App({ almacen, sesion }) {
   const [datos, setDatos] = useState(almacen.datos);
-  const [pestana, setPestana] = useState(() => { try { return localStorage.getItem('pestana') || 'lista'; } catch { return 'lista'; } });
+  // Al abrir la app se empieza en Inicio (o en la pestaña que pida un aviso del móvil).
+  const [pestana, setPestana] = useState(() => {
+    const pedida = new URLSearchParams(location.search).get('pestana');
+    return PESTANAS.some((p) => p[0] === pedida) ? pedida : 'inicio';
+  });
   const [receta, setReceta] = useState(null); // { id, raciones }
   const [editando, setEditando] = useState(undefined); // undefined = cerrado, null = nueva, id = editar
   const [capturas, setCapturas] = useState(null);      // capturas de una receta para leer al abrir el editor
@@ -3321,6 +3271,7 @@ function App({ almacen, sesion }) {
   const props = {
     almacen, datos, sesion,
     abrirReceta: (id, raciones) => setReceta({ id, raciones }),
+    irA: setPestana,
     editarReceta: (id, fotos = null) => { setCapturas(fotos); setEditando(id); },
   };
   return html`
@@ -3331,6 +3282,7 @@ function App({ almacen, sesion }) {
     </header>
     <main>
       ${!almacen.cargado ? html`<p class="vacio">Cargando…</p>`
+        : pestana === 'inicio' ? html`<${PantallaInicio} ...${props} nLista=${nLista} />`
         : pestana === 'plan' ? html`<${PantallaPlan} ...${props} />`
         : pestana === 'recetas' ? html`<${PantallaRecetas} ...${props} />`
         : pestana === 'despensa' ? html`<${PantallaDespensa} ...${props} />`
@@ -3347,7 +3299,7 @@ function App({ almacen, sesion }) {
       onCerrar=${() => setReceta(null)} onEditar=${(id) => { setReceta(null); setEditando(id); }} />`}
     ${editando !== undefined && html`<${EditarReceta} ...${props} id=${editando} capturas=${capturas}
       onCerrar=${(id) => { setEditando(undefined); setCapturas(null); if (id) setReceta({ id }); }} />`}
-    ${ajustes && html`<${PantallaAjustes} almacen=${almacen} sesion=${sesion} onCerrar=${() => setAjustes(false)} />`}
+    ${ajustes && html`<${PantallaAjustes} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setAjustes(false)} />`}
     <${Aviso} />`;
 }
 
@@ -3459,6 +3411,7 @@ async function arrancarPrueba(raiz) {
   await almacen.cargar();
 }
 
+aplicarApariencia();
 const raiz = document.getElementById('app');
 raiz.textContent = '';
 const prueba = new URLSearchParams(location.search).has('prueba') || config.MODO === 'prueba' || !config.SUPABASE_URL;

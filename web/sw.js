@@ -1,11 +1,12 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'compras-v32';
+const VERSION = 'compras-v33';
 const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
   'src/comparar.js', 'src/catalogo.js', 'src/tiques.js', 'src/menu.js', 'src/fotos.js', 'src/ingredientes.js', 'src/consumo.js', 'src/foto-producto.js',
-  'src/receta-texto.js', 'src/video.js'];
+  'src/receta-texto.js', 'src/video.js', 'src/inicio.js', 'src/planificador.js', 'src/avisos.js', 'src/apariencia.js',
+  'src/notificaciones.js'];
 // El lector de tiques (vendor/ocr, unos 10 MB) y el compresor de vídeo (vendor/mediabunny) no se guardan al
 // instalar: se guardan la primera vez que se usan.
 
@@ -29,4 +30,24 @@ self.addEventListener('fetch', (e) => {
       .then((r) => { const copia = r.clone(); caches.open(VERSION).then((c) => c.put(e.request, copia)); return r; })
       .catch(() => caches.match(e.request, { ignoreSearch: true })),
   );
+});
+
+// Avisos en el móvil: llegan de la función "avisos" de Supabase aunque la app esté cerrada.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data?.json() ?? {}; } catch { d = { cuerpo: e.data?.text() }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Compras de casa', {
+    body: d.cuerpo || '', icon: 'icono-192.png', badge: 'icono-192.png', tag: 'aviso-diario', renotify: true,
+    data: { pestana: d.pestana || 'inicio' },
+  }));
+});
+
+// Al tocar el aviso: abre la app (o la trae delante) en Inicio.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL(`./?pestana=${e.notification.data?.pestana || 'inicio'}`, self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+    const v = ventanas.find((w) => w.url.startsWith(self.registration.scope));
+    return v ? v.navigate(url).then((w) => (w ?? v).focus()) : self.clients.openWindow(url);
+  }));
 });

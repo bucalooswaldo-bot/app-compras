@@ -278,6 +278,13 @@ const ORDEN_CATEGORIAS = [
   'Panadería', 'Despensa', 'Conservas', 'Congelados', 'Bebidas', 'Droguería', 'Otros',
 ];
 
+const ICONO_PASILLO = {
+  'Frutas y verduras': '🥬', Carne: '🥩', Pescado: '🐟', 'Charcutería y quesos': '🧀', 'Lácteos y huevos': '🥛',
+  Panadería: '🥖', Despensa: '🫙', Conservas: '🥫', Congelados: '🧊', Bebidas: '🧃', Droguería: '🧴',
+};
+/** Dibujo de cada sección del súper (para las listas). */
+export const iconoPasillo = (c) => ICONO_PASILLO[c] ?? '🛒';
+
 export function ordenCategoria(c) {
   const i = ORDEN_CATEGORIAS.indexOf(c);
   return i === -1 ? ORDEN_CATEGORIAS.length : i;
