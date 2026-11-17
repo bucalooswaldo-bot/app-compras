@@ -21,8 +21,19 @@ const ZONA = 'Atlantic/Canary';
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false },
 });
-webpush.setVapidDetails('https://bucalooswaldo-bot.github.io/app-compras/',
-  Deno.env.get('VAPID_PUBLICA')!, Deno.env.get('VAPID_PRIVADA')!);
+// Las claves de los avisos están en ajustes_servidor (solo las lee el servidor; no van en el repositorio).
+let claves: Promise<void> | null = null;
+function prepararClaves() {
+  claves ??= db.from('ajustes_servidor').select('clave, valor').in('clave', ['vapid_publica', 'vapid_privada'])
+    .then(({ data, error }) => {
+      if (error) throw error;
+      const v = Object.fromEntries((data ?? []).map((f) => [f.clave, f.valor]));
+      if (!v.vapid_publica || !v.vapid_privada) throw new Error('Faltan las claves de avisos en ajustes_servidor');
+      webpush.setVapidDetails('https://bucalooswaldo-bot.github.io/app-compras/', v.vapid_publica, v.vapid_privada);
+    })
+    .catch((e) => { claves = null; throw e; });
+  return claves;
+}
 
 /** Fecha (AAAA-MM-DD) y hora de ahora en Canarias. */
 function ahoraEnCanarias() {
@@ -52,6 +63,7 @@ async function datosDeCasa(hogarId: string) {
 
 // deno-lint-ignore no-explicit-any
 async function mandar(sub: any, aviso: { titulo: string; cuerpo: string }) {
+  await prepararClaves();
   try {
     await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
       JSON.stringify({ ...aviso, pestana: 'inicio' }), { TTL: 6 * 3600 });
