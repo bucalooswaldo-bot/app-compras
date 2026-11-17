@@ -33,7 +33,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 38;
+const VERSION_APP = 39;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
