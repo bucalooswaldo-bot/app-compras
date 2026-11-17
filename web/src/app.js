@@ -15,6 +15,7 @@ import {
   tiqueRepetido, lineasQueSobran, cotejarTique,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
+import { compradoAMenudo, ofertasDe, barrasPorSuper, comparaConAnterior } from './ofertas.js';
 import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma, portadaDeCaptura } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
 import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano, numerarPasos } from './receta-texto.js';
@@ -23,6 +24,7 @@ import { PantallaInicio } from './inicio.js';
 import { PantallaPlan } from './planificador.js';
 import { Apariencia, aplicarApariencia, AjustesAvisos } from './apariencia.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
+import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe } from './cocina.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
 import * as config from '../config.js';
 
@@ -169,16 +171,26 @@ async function cargarRecetasInicio(almacen) {
 // ---------------------------------------------------------------------------
 // Plan semanal
 // ---------------------------------------------------------------------------
-/** Marca una comida del plan como cocinada (descuenta de la despensa) o lo deshace. */
-export async function cocinarComida(almacen, datos, comida, hecho) {
-  const signo = hecho ? -1 : 1;
-  for (const ing of ingredientesDeComida(datos, comida)) {
-    if (datos.despensa.some((x) => x.articulo_id === ing.articulo_id)) {
-      await almacen.sumarDespensa(ing.articulo_id, signo * ing.cantidad);
-    }
-  }
-  await almacen.actualizar('plan', comida.id, { cocinado: hecho });
-  mostrarAviso(hecho ? 'Hecho. Se ha descontado de la despensa.' : 'Deshecho. Se ha devuelto a la despensa.');
+/**
+ * "Hecho" en una comida del plan, igual en Inicio y en Plan: al marcarla pregunta qué restar de la despensa
+ * (hoja DescontarCocinado); al desmarcarla devuelve lo que se restó.
+ * Devuelve { cocinar(comida, hecho), hoja } — hay que pintar `hoja` en la pantalla.
+ */
+export function useCocinar(almacen, datos) {
+  const [hecha, setHecha] = useState(null);
+  const cocinar = async (comida, hecho) => {
+    if (hecho) { setHecha(comida); return; }
+    const restado = leerRestado(comida.id)
+      ?? ingredientesDeComida(datos, comida).filter((i) => datos.despensa.some((x) => x.articulo_id === i.articulo_id))
+        .map((i) => [i.articulo_id, i.cantidad]);
+    for (const [articuloId, cantidad] of restado) await almacen.sumarDespensa(articuloId, cantidad);
+    guardarRestado(comida.id, null);
+    await almacen.actualizar('plan', comida.id, { cocinado: false });
+    mostrarAviso(restado.length ? 'Deshecho. Se ha devuelto a la despensa.' : 'Deshecho.');
+  };
+  const hoja = hecha && html`<${DescontarCocinado} almacen=${almacen} datos=${datos} recetaId=${hecha.receta_id} raciones=${hecha.raciones}
+    comida=${hecha} onCerrar=${() => setHecha(null)} />`;
+  return { cocinar, hoja };
 }
 
 export const leerRaciones = () => { try { return Number(localStorage.getItem('raciones-plan')) || null; } catch { return null; } };
@@ -300,6 +312,8 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
   const r = datos.recetas.find((x) => x.id === id);
   const [raciones, setRaciones] = useState(racionesIniciales ?? r?.raciones ?? 4);
   const [alPlan, setAlPlan] = useState(false);
+  const [cocinando, setCocinando] = useState(false);
+  const [cocinado, setCocinado] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const entradaFoto = useRef(null);
   const fotos = useFotos(almacen, [r?.foto_path]);
@@ -314,6 +328,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
     almacen.motor.urlVideo(r.video_path).then((u) => vivo && setUrlVideo(u)).catch((e) => console.error(e));
     return () => { vivo = false; };
   }, [r?.video_path]);
+  const fotoEnviar = useFotoParaEnviar(r?.foto_path ? fotos[r.foto_path] : null, r?.nombre);
   if (!r) return null;
   const ingredientes = datos.ingredientes.filter((i) => i.receta_id === id).sort((a, b) => a.orden - b.orden);
   const urlFoto = r.foto_path ? fotos[r.foto_path] : null;
@@ -409,6 +424,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
         <button class="chip ${r.favorita ? 'activo' : ''}" onClick=${() => almacen.actualizar('recetas', id, { favorita: !r.favorita })}>
           ${r.favorita ? '★ Favorita' : '☆ Favorita'}</button>
         <button class="chip" onClick=${() => setAlPlan(true)}>+ Al plan</button>
+        <button class="chip" onClick=${() => compartir({ titulo: r.nombre, texto: textoReceta(r, ingredientes, datos.articulos, raciones), foto: fotoEnviar })}>📤 Enviar</button>
         <button class="chip" onClick=${() => onEditar(id)}>Editar</button>
         ${!r.video_path && !video && html`<button class="chip" onClick=${() => entradaVideo.current?.click()}>🎬 Añadir vídeo</button>`}
       </div>
@@ -442,13 +458,291 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
       </ul>
       <h3>Preparación</h3>
       <div class="pasos">${r.pasos.split('\n').filter(Boolean).map((p) => html`<p>${p}</p>`)}</div>
+      <div class="botones-cocinar">
+        <button class="boton grande" onClick=${() => setCocinando(true)}>👩‍🍳 Modo cocina</button>
+        <button class="boton grande secundario" onClick=${() => setCocinado(true)}>✅ La he cocinado</button>
+      </div>
       <p class="pie"><${BotonSeguro} texto="Borrar receta" pregunta="¿Seguro? También se quita del plan. Toca otra vez para borrar." onClick=${borrar} /></p>
+      ${cocinando && html`<${ModoCocina} datos=${datos} receta=${r} raciones=${raciones}
+        onCerrar=${() => setCocinando(false)} onTerminar=${() => { setCocinando(false); setCocinado(true); }} />`}
+      ${cocinado && html`<${DescontarCocinado} almacen=${almacen} datos=${datos} recetaId=${id} raciones=${raciones}
+        onCerrar=${() => setCocinado(false)} />`}
       ${alPlan && html`<${ElegirDia} onCerrar=${() => setAlPlan(false)} onElegir=${(fecha, momento) => {
         almacen.insertar('plan', { fecha, momento, receta_id: id, raciones, cocinado: false });
         setAlPlan(false);
         mostrarAviso(`Añadida al plan: ${nombreDia(fecha)}, ${nombreMomento(momento).toLowerCase()}`);
       }} />`}
     </${Hoja}>`;
+}
+
+// ---------------------------------------------------------------------------
+// Compartir por WhatsApp, modo cocina y descontar lo cocinado
+// ---------------------------------------------------------------------------
+/**
+ * Abre "Compartir" del móvil (ahí sale WhatsApp) con el texto y, si se puede, la foto.
+ * Sin "Compartir" (ordenador) abre WhatsApp Web con el texto.
+ */
+async function compartir({ titulo, texto, foto }) {
+  try {
+    if (foto && navigator.canShare?.({ files: [foto], text: texto })) {
+      await navigator.share({ files: [foto], text: texto, title: titulo });
+      return;
+    }
+    if (navigator.share) {
+      await navigator.share({ text: texto, title: titulo });
+      return;
+    }
+  } catch (e) {
+    if (e?.name === 'AbortError') return;   // lo cerró ella
+    console.error(e);
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+}
+
+/** Descarga la foto de portada en cuanto se ve la receta, para que "Enviar" salga al momento con ella. */
+function useFotoParaEnviar(url, nombre) {
+  const [foto, setFoto] = useState(null);
+  useEffect(() => {
+    setFoto(null);
+    if (!url) return;
+    let vivo = true;
+    fetch(url).then((r) => (r.ok ? r.blob() : null)).then((b) => {
+      if (!vivo || !b) return;
+      const ext = b.type === 'image/png' ? 'png' : b.type === 'image/webp' ? 'webp' : 'jpg';
+      const base = normalizar(nombre || 'receta').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'receta';
+      setFoto(new File([b], `${base}.${ext}`, { type: b.type || 'image/jpeg' }));
+    }).catch(() => {});
+    return () => { vivo = false; };
+  }, [url]);
+  return foto;
+}
+
+/** Lo restado al marcar una comida como hecha, para devolverlo exacto si se deshace. */
+const leerRestado = (id) => { try { return JSON.parse(localStorage.getItem(`restado-${id}`)); } catch { return null; } };
+const guardarRestado = (id, filas) => {
+  try { if (filas) localStorage.setItem(`restado-${id}`, JSON.stringify(filas)); else localStorage.removeItem(`restado-${id}`); } catch { /* nada */ }
+};
+
+/** La comida del plan que se está cocinando: la de hoy (o la última pendiente de días pasados) de esta receta. */
+function comidaPendiente(datos, recetaId) {
+  const hoy = fechaISO();
+  return datos.plan
+    .filter((p) => p.receta_id === recetaId && !p.cocinado && p.fecha <= hoy && p.fecha >= sumarDias(hoy, -3))
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))[0] ?? null;
+}
+
+/**
+ * "La he cocinado": enseña lo que se va a restar de la despensa (se puede cambiar o saltar) y lo resta.
+ * Si la receta estaba en el plan, la marca como hecha.
+ */
+function DescontarCocinado({ almacen, datos, recetaId, raciones, comida, onCerrar }) {
+  const r = datos.recetas.find((x) => x.id === recetaId);
+  const [filas, setFilas] = useState(() => aDescontar(datos, recetaId, raciones).map((f) => ({ ...f, saltar: !f.enDespensa })));
+  const cambiar = (k, c) => setFilas((xs) => xs.map((x) => (x.clave === k ? { ...x, ...c } : x)));
+  const apuntadas = filas.filter((f) => f.enDespensa);
+  const fuera = filas.filter((f) => !f.enDespensa);
+  const listas = apuntadas.filter((f) => !f.saltar && f.cantidad > 0);
+  const delPlan = comida ?? comidaPendiente(datos, recetaId);
+  const sinCantidad = datos.ingredientes.filter((i) => i.receta_id === recetaId && i.cantidad == null).length;
+
+  const terminar = async (restar) => {
+    const hechas = restar ? listas : [];
+    for (const f of hechas) await almacen.sumarDespensa(f.articulo_id, -Math.min(f.cantidad, f.hay || f.cantidad));
+    if (delPlan) {
+      await almacen.actualizar('plan', delPlan.id, { cocinado: true });
+      guardarRestado(delPlan.id, hechas.map((f) => [f.articulo_id, Math.min(f.cantidad, f.hay || f.cantidad)]));
+    }
+    mostrarAviso(hechas.length ? `¡Que aproveche! Restado de la despensa: ${hechas.map((f) => f.nombre).join(', ')}` : '¡Que aproveche!');
+    onCerrar(true);
+  };
+
+  return html`
+    <${Hoja} titulo=${`He cocinado ${r?.nombre ?? ''}`} onCerrar=${() => onCerrar(false)}>
+      <p class="meta">${raciones} ${raciones === 1 ? 'ración' : 'raciones'}. Esto es lo que se resta de la despensa; cambia lo que no cuadre.</p>
+      ${apuntadas.length === 0 && html`<p class="vacio">Ningún ingrediente de esta receta está apuntado en la despensa.</p>`}
+      ${apuntadas.map((f) => html`<div class="ing-fila ${f.saltar ? 'saltado' : ''}" key=${f.clave}>
+        <div class="ing-cab"><strong>${f.nombre}</strong>
+          <button class="enlace" onClick=${() => cambiar(f.clave, { saltar: !f.saltar })}>${f.saltar ? 'Restar' : 'No restar'}</button></div>
+        ${!f.saltar && html`<div class="ing-datos">
+          <${CampoCantidad} unidad=${f.unidad} valor=${f.cantidad} onCambio=${(c) => cambiar(f.clave, { cantidad: c ?? 0 })} />
+          <small class="meta">hay ${formatoCantidad(f.hay, f.unidad)}${f.cantidad > f.hay ? ' (se queda en 0)' : ''}</small>
+        </div>`}
+      </div>`)}
+      ${(fuera.length > 0 || sinCantidad > 0) && html`<p class="meta">${[
+        fuera.length && `No están en la despensa: ${fuera.map((f) => f.nombre).join(', ')}.`,
+        sinCantidad && `${sinCantidad === 1 ? 'Un ingrediente va' : `${sinCantidad} ingredientes van`} sin cantidad y no se resta${sinCantidad === 1 ? '' : 'n'}.`,
+      ].filter(Boolean).join(' ')}</p>`}
+      ${delPlan && html`<p class="meta">Se marca como hecha en el plan (${nombreDia(delPlan.fecha).toLowerCase()}, ${nombreMomento(delPlan.momento).toLowerCase()}).</p>`}
+      <button class="boton grande" disabled=${!listas.length} onClick=${() => terminar(true)}>
+        Restar ${listas.length || ''} de la despensa</button>
+      <p class="pie"><button class="enlace" onClick=${() => terminar(false)}>${delPlan ? 'Marcar como hecha sin restar nada' : 'No restar nada'}</button></p>
+    </${Hoja}>`;
+}
+
+/** Pitido con el altavoz del móvil (sin archivos de sonido). */
+let audioCocina = null;
+function prepararSonido() {
+  try { audioCocina ??= new (window.AudioContext || window.webkitAudioContext)(); audioCocina.resume?.(); } catch { /* sin sonido */ }
+}
+function pitar() {
+  try {
+    const ctx = audioCocina;
+    if (!ctx) return;
+    for (const [t, f] of [[0, 880], [0.25, 880], [0.5, 1175]]) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.2);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
+    }
+  } catch { /* nada */ }
+  try { navigator.vibrate?.([300, 150, 300]); } catch { /* nada */ }
+}
+
+/** Mantiene la pantalla encendida mientras se ve el modo cocina. Devuelve si lo ha conseguido. */
+function usePantallaEncendida() {
+  const [activa, setActiva] = useState(null);   // null = probando, true/false
+  useEffect(() => {
+    let cerrojo = null, vivo = true;
+    const pedir = async () => {
+      if (!('wakeLock' in navigator)) { setActiva(false); return; }
+      try {
+        cerrojo = await navigator.wakeLock.request('screen');
+        if (!vivo) { cerrojo.release().catch(() => {}); return; }
+        setActiva(true);
+        cerrojo.addEventListener?.('release', () => vivo && document.visibilityState !== 'visible' && setActiva(null));
+      } catch { setActiva(false); }
+    };
+    // Al salir de la app se suelta solo: se vuelve a pedir al volver.
+    const alVolver = () => { if (document.visibilityState === 'visible') pedir(); };
+    pedir();
+    document.addEventListener('visibilitychange', alVolver);
+    return () => { vivo = false; document.removeEventListener('visibilitychange', alVolver); cerrojo?.release().catch(() => {}); };
+  }, []);
+  return activa;
+}
+
+const MINUTOS_RAPIDOS = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
+
+/** Pasos en grande, pantalla siempre encendida y temporizadores sacados de cada paso. */
+function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
+  const pasos = pasosDe(receta);
+  const ingredientes = datos.ingredientes.filter((i) => i.receta_id === receta.id).sort((a, b) => a.orden - b.orden);
+  const [paso, setPaso] = useState(0);             // 0 = ingredientes; 1..n = pasos
+  const [relojes, setRelojes] = useState([]);      // { id, nombre, total, fin, sonando }
+  const [ahora, setAhora] = useState(Date.now());
+  const [otro, setOtro] = useState(false);
+  const [salir, setSalir] = useState(false);
+  const [hechos, setHechos] = useState(() => new Set());   // ingredientes ya echados
+  const pantalla = usePantallaEncendida();
+
+  useEffect(() => {
+    document.body.classList.add('sin-scroll');
+    const esc = (e) => { if (e.key === 'ArrowRight') setPaso((p) => Math.min(pasos.length, p + 1)); if (e.key === 'ArrowLeft') setPaso((p) => Math.max(0, p - 1)); };
+    document.addEventListener('keydown', esc);
+    return () => { document.body.classList.remove('sin-scroll'); document.removeEventListener('keydown', esc); };
+  }, []);
+  // Un tic por segundo mientras haya temporizadores; al acabar uno, pita hasta que se pare.
+  useEffect(() => {
+    if (!relojes.length) return;
+    const t = setInterval(() => {
+      const n = Date.now();
+      setAhora(n);
+      setRelojes((rs) => {
+        let cambia = false;
+        const nuevos = rs.map((x) => {
+          if (!x.sonando && x.fin <= n) { cambia = true; return { ...x, sonando: n }; }
+          return x;
+        });
+        const suenan = nuevos.filter((x) => x.sonando && n - x.sonando < 120000);
+        if (suenan.length && Math.floor(n / 1000) % 2 === 0) pitar();
+        return cambia ? nuevos : rs;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, [relojes.length > 0]);
+
+  const empezar = (segundos, nombre) => {
+    prepararSonido();
+    const n = Date.now();
+    setAhora(n);
+    setRelojes((rs) => [...rs, { id: `${n}-${Math.random()}`, nombre, total: segundos, fin: n + segundos * 1000, sonando: null }]);
+    setOtro(false);
+  };
+  const quitar = (id) => setRelojes((rs) => rs.filter((x) => x.id !== id));
+  const sumarMinuto = (id) => setRelojes((rs) => rs.map((x) => (x.id === id
+    ? { ...x, fin: Math.max(x.fin, Date.now()) + 60000, sonando: null } : x)));
+  const intentarSalir = () => {
+    if (relojes.some((x) => !x.sonando) && !salir) { setSalir(true); setTimeout(() => setSalir(false), 5000); return; }
+    onCerrar();
+  };
+
+  const texto = paso > 0 ? pasos[paso - 1] : null;
+  const tiempos = texto ? tiemposDePaso(texto) : [];
+  const ultimo = paso === pasos.length;
+
+  return html`
+    <div class="cocina" role="dialog" aria-label=${`Modo cocina: ${receta.nombre}`}>
+      <div class="cocina-cab">
+        <div class="cocina-titulo">
+          <strong>${receta.nombre}</strong>
+          <small>${paso === 0 ? `Ingredientes · ${raciones} rac.` : `Paso ${paso} de ${pasos.length}`}
+            ${pantalla === true ? ' · 🔆 pantalla encendida' : pantalla === false ? ' · la pantalla puede apagarse' : ''}</small>
+        </div>
+        <button class="chip ${salir ? 'peligro' : ''}" onClick=${intentarSalir}>${salir ? 'Hay temporizadores. ¿Salir?' : '✕ Salir'}</button>
+      </div>
+      <div class="cocina-progreso" aria-hidden="true"><span style=${`width:${pasos.length ? (paso / pasos.length) * 100 : 100}%`}></span></div>
+
+      ${relojes.length > 0 && html`<div class="cocina-relojes">
+        ${relojes.map((x) => {
+          const queda = Math.ceil((x.fin - ahora) / 1000);
+          return html`<div class="reloj ${x.sonando ? 'suena' : ''}" key=${x.id}>
+            <span class="reloj-nombre">${x.nombre}</span>
+            <b class="reloj-cifra">${x.sonando ? '¡Tiempo!' : reloj(queda)}</b>
+            <button class="chip" onClick=${() => sumarMinuto(x.id)}>+1 min</button>
+            <button class="chip" onClick=${() => quitar(x.id)}>${x.sonando ? 'Parar' : '✕'}</button>
+          </div>`;
+        })}
+      </div>`}
+
+      <div class="cocina-cuerpo">
+        ${paso === 0 ? html`
+          <ul class="cocina-ingredientes">
+            ${ingredientes.map((i) => {
+              const a = articulo(datos, i.articulo_id);
+              const c = escalar(i.cantidad, receta.raciones, raciones);
+              const hecho = hechos.has(i.id);
+              return html`<li key=${i.id} class=${hecho ? 'hecho' : ''}>
+                <button onClick=${() => setHechos((s) => { const n = new Set(s); if (n.has(i.id)) n.delete(i.id); else n.add(i.id); return n; })}>
+                  <span class="marca">${hecho ? '✓' : ''}</span>
+                  <span class="nombre">${a?.nombre}</span>
+                  <span class="cant">${c == null ? (i.nota || 'al gusto') : formatoCantidad(c, a?.unidad)}</span>
+                </button>
+              </li>`;
+            })}
+          </ul>
+          ${ingredientes.length > 0 && html`<p class="meta">Toca cada ingrediente cuando lo tengas preparado.</p>`}
+          ${pasos.length === 0 && html`<p class="vacio">Esta receta no tiene pasos escritos.</p>`}`
+        : html`
+          <p class="cocina-paso">${texto}</p>
+          <div class="cocina-tiempos">
+            ${tiempos.map((t) => html`<button class="boton" onClick=${() => empezar(t.segundos, `Paso ${paso} · ${duracion(t.segundos)}`)}>⏱ ${duracion(t.segundos)}</button>`)}
+            <button class="boton secundario" onClick=${() => setOtro(!otro)}>⏱ ${tiempos.length ? 'Otro tiempo' : 'Temporizador'}</button>
+          </div>`}
+        ${otro && html`<div class="cocina-otro">
+          ${MINUTOS_RAPIDOS.map((m) => html`<button class="chip" onClick=${() => empezar(m * 60, `${paso ? `Paso ${paso} · ` : ''}${m} min`)}>${m} min</button>`)}
+        </div>`}
+      </div>
+
+      <div class="cocina-pie">
+        <button class="boton secundario" disabled=${paso === 0} onClick=${() => setPaso(paso - 1)}>‹ Anterior</button>
+        ${ultimo
+          ? html`<button class="boton" onClick=${onTerminar}>✅ ¡Terminado!</button>`
+          : html`<button class="boton" onClick=${() => setPaso(paso + 1)}>${paso === 0 ? 'Empezar ›' : 'Siguiente ›'}</button>`}
+      </div>
+    </div>`;
 }
 
 function ElegirDia({ onCerrar, onElegir }) {
@@ -1463,6 +1757,8 @@ function PantallaLista({ almacen, datos, sesion }) {
     for (const f of filas.filter((x) => x.tipo === 'manual')) await almacen.actualizar('lista', f.id, { para_hoy: true });
   };
   const aLuego = (f) => almacen.actualizar('lista', f.id, { para_hoy: false });
+  const enviarLista = () => compartir({ titulo: enHoy ? 'Compra de hoy' : 'Falta en casa',
+    texto: textoLista(enHoy ? 'Compra de hoy' : 'Falta en casa', pendientes, datos.articulos) });
 
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
@@ -1617,7 +1913,8 @@ function PantallaLista({ almacen, datos, sesion }) {
           <button class="boton secundario coger" onClick=${() => setCoger(true)}>+ Coger otra cosa</button>`
           : pendientes.length > 0 && html`
           <${PrecioHoy} datos=${datos} sesion=${sesion} items=${itemsComparar(datos, pendientes)} onDetalle=${() => setComparar(pendientes)} />
-          <button class="boton grande empezar" onClick=${() => setElegirSuper(true)}>🛒 Empezar la compra</button>`}
+          <button class="boton grande empezar" onClick=${() => setElegirSuper(true)}>🛒 Empezar la compra</button>
+          <button class="boton secundario enviar-lista" onClick=${enviarLista}>📤 Enviar la lista por WhatsApp</button>`}
         ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
         ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio">
           <p>Aún no hay nada en la compra de hoy.</p>
@@ -1632,6 +1929,7 @@ function PantallaLista({ almacen, datos, sesion }) {
         ${pendientes.length > 1 && html`<div class="todo-hoy">
           <button class="chip" onClick=${async () => { await aHoy(pendientes); mostrarAviso('Todo pasado a la compra de hoy'); elegirVista('hoy'); }}>Todo a la compra de hoy</button>
           <button class="chip" onClick=${() => setComparar(pendientes)}>💶 Comparar precios</button>
+          <button class="chip" onClick=${enviarLista}>📤 Enviar</button>
         </div>`}
         ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio"><p>No falta nada. 🎉</p>
           <p><small>Esta lista se llena sola con las recetas del plan y con lo que baje del aviso en la despensa.</small></p></div>`}
@@ -2901,7 +3199,104 @@ function precioEnSuper(datos, catalogo) {
   };
 }
 
-function PantallaGastos({ almacen, datos, sesion }) {
+/**
+ * Ofertas de lo que la casa compra a menudo (Mercadona e HiperDino, con los precios que la tarea diaria
+ * va mirando). Se calcula en la app al abrir y cada vez que cambian los tiques, la lista o los enlaces.
+ */
+function useOfertas(datos, sesion) {
+  const [estado, setEstado] = useState({ lista: [], frecuentes: 0, mirados: 0, listo: false });
+  const frecuentes = useMemo(() => compradoAMenudo(datos), [datos.tiques, datos.tique_lineas, datos.lista]);
+  const clave = `${[...frecuentes.keys()].sort().join(',')}|${datos.equivalencias.length}|${datos.preferencias.length}`;
+  useEffect(() => {
+    if (!sesion) { setEstado({ lista: [], frecuentes: frecuentes.size, mirados: 0, listo: true }); return; }
+    const enlaces = datos.equivalencias.filter((e) => frecuentes.has(e.articulo_id));
+    if (!enlaces.length) { setEstado({ lista: [], frecuentes: frecuentes.size, mirados: 0, listo: true }); return; }
+    const catalogo = obtenerCatalogo(sesion);
+    const ids = enlaces.map((e) => e.producto_id);
+    let vivo = true;
+    Promise.all([catalogo.cargar(ids), catalogo.historial(ids, sumarDias(fechaISO(), -84))])
+      .then(([, historial]) => {
+        if (!vivo) return;
+        const lista = ofertasDe(frecuentes, enlaces, catalogo.productos, historial, { vale: filtroGustos(datos) })
+          .filter((o) => o.producto.supermercado_id !== 'lidl'); // Lidl: sus precios salen de los tiques, no de ofertas
+        setEstado({ lista, frecuentes: frecuentes.size, mirados: new Set(ids).size, listo: true });
+      })
+      .catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, [clave, !!sesion]);
+  return estado;
+}
+
+/** Tarjeta «De oferta en lo que soléis comprar», arriba de Gastos. */
+function TarjetaOfertas({ almacen, datos, ofertas }) {
+  const [abierta, setAbierta] = useState(false);
+  if (!ofertas?.listo) return null;
+  const enLista = new Set(datos.lista.filter((l) => !l.comprado).map((l) => l.articulo_id));
+  const apuntar = async (o) => {
+    await almacen.insertar('lista', { articulo_id: o.articulo_id, cantidad: null, marca: o.producto.marca ?? null,
+      origen: 'manual', comprado: false });
+    mostrarAviso(`${nombreArticulo(datos, o.articulo_id)} apuntado en la Lista.`);
+  };
+  const lidl = html`<a class="enlace" href="https://www.lidl.es/" target="_blank" rel="noopener">Ver las ofertas de Lidl en su web ↗</a>`;
+  if (!ofertas.lista.length) {
+    return html`<div class="tarjeta-ofertas tranquila">
+      <b>🏷 Ofertas</b>
+      <p class="meta">${ofertas.frecuentes === 0
+        ? 'Cuando haya unos cuantos tiques, aquí os avisaré si algo que compráis a menudo está de oferta.'
+        : ofertas.mirados === 0
+          ? 'Lo que compráis a menudo aún no está enlazado con Mercadona o HiperDino: enlazadlo desde la Lista para ver sus ofertas.'
+          : `Hoy no hay ofertas en lo que compráis a menudo (miro ${ofertas.mirados} ${ofertas.mirados === 1 ? 'producto' : 'productos'} de Mercadona e HiperDino).`}</p>
+      <p class="meta">${lidl}</p>
+    </div>`;
+  }
+  const visibles = abierta ? ofertas.lista : ofertas.lista.slice(0, 4);
+  return html`<div class="tarjeta-ofertas">
+    <b>🏷 De oferta en lo que soléis comprar</b>
+    <div class="filas-oferta">
+      ${visibles.map((o) => html`<div class="fila-oferta">
+        <${FotoProducto} url=${o.producto.imagen_url} />
+        <div class="que">
+          <span>${nombreArticulo(datos, o.articulo_id)}</span>
+          <span class="meta">${nombreSuper(o.producto.supermercado_id)} · ${o.producto.nombre}</span>
+          <span class="meta">${o.motivo === 'rebajado' ? 'Rebajado en su web' : 'Más barato de lo normal'}</span>
+        </div>
+        <div class="precio">
+          <b>${euros(o.precio)}</b><s>${euros(o.antes)}</s>
+          <span class="descuento">−${o.pct}%</span>
+          ${enLista.has(o.articulo_id)
+            ? html`<span class="meta">En la lista</span>`
+            : html`<button class="boton peq" onClick=${() => apuntar(o)}>+ Lista</button>`}
+        </div>
+      </div>`)}
+    </div>
+    ${ofertas.lista.length > 4 && html`<button class="enlace" onClick=${() => setAbierta(!abierta)}>
+      ${abierta ? 'Ver menos' : `Ver las ${ofertas.lista.length}`}</button>`}
+    <p class="meta">${lidl}</p>
+  </div>`;
+}
+
+const COLOR_SUPER = { mercadona: 'var(--c-mercadona)', hiperdino: 'var(--c-hiperdino)', lidl: 'var(--c-lidl)' };
+
+/** Barras de los últimos periodos, cada súper con su color. */
+function GraficaGasto({ grupos, periodo }) {
+  const barras = barrasPorSuper(grupos, 6);
+  if (barras.length < 2) return null;
+  const supers = [...new Set(barras.flatMap((b) => b.trozos.map((t) => t.s)))];
+  return html`<div class="grafica-gasto">
+    <div class="leyenda">${supers.map((s) => html`<span><i style=${`background:${COLOR_SUPER[s] ?? 'var(--c-otro)'}`}></i>${nombreDe(s)}</span>`)}</div>
+    ${barras.map((b) => html`<div class="barra-gasto">
+      <div class="rotulo"><span>${tituloPeriodo(b.inicio, periodo)}</span><b>${euros(b.total)}</b></div>
+      <div class="barra" role="img" aria-label=${b.trozos.map((t) => `${nombreDe(t.s)} ${euros(t.valor)}`).join(', ')}>
+        ${b.trozos.map((t) => html`<span style=${`width:${t.ancho}%;background:${COLOR_SUPER[t.s] ?? 'var(--c-otro)'}`}
+          title=${`${nombreDe(t.s)}: ${euros(t.valor)}`}></span>`)}
+      </div>
+    </div>`)}
+  </div>`;
+}
+
+const ANTERIOR = { semana: 'la semana pasada', mes: 'el mes pasado', anio: 'el año pasado' };
+
+function PantallaGastos({ almacen, datos, sesion, ofertas }) {
   const [periodo, setPeriodo] = useState(() => { try { return localStorage.getItem('periodo-gastos') || 'mes'; } catch { return 'mes'; } });
   const [leyendo, setLeyendo] = useState(null); // null | número (progreso) | 'cargando'
   const [revisar, setRevisar] = useState(null);
@@ -2928,6 +3323,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
   const tiques = [...datos.tiques].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const grupos = gastosPorPeriodo(tiques, periodo);
   const actual = grupos[0];
+  const comparado = actual && actual.inicio === inicioPeriodo(fechaISO(), periodo) ? comparaConAnterior(tiques, periodo, fechaISO(), inicioPeriodo) : null;
   const ahorro = useMemo(() => {
     if (!actual) return null;
     const ids = new Set(tiques.filter((t) => inicioPeriodo(t.fecha, periodo) === actual.inicio).map((t) => t.id));
@@ -2973,6 +3369,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
         <input ref=${fichero} type="file" accept="image/*" hidden onChange=${elegirFoto} />
         <button class="enlace" onClick=${() => setRevisar({ supermercado: null, fecha: null, total: null, lineas: [] })}>o escribirlo a mano</button>
       </div>
+      <${TarjetaOfertas} almacen=${almacen} datos=${datos} ofertas=${ofertas} />
       <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel, o elige de la galería una foto o una captura
         del tique de la app (Lidl Plus…). El texto se lee en el móvil; la foto no se guarda.</p>
 
@@ -2987,6 +3384,9 @@ function PantallaGastos({ almacen, datos, sesion }) {
           <span class="meta">${tituloPeriodo(actual.inicio, periodo)}</span>
           <strong class="cifra">${euros(actual.total)}</strong>
           <span class="meta">${actual.tiques} ${actual.tiques === 1 ? 'tique' : 'tiques'}</span>
+          ${comparado && Math.abs(comparado.diferencia) >= 1 && html`<span class="comparado ${comparado.diferencia > 0 ? 'mas' : 'menos'}">
+            ${euros(Math.abs(comparado.diferencia))} ${comparado.diferencia > 0 ? 'más' : 'menos'} que ${ANTERIOR[periodo]} a estas alturas (${euros(comparado.antes)})</span>`}
+          ${comparado && Math.abs(comparado.diferencia) < 1 && html`<span class="comparado">Igual que ${ANTERIOR[periodo]} a estas alturas</span>`}
           <div class="por-super">
             ${Object.entries(actual.porSuper).sort((a, b) => b[1] - a[1]).map(([s, v]) => html`
               <div><span>${nombreDe(s)}</span><b>${euros(v)}</b></div>`)}
@@ -3006,11 +3406,12 @@ function PantallaGastos({ almacen, datos, sesion }) {
         </div>`}
 
       ${grupos.length > 1 && html`
-        <h3 class="categoria">Anteriores</h3>
-        <div class="filas">
-          ${grupos.slice(1, 13).map((g) => html`
+        <h3 class="categoria">${periodo === 'mes' ? 'Por mes' : periodo === 'semana' ? 'Por semana' : 'Por año'} y súper</h3>
+        <${GraficaGasto} grupos=${grupos} periodo=${periodo} />
+        ${grupos.length > 6 && html`<div class="filas">
+          ${grupos.slice(6, 13).map((g) => html`
             <div class="fila-gasto"><span>${tituloPeriodo(g.inicio, periodo)}</span><b>${euros(g.total)}</b></div>`)}
-        </div>`}
+        </div>`}`}
 
       ${tiques.length > 0 && html`
         <h3 class="categoria">Tiques</h3>
@@ -3268,8 +3669,11 @@ function App({ almacen, sesion }) {
   const nLista = useMemo(() => faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).length
     + datos.lista.filter(pendienteManual).length, [datos, pestana]);
 
+  const ofertas = useOfertas(datos, sesion);
+  const nOfertas = ofertas.lista.filter((o) => !datos.lista.some((l) => !l.comprado && l.articulo_id === o.articulo_id)).length;
+
   const props = {
-    almacen, datos, sesion,
+    almacen, datos, sesion, ofertas,
     abrirReceta: (id, raciones) => setReceta({ id, raciones }),
     irA: setPestana,
     editarReceta: (id, fotos = null) => { setCapturas(fotos); setEditando(id); },
@@ -3292,7 +3696,7 @@ function App({ almacen, sesion }) {
     <nav class="pestanas">
       ${PESTANAS.map(([id, nombre, ico]) => html`
         <button class=${pestana === id ? 'activa' : ''} aria-current=${pestana === id ? 'page' : null} onClick=${() => setPestana(id)}>
-          <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}</span>${nombre}
+          <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}${id === 'gastos' && nOfertas > 0 && html`<b class="globo oferta" aria-label=${`${nOfertas} ofertas`}>${nOfertas}</b>`}</span>${nombre}
         </button>`)}
     </nav>
     ${receta && html`<${VerReceta} ...${props} id=${receta.id} racionesIniciales=${receta.raciones}

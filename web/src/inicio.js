@@ -2,7 +2,7 @@
 import { html, useState, useMemo, useEffect } from '../vendor/preact-htm.js';
 import { fechaISO, nombreDia, nombreMomento, formatoCantidad, pendienteHoy, tengoTodo } from './logica.js';
 import { avisosDeCasa, enumerar } from './avisos.js';
-import { Miniatura, useFotos, ElegirReceta, guardarRaciones, cocinarComida } from './app.js';
+import { Miniatura, useFotos, ElegirReceta, guardarRaciones, useCocinar } from './app.js';
 import { puedeAvisar, estadoAvisos, activarAvisos } from './notificaciones.js';
 
 const DIAS_LARGOS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -47,6 +47,7 @@ function OfrecerAvisos({ sesion }) {
 export function PantallaInicio({ almacen, datos, sesion, abrirReceta, irA, nLista }) {
   const hoy = fechaISO();
   const [elegir, setElegir] = useState(null); // momento
+  const { cocinar, hoja } = useCocinar(almacen, datos);
   const avisos = useMemo(() => avisosDeCasa(datos, hoy, 4), [datos]);
   const deHoy = datos.plan.filter((p) => p.fecha === hoy);
   const recetasHoy = deHoy.map((c) => datos.recetas.find((r) => r.id === c.receta_id)).filter(Boolean);
@@ -81,7 +82,7 @@ export function PantallaInicio({ almacen, datos, sesion, abrirReceta, irA, nList
                   : faltan.length ? html`<small class="falta">Falta ${enumerar(faltan.map((f) => f.nombre))}</small>`
                   : html`<small class="ok">Tenéis todo</small>`}
               </div>
-              <button class="chip ${c.cocinado ? 'activo' : ''}" onClick=${() => cocinarComida(almacen, datos, c, !c.cocinado)}>
+              <button class="chip ${c.cocinado ? 'activo' : ''}" onClick=${() => cocinar(c, !c.cocinado)}>
                 ${c.cocinado ? '✓ Hecho' : 'Hecho'}</button>
             </div>`;
         })}
@@ -121,6 +122,7 @@ export function PantallaInicio({ almacen, datos, sesion, abrirReceta, irA, nList
         <div class="acciones"><button class="boton principal" onClick=${() => irA('lista')}>Ir a la lista</button></div>
       </div>
 
+      ${hoja}
       ${elegir && html`<${ElegirReceta} almacen=${almacen} datos=${datos} titulo=${`Hoy, ${nombreMomento(elegir).toLowerCase()}`} momento=${elegir}
         onCerrar=${() => setElegir(null)}
         onElegir=${(receta, raciones) => {

@@ -3,7 +3,7 @@
 import { html, useState, useRef, useEffect } from '../vendor/preact-htm.js';
 import { fechaISO, sumarDias, nombreDia, nombreMomento } from './logica.js';
 import {
-  Miniatura, useFotos, ElegirReceta, ProponerSemana, guardarRaciones, leerRaciones, cocinarComida, mostrarAviso,
+  Miniatura, useFotos, ElegirReceta, ProponerSemana, guardarRaciones, leerRaciones, useCocinar, mostrarAviso,
 } from './app.js';
 
 const LETRA_DIA = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
@@ -93,6 +93,7 @@ export function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
   const [semana, setSemana] = useState(0);
   const [elegir, setElegir] = useState(null); // { fecha, momento }
   const [proponer, setProponer] = useState(false);
+  const { cocinar, hoja } = useCocinar(almacen, datos);
   const [extras, setExtras] = useState(new Set()); // días con postre/tentempié a la vista
   const inicio = sumarDias(hoy, semana * 7);
   const dias = Array.from({ length: 7 }, (_, i) => sumarDias(inicio, i));
@@ -136,7 +137,7 @@ export function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
           <small class="meta">${c.raciones} rac.</small>
         </button>
         <button class="chip ${c.cocinado ? 'activo' : ''}" title="Marcar como cocinado"
-          onClick=${() => cocinarComida(almacen, datos, c, !c.cocinado)}>${c.cocinado ? '✓' : 'Hecho'}</button>
+          onClick=${() => cocinar(c, !c.cocinado)}>${c.cocinado ? '✓' : 'Hecho'}</button>
         <button class="icono peq" aria-label="Quitar del plan" onClick=${() => almacen.borrar('plan', c.id)}>✕</button>
       </div>`;
   };
@@ -197,6 +198,7 @@ export function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
       ${vivo && html`<div class="fantasma" style=${`left:${vivo.x}px;top:${vivo.y}px`}>
         ${vivo.foto ? html`<img src=${vivo.foto} alt="" />` : null}<span>${vivo.etiqueta}</span></div>`}
 
+      ${hoja}
       ${elegir && html`<${ElegirReceta} almacen=${almacen} datos=${datos} titulo=${`${nombreDia(elegir.fecha, hoy)}, ${nombreMomento(elegir.momento).toLowerCase()}`} momento=${elegir.momento}
         onCerrar=${() => setElegir(null)}
         onElegir=${(receta, raciones) => {

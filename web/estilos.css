@@ -9,6 +9,7 @@
   --aviso: #b4541a;
   --aviso-claro: #fbeee4;
   --peligro: #b3261e;
+  --c-mercadona: #2f8a4f; --c-hiperdino: #e07b1f; --c-lidl: #1f5fbf; --c-otro: #9aa29c;
   --sombra: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 8px rgb(0 0 0 / 0.04);
   color-scheme: light;
 }
@@ -594,3 +595,76 @@ body.arrastrando { -webkit-user-select: none; user-select: none; }
   background: var(--panel); border: 2px solid var(--verde); border-radius: 12px; padding: 6px 10px 6px 6px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.25); max-width: 70vw; font-weight: 600; }
 .fantasma img { width: 48px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; }
 .fantasma span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Gastos: comparación, gráfica por súper y ofertas */
+.tarjeta-gasto .comparado { display: block; margin-top: 4px; font-size: 0.9rem; color: var(--suave); }
+.tarjeta-gasto .comparado.mas { color: var(--aviso); }
+.tarjeta-gasto .comparado.menos { color: var(--verde); }
+.grafica-gasto { display: grid; gap: 10px; margin-bottom: 8px; }
+.grafica-gasto .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; color: var(--suave); }
+.grafica-gasto .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.barra-gasto .rotulo { display: flex; justify-content: space-between; gap: 12px; font-size: 0.92rem; margin-bottom: 3px; }
+.barra-gasto .barra { display: flex; height: 14px; border-radius: 7px; background: var(--linea); overflow: hidden; gap: 2px; }
+.barra-gasto .barra span { display: block; height: 100%; min-width: 3px; }
+.tarjeta-ofertas { background: var(--panel); border: 1px solid var(--linea); border-left: 4px solid var(--aviso);
+  border-radius: 12px; padding: 12px; margin: 12px 0; box-shadow: var(--sombra); }
+.tarjeta-ofertas.tranquila { border-left-color: var(--linea); }
+.tarjeta-ofertas .meta { display: block; margin: 4px 0 0; }
+.filas-oferta { display: grid; gap: 4px; margin: 8px 0 4px; }
+.fila-oferta { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--linea); }
+.fila-oferta:last-child { border-bottom: 0; }
+.fila-oferta .foto-producto { width: 44px; height: 44px; }
+.fila-oferta .que { min-width: 0; }
+.fila-oferta .que .meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem; margin: 0; }
+.fila-oferta .precio { display: grid; justify-items: end; gap: 2px; text-align: right; }
+.fila-oferta .precio s { color: var(--suave); font-size: 0.82rem; }
+.fila-oferta .descuento { background: var(--aviso-claro); color: var(--aviso); border-radius: 6px; padding: 0 6px; font-size: 0.8rem; font-weight: 600; }
+.globo.oferta { background: var(--aviso); }
+
+/* Recetas: modo cocina, "la he cocinado" y enviar por WhatsApp */
+.botones-cocinar { display: grid; gap: 8px; margin-top: 8px; }
+.botones-cocinar .boton.grande { margin-top: 0; }
+.enviar-lista { width: 100%; margin-top: 8px; min-height: 44px; }
+.chip.peligro { color: var(--peligro); border-color: var(--peligro); }
+.cocina {
+  position: fixed; inset: 0; z-index: 60; background: var(--fondo); color: var(--texto);
+  display: flex; flex-direction: column;
+  padding: max(10px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+}
+.cocina-cab { display: flex; align-items: center; gap: 10px; }
+.cocina-titulo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cocina-titulo strong { font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cocina-titulo small { color: var(--suave); font-size: 0.82rem; }
+.cocina-progreso { height: 4px; background: var(--linea); border-radius: 2px; margin: 10px 0; overflow: hidden; }
+.cocina-progreso span { display: block; height: 100%; background: var(--verde); transition: width 0.2s; }
+.cocina-relojes { display: grid; gap: 6px; margin-bottom: 8px; }
+.reloj {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px;
+  background: var(--verde-claro); border: 1px solid var(--verde);
+}
+.reloj-nombre { flex: 1; min-width: 0; font-size: 0.85rem; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reloj-cifra { font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--verde); }
+.reloj.suena { background: var(--aviso-claro); border-color: var(--aviso); animation: latido 1s infinite; }
+.reloj.suena .reloj-cifra { color: var(--aviso); }
+@keyframes latido { 50% { transform: scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .reloj.suena { animation: none; } }
+.cocina-cuerpo { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 0 12px; }
+.cocina-paso { font-size: 1.55rem; line-height: 1.45; margin: 8px 0 20px; }
+.cocina-tiempos { display: flex; flex-wrap: wrap; gap: 8px; }
+.cocina-tiempos .boton { min-height: 50px; font-size: 1.05rem; padding: 0 18px; }
+.cocina-otro { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cocina-ingredientes { list-style: none; padding: 0; margin: 0; }
+.cocina-ingredientes button {
+  width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 4px; border: 0;
+  border-bottom: 1px solid var(--linea); background: none; color: var(--texto); font-size: 1.2rem; text-align: left;
+}
+.cocina-ingredientes .marca {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--verde);
+  display: grid; place-items: center; color: #fff; font-size: 0.95rem;
+}
+.cocina-ingredientes .nombre { flex: 1; min-width: 0; }
+.cocina-ingredientes .cant { font-size: 1.05rem; }
+.cocina-ingredientes .hecho .marca { background: var(--verde); }
+.cocina-ingredientes .hecho .nombre { text-decoration: line-through; color: var(--suave); }
+.cocina-pie { display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; padding-top: 10px; border-top: 1px solid var(--linea); }
+.cocina-pie .boton { min-height: 56px; font-size: 1.1rem; }

@@ -67,6 +67,22 @@ export function crearCatalogo(cliente) {
       return data.resultados ?? [];
     },
 
+    /** Precios anteriores de esos productos desde `desde` (para saber si hoy están más baratos de lo normal). */
+    async historial(ids, desde) {
+      const salida = new Map();
+      const unicos = [...new Set(ids)].filter(Boolean);
+      for (let i = 0; i < unicos.length; i += 80) {
+        const { data, error } = await cliente.from('precios').select('producto_id, precio, visto_en')
+          .in('producto_id', unicos.slice(i, i + 80)).gte('visto_en', desde).order('visto_en');
+        if (error) throw error;
+        for (const x of data) {
+          if (!salida.has(x.producto_id)) salida.set(x.producto_id, []);
+          salida.get(x.producto_id).push({ precio: Number(x.precio), visto_en: x.visto_en });
+        }
+      }
+      return salida;
+    },
+
     /** Productos de Lidl (salen de los tiques de la casa). */
     async cargarLidl() {
       const { data, error } = await cliente.from('productos_super').select('id').eq('supermercado_id', 'lidl');
