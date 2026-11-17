@@ -842,7 +842,7 @@ function ElegirIngredientes({ datos, elegidos, onElegir, onCerrar }) {
 
 // Unidades para elegir en cada ingrediente: las de compra (se suman en la lista) y las caseras (van como nota).
 const UNIDAD_FAMILIA = { g: 'g', kg: 'g', ml: 'ml', l: 'ml', ud: 'ud' };
-const CASERAS = ['cda', 'cdta', 'taza', 'vaso', 'pizca', 'puñado', 'chorrito', 'al gusto'];
+const CASERAS = ['cda', 'cdta', 'taza', 'vaso', 'pizca', 'puñado', 'chorrito', 'loncha', 'al gusto'];
 const CASERA_DE = (u) => {
   const n = normalizar(u);
   if (/^(cucharadas?|cdas?)$/.test(n)) return 'cda';
