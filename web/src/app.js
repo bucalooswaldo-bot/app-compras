@@ -33,7 +33,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 37;
+const VERSION_APP = 38;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -3322,7 +3322,9 @@ function GraficaGasto({ grupos, periodo }) {
 const ANTERIOR = { semana: 'la semana pasada', mes: 'el mes pasado', anio: 'el año pasado' };
 
 function PantallaGastos({ almacen, datos, sesion, ofertas }) {
-  const [periodo, setPeriodo] = useState(() => { try { return localStorage.getItem('periodo-gastos') || 'mes'; } catch { return 'mes'; } });
+  // Siempre abre en «Mes»: si cada móvil recordara su periodo, uno vería la semana y otro el mes,
+  // y parecería que los gastos no coinciden.
+  const [periodo, setPeriodo] = useState('mes');
   const [leyendo, setLeyendo] = useState(null); // null | número (progreso) | 'cargando'
   const [revisar, setRevisar] = useState(null);
   const [ver, setVer] = useState(null);
@@ -3338,7 +3340,6 @@ function PantallaGastos({ almacen, datos, sesion, ofertas }) {
   const camara = useRef(null);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
 
-  useEffect(() => { try { localStorage.setItem('periodo-gastos', periodo); } catch { /* nada */ } }, [periodo]);
   useEffect(() => {
     if (!catalogo) return;
     Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarLidl()])
@@ -3347,8 +3348,13 @@ function PantallaGastos({ almacen, datos, sesion, ofertas }) {
 
   const tiques = [...datos.tiques].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const grupos = gastosPorPeriodo(tiques, periodo);
-  const actual = grupos[0];
-  const comparado = actual && actual.inicio === inicioPeriodo(fechaISO(), periodo) ? comparaConAnterior(tiques, periodo, fechaISO(), inicioPeriodo) : null;
+  // Arriba, siempre el periodo de hoy (aunque vaya a 0 €), no el último con tiques: así no se confunde
+  // «esta semana» con una semana pasada.
+  const hoyInicio = inicioPeriodo(fechaISO(), periodo);
+  const actual = !tiques.length ? null
+    : grupos.find((g) => g.inicio === hoyInicio) ?? { inicio: hoyInicio, total: 0, porSuper: {}, tiques: 0 };
+  const comparado0 = actual ? comparaConAnterior(tiques, periodo, fechaISO(), inicioPeriodo) : null;
+  const comparado = comparado0 && (comparado0.antes > 0 || comparado0.ahora > 0) ? comparado0 : null;
   const ahorro = useMemo(() => {
     if (!actual) return null;
     const ids = new Set(tiques.filter((t) => inicioPeriodo(t.fecha, periodo) === actual.inicio).map((t) => t.id));
