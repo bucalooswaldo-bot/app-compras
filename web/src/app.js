@@ -15,6 +15,7 @@ import {
   tiqueRepetido, lineasQueSobran, cotejarTique,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
+import { compradoAMenudo, ofertasDe, barrasPorSuper, comparaConAnterior } from './ofertas.js';
 import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma, portadaDeCaptura } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
 import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano, numerarPasos } from './receta-texto.js';
@@ -29,7 +30,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 33;
+const VERSION_APP = 34;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -3246,7 +3247,104 @@ function precioEnSuper(datos, catalogo) {
   };
 }
 
-function PantallaGastos({ almacen, datos, sesion }) {
+/**
+ * Ofertas de lo que la casa compra a menudo (Mercadona e HiperDino, con los precios que la tarea diaria
+ * va mirando). Se calcula en la app al abrir y cada vez que cambian los tiques, la lista o los enlaces.
+ */
+function useOfertas(datos, sesion) {
+  const [estado, setEstado] = useState({ lista: [], frecuentes: 0, mirados: 0, listo: false });
+  const frecuentes = useMemo(() => compradoAMenudo(datos), [datos.tiques, datos.tique_lineas, datos.lista]);
+  const clave = `${[...frecuentes.keys()].sort().join(',')}|${datos.equivalencias.length}|${datos.preferencias.length}`;
+  useEffect(() => {
+    if (!sesion) { setEstado({ lista: [], frecuentes: frecuentes.size, mirados: 0, listo: true }); return; }
+    const enlaces = datos.equivalencias.filter((e) => frecuentes.has(e.articulo_id));
+    if (!enlaces.length) { setEstado({ lista: [], frecuentes: frecuentes.size, mirados: 0, listo: true }); return; }
+    const catalogo = obtenerCatalogo(sesion);
+    const ids = enlaces.map((e) => e.producto_id);
+    let vivo = true;
+    Promise.all([catalogo.cargar(ids), catalogo.historial(ids, sumarDias(fechaISO(), -84))])
+      .then(([, historial]) => {
+        if (!vivo) return;
+        const lista = ofertasDe(frecuentes, enlaces, catalogo.productos, historial, { vale: filtroGustos(datos) })
+          .filter((o) => o.producto.supermercado_id !== 'lidl'); // Lidl: sus precios salen de los tiques, no de ofertas
+        setEstado({ lista, frecuentes: frecuentes.size, mirados: new Set(ids).size, listo: true });
+      })
+      .catch((e) => console.error(e));
+    return () => { vivo = false; };
+  }, [clave, !!sesion]);
+  return estado;
+}
+
+/** Tarjeta «De oferta en lo que soléis comprar», arriba de Gastos. */
+function TarjetaOfertas({ almacen, datos, ofertas }) {
+  const [abierta, setAbierta] = useState(false);
+  if (!ofertas?.listo) return null;
+  const enLista = new Set(datos.lista.filter((l) => !l.comprado).map((l) => l.articulo_id));
+  const apuntar = async (o) => {
+    await almacen.insertar('lista', { articulo_id: o.articulo_id, cantidad: null, marca: o.producto.marca ?? null,
+      origen: 'manual', comprado: false });
+    mostrarAviso(`${nombreArticulo(datos, o.articulo_id)} apuntado en la Lista.`);
+  };
+  const lidl = html`<a class="enlace" href="https://www.lidl.es/" target="_blank" rel="noopener">Ver las ofertas de Lidl en su web ↗</a>`;
+  if (!ofertas.lista.length) {
+    return html`<div class="tarjeta-ofertas tranquila">
+      <b>🏷 Ofertas</b>
+      <p class="meta">${ofertas.frecuentes === 0
+        ? 'Cuando haya unos cuantos tiques, aquí os avisaré si algo que compráis a menudo está de oferta.'
+        : ofertas.mirados === 0
+          ? 'Lo que compráis a menudo aún no está enlazado con Mercadona o HiperDino: enlazadlo desde la Lista para ver sus ofertas.'
+          : `Hoy no hay ofertas en lo que compráis a menudo (miro ${ofertas.mirados} ${ofertas.mirados === 1 ? 'producto' : 'productos'} de Mercadona e HiperDino).`}</p>
+      <p class="meta">${lidl}</p>
+    </div>`;
+  }
+  const visibles = abierta ? ofertas.lista : ofertas.lista.slice(0, 4);
+  return html`<div class="tarjeta-ofertas">
+    <b>🏷 De oferta en lo que soléis comprar</b>
+    <div class="filas-oferta">
+      ${visibles.map((o) => html`<div class="fila-oferta">
+        <${FotoProducto} url=${o.producto.imagen_url} />
+        <div class="que">
+          <span>${nombreArticulo(datos, o.articulo_id)}</span>
+          <span class="meta">${nombreSuper(o.producto.supermercado_id)} · ${o.producto.nombre}</span>
+          <span class="meta">${o.motivo === 'rebajado' ? 'Rebajado en su web' : 'Más barato de lo normal'}</span>
+        </div>
+        <div class="precio">
+          <b>${euros(o.precio)}</b><s>${euros(o.antes)}</s>
+          <span class="descuento">−${o.pct}%</span>
+          ${enLista.has(o.articulo_id)
+            ? html`<span class="meta">En la lista</span>`
+            : html`<button class="boton peq" onClick=${() => apuntar(o)}>+ Lista</button>`}
+        </div>
+      </div>`)}
+    </div>
+    ${ofertas.lista.length > 4 && html`<button class="enlace" onClick=${() => setAbierta(!abierta)}>
+      ${abierta ? 'Ver menos' : `Ver las ${ofertas.lista.length}`}</button>`}
+    <p class="meta">${lidl}</p>
+  </div>`;
+}
+
+const COLOR_SUPER = { mercadona: 'var(--c-mercadona)', hiperdino: 'var(--c-hiperdino)', lidl: 'var(--c-lidl)' };
+
+/** Barras de los últimos periodos, cada súper con su color. */
+function GraficaGasto({ grupos, periodo }) {
+  const barras = barrasPorSuper(grupos, 6);
+  if (barras.length < 2) return null;
+  const supers = [...new Set(barras.flatMap((b) => b.trozos.map((t) => t.s)))];
+  return html`<div class="grafica-gasto">
+    <div class="leyenda">${supers.map((s) => html`<span><i style=${`background:${COLOR_SUPER[s] ?? 'var(--c-otro)'}`}></i>${nombreDe(s)}</span>`)}</div>
+    ${barras.map((b) => html`<div class="barra-gasto">
+      <div class="rotulo"><span>${tituloPeriodo(b.inicio, periodo)}</span><b>${euros(b.total)}</b></div>
+      <div class="barra" role="img" aria-label=${b.trozos.map((t) => `${nombreDe(t.s)} ${euros(t.valor)}`).join(', ')}>
+        ${b.trozos.map((t) => html`<span style=${`width:${t.ancho}%;background:${COLOR_SUPER[t.s] ?? 'var(--c-otro)'}`}
+          title=${`${nombreDe(t.s)}: ${euros(t.valor)}`}></span>`)}
+      </div>
+    </div>`)}
+  </div>`;
+}
+
+const ANTERIOR = { semana: 'la semana pasada', mes: 'el mes pasado', anio: 'el año pasado' };
+
+function PantallaGastos({ almacen, datos, sesion, ofertas }) {
   const [periodo, setPeriodo] = useState(() => { try { return localStorage.getItem('periodo-gastos') || 'mes'; } catch { return 'mes'; } });
   const [leyendo, setLeyendo] = useState(null); // null | número (progreso) | 'cargando'
   const [revisar, setRevisar] = useState(null);
@@ -3273,6 +3371,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
   const tiques = [...datos.tiques].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const grupos = gastosPorPeriodo(tiques, periodo);
   const actual = grupos[0];
+  const comparado = actual && actual.inicio === inicioPeriodo(fechaISO(), periodo) ? comparaConAnterior(tiques, periodo, fechaISO(), inicioPeriodo) : null;
   const ahorro = useMemo(() => {
     if (!actual) return null;
     const ids = new Set(tiques.filter((t) => inicioPeriodo(t.fecha, periodo) === actual.inicio).map((t) => t.id));
@@ -3318,6 +3417,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
         <input ref=${fichero} type="file" accept="image/*" hidden onChange=${elegirFoto} />
         <button class="enlace" onClick=${() => setRevisar({ supermercado: null, fecha: null, total: null, lineas: [] })}>o escribirlo a mano</button>
       </div>
+      <${TarjetaOfertas} almacen=${almacen} datos=${datos} ofertas=${ofertas} />
       <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel, o elige de la galería una foto o una captura
         del tique de la app (Lidl Plus…). El texto se lee en el móvil; la foto no se guarda.</p>
 
@@ -3332,6 +3432,9 @@ function PantallaGastos({ almacen, datos, sesion }) {
           <span class="meta">${tituloPeriodo(actual.inicio, periodo)}</span>
           <strong class="cifra">${euros(actual.total)}</strong>
           <span class="meta">${actual.tiques} ${actual.tiques === 1 ? 'tique' : 'tiques'}</span>
+          ${comparado && Math.abs(comparado.diferencia) >= 1 && html`<span class="comparado ${comparado.diferencia > 0 ? 'mas' : 'menos'}">
+            ${euros(Math.abs(comparado.diferencia))} ${comparado.diferencia > 0 ? 'más' : 'menos'} que ${ANTERIOR[periodo]} a estas alturas (${euros(comparado.antes)})</span>`}
+          ${comparado && Math.abs(comparado.diferencia) < 1 && html`<span class="comparado">Igual que ${ANTERIOR[periodo]} a estas alturas</span>`}
           <div class="por-super">
             ${Object.entries(actual.porSuper).sort((a, b) => b[1] - a[1]).map(([s, v]) => html`
               <div><span>${nombreDe(s)}</span><b>${euros(v)}</b></div>`)}
@@ -3351,11 +3454,12 @@ function PantallaGastos({ almacen, datos, sesion }) {
         </div>`}
 
       ${grupos.length > 1 && html`
-        <h3 class="categoria">Anteriores</h3>
-        <div class="filas">
-          ${grupos.slice(1, 13).map((g) => html`
+        <h3 class="categoria">${periodo === 'mes' ? 'Por mes' : periodo === 'semana' ? 'Por semana' : 'Por año'} y súper</h3>
+        <${GraficaGasto} grupos=${grupos} periodo=${periodo} />
+        ${grupos.length > 6 && html`<div class="filas">
+          ${grupos.slice(6, 13).map((g) => html`
             <div class="fila-gasto"><span>${tituloPeriodo(g.inicio, periodo)}</span><b>${euros(g.total)}</b></div>`)}
-        </div>`}
+        </div>`}`}
 
       ${tiques.length > 0 && html`
         <h3 class="categoria">Tiques</h3>
@@ -3609,8 +3713,11 @@ function App({ almacen, sesion }) {
   const nLista = useMemo(() => faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).length
     + datos.lista.filter(pendienteManual).length, [datos, pestana]);
 
+  const ofertas = useOfertas(datos, sesion);
+  const nOfertas = ofertas.lista.filter((o) => !datos.lista.some((l) => !l.comprado && l.articulo_id === o.articulo_id)).length;
+
   const props = {
-    almacen, datos, sesion,
+    almacen, datos, sesion, ofertas,
     abrirReceta: (id, raciones) => setReceta({ id, raciones }),
     editarReceta: (id, fotos = null) => { setCapturas(fotos); setEditando(id); },
   };
@@ -3631,7 +3738,7 @@ function App({ almacen, sesion }) {
     <nav class="pestanas">
       ${PESTANAS.map(([id, nombre, ico]) => html`
         <button class=${pestana === id ? 'activa' : ''} aria-current=${pestana === id ? 'page' : null} onClick=${() => setPestana(id)}>
-          <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}</span>${nombre}
+          <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}${id === 'gastos' && nOfertas > 0 && html`<b class="globo oferta" aria-label=${`${nOfertas} ofertas`}>${nOfertas}</b>`}</span>${nombre}
         </button>`)}
     </nav>
     ${receta && html`<${VerReceta} ...${props} id=${receta.id} racionesIniciales=${receta.raciones}

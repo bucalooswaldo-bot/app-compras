@@ -9,6 +9,7 @@
   --aviso: #b4541a;
   --aviso-claro: #fbeee4;
   --peligro: #b3261e;
+  --c-mercadona: #2f8a4f; --c-hiperdino: #e07b1f; --c-lidl: #1f5fbf; --c-otro: #9aa29c;
   --sombra: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 8px rgb(0 0 0 / 0.04);
   color-scheme: light;
 }
@@ -527,6 +528,31 @@ li.hecho { opacity: 0.8; }
   .cantidad-ing .fila-campo select { field-sizing: content; width: auto; min-width: 4.6em; }
 }
 .etiquetas-editor .chips { flex-wrap: wrap; overflow: visible; }
+
+/* Gastos: comparación, gráfica por súper y ofertas */
+.tarjeta-gasto .comparado { display: block; margin-top: 4px; font-size: 0.9rem; color: var(--suave); }
+.tarjeta-gasto .comparado.mas { color: var(--aviso); }
+.tarjeta-gasto .comparado.menos { color: var(--verde); }
+.grafica-gasto { display: grid; gap: 10px; margin-bottom: 8px; }
+.grafica-gasto .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; color: var(--suave); }
+.grafica-gasto .leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.barra-gasto .rotulo { display: flex; justify-content: space-between; gap: 12px; font-size: 0.92rem; margin-bottom: 3px; }
+.barra-gasto .barra { display: flex; height: 14px; border-radius: 7px; background: var(--linea); overflow: hidden; gap: 2px; }
+.barra-gasto .barra span { display: block; height: 100%; min-width: 3px; }
+.tarjeta-ofertas { background: var(--panel); border: 1px solid var(--linea); border-left: 4px solid var(--aviso);
+  border-radius: 12px; padding: 12px; margin: 12px 0; box-shadow: var(--sombra); }
+.tarjeta-ofertas.tranquila { border-left-color: var(--linea); }
+.tarjeta-ofertas .meta { display: block; margin: 4px 0 0; }
+.filas-oferta { display: grid; gap: 4px; margin: 8px 0 4px; }
+.fila-oferta { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--linea); }
+.fila-oferta:last-child { border-bottom: 0; }
+.fila-oferta .foto-producto { width: 44px; height: 44px; }
+.fila-oferta .que { min-width: 0; }
+.fila-oferta .que .meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem; margin: 0; }
+.fila-oferta .precio { display: grid; justify-items: end; gap: 2px; text-align: right; }
+.fila-oferta .precio s { color: var(--suave); font-size: 0.82rem; }
+.fila-oferta .descuento { background: var(--aviso-claro); color: var(--aviso); border-radius: 6px; padding: 0 6px; font-size: 0.8rem; font-weight: 600; }
+.globo.oferta { background: var(--aviso); }
 
 /* Recetas: modo cocina, "la he cocinado" y enviar por WhatsApp */
 .botones-cocinar { display: grid; gap: 8px; margin-top: 8px; }
