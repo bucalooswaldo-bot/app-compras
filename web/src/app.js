@@ -5,6 +5,7 @@ import {
   escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, enCasa, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, iconoPasillo, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
+import { GUIA, ejemplosDe, alimentosConCasa, buscarEnGuia } from './guia.js';
 import {
   SUPERS, SUPERS_WEB, nombreSuper, entenderDictado, pareceFrase, cantidadParaArticulo, unidadNueva, textoBusqueda, sugerir, calcularCesta,
   encaja, palabrasClave, precioUnidad, etiquetaUnidad, euros, AHORRO_MINIMO_PARA_REPARTIR,
@@ -33,7 +34,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 40;
+const VERSION_APP = 41;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -1102,6 +1103,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
   const [gastado, setGastado] = useState('');
   const [revisar, setRevisar] = useState(null);   // lo gastado, entendido, para confirmar
   const [repasar, setRepasar] = useState(false);
+  const [guia, setGuia] = useState(false);
   const [marcas, setMarcas] = useState(null);     // articulo_id cuyas marcas se ven
   const [porFoto, setPorFoto] = useState(null);   // foto de un producto para añadirlo
   const camaraProducto = useRef(null);
@@ -1148,6 +1150,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
         <button class="boton" disabled=${!gastado.trim()}>Restar</button>
       </form>
       <div class="chips">
+        <button class="chip" onClick=${() => setGuia(true)}>📚 Guía de alimentos</button>
         <button class="chip" onClick=${() => setRepasar(true)}>📋 Repasar despensa</button>
         <button class="chip ${soloFaltan ? 'activo' : ''}" onClick=${() => setSoloFaltan(!soloFaltan)}>
           Se acaba${faltanN ? ` (${faltanN})` : ''}</button>
@@ -1155,7 +1158,8 @@ function PantallaDespensa({ almacen, datos, sesion }) {
       ${datos.despensa.length > 0 && html`<p class="meta">Toca la foto para ver sus marcas, y el nombre para cambiar cantidad, unidad, sección o aviso. Para uno nuevo, <b>+ Añadir</b>.</p>`}
       ${datos.despensa.length === 0 && html`<div class="vacio">
         <p>Apunta lo que hay en casa. Si le pones un <b>mínimo</b>, cuando baje de ahí aparecerá en la lista de la compra.</p>
-        <p><small>Ejemplo: aceite, mínimo 1 l.</small></p></div>`}`}
+        <p><small>Ejemplo: aceite, mínimo 1 l.</small></p>
+        <button class="boton" onClick=${() => setGuia(true)}>📚 Empezar con la guía de alimentos</button></div>`}`}
       ${buscando && html`<h3 class="titulo-casa">En casa</h3>
         ${!filas.length && html`<p class="vacio">No tenéis «${buscar.trim()}» en la despensa.</p>`}`}
       ${agruparPorCategoria(filas, datos.articulos).map(([cat, grupo]) => html`
@@ -1189,6 +1193,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
       ${revisar && html`<${RevisarConsumo} almacen=${almacen} datos=${datos} cosas=${revisar}
         onCerrar=${(hecho) => { setRevisar(null); if (hecho) setGastado(''); }} />`}
       ${repasar && html`<${RepasarDespensa} almacen=${almacen} datos=${datos} onCerrar=${() => setRepasar(false)} />`}
+      ${guia && html`<${GuiaAlimentos} almacen=${almacen} datos=${datos} onCerrar=${() => setGuia(false)} />`}
       ${marcas && html`<${MarcasArticulo} almacen=${almacen} datos=${datos} sesion=${sesion} articuloId=${marcas} onCerrar=${() => setMarcas(null)} />`}
       ${porFoto && html`<${AnadirPorFoto} key=${porFoto.name + porFoto.lastModified} almacen=${almacen} datos=${datos} sesion=${sesion}
         foto=${porFoto} onOtra=${() => camaraProducto.current.click()} onCerrar=${() => setPorFoto(null)} />`}
@@ -1532,6 +1537,103 @@ function OtrasOpciones({ texto, almacen, datos, catalogo, onEscribir }) {
         ${guardando ? 'Guardando…' : html`Añadir a la despensa<small>${resumen.join(', ')}</small>`}</button>
     </div>`}`;
 }
+// ---------------------------------------------------------------------------
+// Guía de alimentos: lo típico de una casa por secciones, para ir marcando lo que hay
+// ---------------------------------------------------------------------------
+function GuiaAlimentos({ almacen, datos, onCerrar }) {
+  const [abierta, setAbierta] = useState(null);   // id de la sección que se ve (null = índice)
+  const [buscar, setBuscar] = useState('');
+  const [marcadas, setMarcadas] = useState({});   // clave -> { x (alimento), cantidad }
+  const [guardando, setGuardando] = useState(false);
+  const cuerpo = useRef(null);
+  const seccion = GUIA.find((s) => s.id === abierta);
+  const elegidas = Object.values(marcadas);
+  const ir = (id) => { setAbierta(id); setBuscar(''); cuerpo.current?.closest('.hoja-cuerpo')?.scrollTo(0, 0); };
+
+  const marcar = (x) => setMarcadas((m) => {
+    const n = { ...m };
+    if (n[x.clave]) delete n[x.clave];
+    else n[x.clave] = { x, cantidad: x.tipica };
+    return n;
+  });
+  const cambiar = (clave, cantidad) => setMarcadas((m) => ({ ...m, [clave]: { ...m[clave], cantidad } }));
+  const resumen = elegidas.map(({ x, cantidad }) => `${x.nombre}${cantidad ? (x.unidad === 'ud' ? ` ×${cantidad}` : ` (${formatoCantidad(cantidad, x.unidad)})`) : ''}`);
+
+  const anadir = async () => {
+    setGuardando(true);
+    try {
+      for (const { x, cantidad } of elegidas) {
+        const a = x.articulo ?? await obtenerArticulo(almacen, x.nombre, x.unidad, x.categoria);
+        await almacen.fijarDespensa(a.id, { cantidad: cantidad ?? 0 });
+      }
+      mostrarAviso(`Añadido a la despensa: ${resumen.join(', ')}`);
+      setMarcadas({});
+    } catch (e) {
+      mostrarAviso(`No se pudo guardar: ${e.message ?? e}`);
+    }
+    setGuardando(false);
+  };
+
+  const fila = (x, conSeccion) => {
+    const m = marcadas[x.clave];
+    if (x.enCasa && !m) {
+      return html`<li class="opcion en-casa">
+        <div class="opcion-cab">
+          <span class="ya-hay" aria-hidden="true">✓</span>
+          <span class="opcion-datos"><b>${x.nombre}</b>
+            <small>Ya en casa: ${formatoCantidad(x.enCasa.cantidad, x.unidad)}${conSeccion ? ` · ${x.seccion.titulo}` : ''}</small></span>
+        </div>
+      </li>`;
+    }
+    return html`<li class="opcion ${m ? 'marcada' : ''}">
+      <label class="opcion-cab">
+        <input type="checkbox" checked=${!!m} onChange=${() => marcar(x)} />
+        <span class="opcion-datos"><b>${x.nombre}</b>${conSeccion && html`<small>${x.seccion.emoji} ${x.seccion.titulo}</small>`}</span>
+      </label>
+      ${m && html`<div class="guia-cantidad"><span>¿Cuánto hay?</span>
+        ${x.unidad === 'ud'
+          ? html`<${Contador} valor=${m.cantidad ?? 1} min=${1} onCambio=${(c) => cambiar(x.clave, c)} />`
+          : html`<${CampoCantidad} unidad=${x.unidad} valor=${m.cantidad} onCambio=${(c) => cambiar(x.clave, c)} placeholder="Cantidad" />`}
+      </div>`}
+    </li>`;
+  };
+
+  const encontrados = buscarEnGuia(buscar, datos);
+  return html`<${Hoja} titulo=${seccion ? `${seccion.emoji} ${seccion.titulo}` : '📚 Guía de alimentos'} onCerrar=${onCerrar}>
+    <div ref=${cuerpo} class="guia">
+      ${!seccion && html`
+        <p class="meta">Lo que se suele tener en casa, por secciones. Entra en una, marca lo que tienes y di cuánto. Al final, <b>Añadir a la despensa</b>.</p>
+        <input type="search" enterkeyhint="search" autocomplete="off" placeholder="Buscar un alimento (gofio, atún, leche…)" value=${buscar}
+          onInput=${(e) => setBuscar(e.target.value)} aria-label="Buscar en la guía" />
+        ${normalizar(buscar).length >= 2
+          ? html`${encontrados.length
+              ? html`<ul class="opciones guia-lista">${encontrados.map((x) => fila(x, true))}</ul>`
+              : html`<p class="vacio">«${buscar.trim()}» no está en la guía. Puedes añadirlo con <b>+ Añadir</b> en la despensa.</p>`}`
+          : html`<ul class="guia-indice">
+              ${GUIA.map((s) => {
+                const xs = alimentosConCasa(s, datos);
+                const hay = xs.filter((x) => x.enCasa).length;
+                const marc = xs.filter((x) => marcadas[x.clave]).length;
+                return html`<li><button class="guia-seccion" onClick=${() => ir(s.id)}>
+                  <span class="guia-emoji" aria-hidden="true">${s.emoji}</span>
+                  <span class="guia-texto"><b>${s.titulo}</b><small>${ejemplosDe(s)}</small></span>
+                  <span class="guia-cuenta">${hay ? html`<span class="en-casa-n">${hay} en casa</span>` : ''}${marc ? html`<span class="marcadas-n">${marc} marcado${marc > 1 ? 's' : ''}</span>` : ''}</span>
+                  <span class="flecha" aria-hidden="true">›</span>
+                </button></li>`;
+              })}
+            </ul>`}`}
+      ${seccion && html`
+        <button class="enlace volver" onClick=${() => ir(null)}>‹ Todas las secciones</button>
+        <ul class="opciones guia-lista">${alimentosConCasa(seccion, datos).map((x) => fila(x, false))}</ul>
+        <p class="meta">¿Falta algo? Búscalo en la despensa o añádelo con <b>+ Añadir</b>.</p>`}
+      ${elegidas.length > 0 && html`<div class="guia-barra">
+        <button class="boton grande" disabled=${guardando} onClick=${anadir}>
+          ${guardando ? 'Guardando…' : html`Añadir a la despensa (${elegidas.length})<small>${resumen.join(', ')}</small>`}</button>
+      </div>`}
+    </div>
+  </${Hoja}>`;
+}
+
 const SECCION_CORTA = { 'Frutas y verduras': 'fruta y verdura', 'Lácteos y huevos': 'lácteos', 'Charcutería y quesos': 'charcutería' };
 
 /** Confirmar lo gastado antes de restarlo. Lo que no se reconoce se pregunta. */

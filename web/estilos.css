@@ -679,3 +679,30 @@ body.arrastrando { -webkit-user-select: none; user-select: none; }
 .confirmar-botones { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .boton.peligro { background: var(--peligro); color: var(--fondo); }
 .aviso-restar { margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--aviso-claro); color: var(--aviso); font-size: 0.9rem; }
+
+/* Guía de alimentos (Despensa) */
+.guia input[type=search] { width: 100%; margin: 6px 0 12px; }
+.guia-indice { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.guia-seccion { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px; text-align: left;
+  background: var(--panel); border: 1px solid var(--linea); border-radius: 14px; color: inherit; font: inherit; cursor: pointer; }
+.guia-emoji { font-size: 2rem; width: 48px; height: 48px; flex: none; display: grid; place-items: center;
+  background: var(--verde-claro); border-radius: 12px; }
+.guia-texto { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.guia-texto small { color: var(--suave); font-size: 0.85rem; }
+.guia-cuenta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 0.75rem; flex: none; }
+.en-casa-n { color: var(--verde); font-weight: 600; }
+.marcadas-n { background: var(--verde); color: #fff; border-radius: 999px; padding: 1px 8px; }
+.guia-seccion .flecha { color: var(--suave); font-size: 1.4rem; }
+.guia .volver { margin: 0 0 10px; }
+.guia-lista .en-casa .opcion-cab { cursor: default; }
+.guia-lista .en-casa b { color: var(--suave); font-weight: 500; }
+.ya-hay { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 6px;
+  background: var(--verde); color: #fff; font-size: 0.8rem; }
+.guia-cantidad { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px;
+  font-size: 0.85rem; color: var(--suave); }
+.guia-cantidad .fila-campo { max-width: 60%; }
+.guia-barra { position: sticky; bottom: 0; padding: 10px 0 4px; background: linear-gradient(transparent, var(--panel) 30%); }
+.guia-barra .boton { width: 100%; display: flex; flex-direction: column; gap: 2px; }
+.guia-barra .boton small { font-weight: 400; font-size: 0.85rem; opacity: 0.9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guia { min-height: 70vh; }
+.guia-lista .opcion-datos { align-items: flex-start; text-align: left; flex: 1; }
