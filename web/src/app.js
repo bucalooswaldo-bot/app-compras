@@ -33,7 +33,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 39;
+const VERSION_APP = 40;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -3839,6 +3839,8 @@ async function arrancarSupabase(raiz) {
       pintar(html`<${App} almacen=${almacen} sesion=${{ cliente, hogarId, email: session.user.email }} />`);
       await almacen.cargar();
       motor.escucharCambios(() => almacen.cargar());
+      // Casa nueva con recetas copiadas: pasar sus fotos y vídeos a la carpeta propia (en segundo plano)
+      motor.adoptarArchivos(almacen.datos.recetas).catch((e) => console.error(e));
       document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && almacen.cargar());
     };
     if (data.length) entrar(data[0].hogar_id);

@@ -258,6 +258,30 @@ export function motorSupabase(cliente, hogarId) {
     async borrarVideo(ruta) {
       if (ruta) await cliente.storage.from('videos').remove([ruta]);
     },
+    /**
+     * Recetas copiadas de otra casa (casa nueva): sus fotos y vídeos siguen en la carpeta de la casa
+     * de origen. Se copian a la carpeta de esta casa (copia dentro de Supabase, sin descargar nada)
+     * para que no dependan de la otra casa. Devuelve cuántas recetas se han cambiado.
+     */
+    async adoptarArchivos(recetas) {
+      const ajena = (r) => r && !r.startsWith('data:') && !r.startsWith(`${hogarId}/`);
+      let n = 0;
+      for (const rec of recetas) {
+        const cambios = {};
+        for (const [campo, cajon] of [['foto_path', 'fotos'], ['video_path', 'videos']]) {
+          const origen = rec[campo];
+          if (!ajena(origen)) continue;
+          const destino = `${hogarId}/${nuevoId()}.${origen.split('.').pop()}`;
+          const { error } = await cliente.storage.from(cajon).copy(origen, destino);
+          if (!error) cambios[campo] = destino;
+        }
+        if (Object.keys(cambios).length) {
+          const { error } = await cliente.from('recetas').update(cambios).eq('id', rec.id);
+          if (!error) { Object.assign(rec, cambios); n++; }
+        }
+      }
+      return n;
+    },
     /** Avisa cuando el otro móvil cambia algo. */
     escucharCambios(fn) {
       let espera;
