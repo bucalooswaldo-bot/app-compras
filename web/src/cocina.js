@@ -16,6 +16,23 @@ export function pasosDe(receta) {
     .filter(Boolean);
 }
 
+// Encabezados dentro de la preparación: "Truco o recomendación:", "Consejo: …", "Para servir:".
+const ENCABEZADO = /^((?:mi |un |el )?(?:trucos?|consejos?|recomendaci[oó]n(?:es)?|notas?|tips?|sugerenci[ae]s?|importante|ojo|emplatado|presentaci[oó]n|conservaci[oó]n|para servir|variantes?|acompañamiento)\b[^:]{0,40}:)\s*(.*)$/i;
+
+/**
+ * Separa el encabezado de una línea de la preparación para verlo en negrita:
+ * "Truco o recomendación:" -> { titulo: 'Truco o recomendación:', resto: '' };
+ * "Consejo: sirve frío" -> { titulo: 'Consejo:', resto: 'sirve frío' }. Si no hay, null.
+ * También cuenta una línea corta que acaba en dos puntos ("Para la salsa:").
+ */
+export function encabezadoPaso(linea) {
+  const t = String(linea ?? '').trim();
+  const m = t.match(ENCABEZADO);
+  if (m) return { titulo: m[1], resto: m[2] };
+  if (/^[^\d:][^:]{1,44}:$/.test(t)) return { titulo: t, resto: '' };
+  return null;
+}
+
 /** Texto de una receta para mandarlo por WhatsApp (con *negritas* de WhatsApp). */
 export function textoReceta(receta, ingredientes, articulos, raciones = receta.raciones) {
   const art = new Map(articulos.map((a) => [a.id, a]));
@@ -36,7 +53,12 @@ export function textoReceta(receta, ingredientes, articulos, raciones = receta.r
   const pasos = pasosDe(receta);
   if (pasos.length) {
     lineas.push('', '*Preparación*');
-    pasos.forEach((p, n) => lineas.push(`${n + 1}. ${p}`));
+    let n = 0;
+    for (const p of pasos) {
+      const e = encabezadoPaso(p);
+      if (e) lineas.push('', `*${e.titulo}*${e.resto ? ` ${e.resto}` : ''}`);
+      else lineas.push(`${++n}. ${p}`);
+    }
   }
   return lineas.join('\n');
 }

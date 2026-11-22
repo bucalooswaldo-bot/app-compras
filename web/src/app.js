@@ -24,7 +24,7 @@ import { PantallaInicio } from './inicio.js';
 import { PantallaPlan } from './planificador.js';
 import { Apariencia, aplicarApariencia, AjustesAvisos } from './apariencia.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
-import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe } from './cocina.js';
+import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe, encabezadoPaso } from './cocina.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
 import * as config from '../config.js';
 
@@ -33,7 +33,7 @@ import * as config from '../config.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 40;
+const VERSION_APP = 41;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -333,6 +333,14 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
     </section>`;
 }
 
+/** Una línea de la preparación; "Truco o recomendación:" y parecidos, en negrita. */
+function LineaPaso({ texto, enLinea }) {
+  const e = encabezadoPaso(texto);
+  const dentro = e ? html`<strong>${e.titulo}</strong>${e.resto ? ` ${e.resto}` : ''}` : texto;
+  if (enLinea) return dentro;
+  return html`<p class=${e ? 'paso-titulo' : ''}>${dentro}</p>`;
+}
+
 function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }) {
   const r = datos.recetas.find((x) => x.id === id);
   const [raciones, setRaciones] = useState(racionesIniciales ?? r?.raciones ?? 4);
@@ -482,7 +490,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
         })}
       </ul>
       <h3>Preparación</h3>
-      <div class="pasos">${r.pasos.split('\n').filter(Boolean).map((p) => html`<p>${p}</p>`)}</div>
+      <div class="pasos">${r.pasos.split('\n').filter((p) => p.trim()).map((p) => html`<${LineaPaso} texto=${p} />`)}</div>
       <div class="botones-cocinar">
         <button class="boton grande" onClick=${() => setCocinando(true)}>👩‍🍳 Modo cocina</button>
         <button class="boton grande secundario" onClick=${() => setCocinado(true)}>✅ La he cocinado</button>
@@ -751,7 +759,7 @@ function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
           ${ingredientes.length > 0 && html`<p class="meta">Toca cada ingrediente cuando lo tengas preparado.</p>`}
           ${pasos.length === 0 && html`<p class="vacio">Esta receta no tiene pasos escritos.</p>`}`
         : html`
-          <p class="cocina-paso">${texto}</p>
+          <p class="cocina-paso"><${LineaPaso} texto=${texto} enLinea /></p>
           <div class="cocina-tiempos">
             ${tiempos.map((t) => html`<button class="boton" onClick=${() => empezar(t.segundos, `Paso ${paso} · ${duracion(t.segundos)}`)}>⏱ ${duracion(t.segundos)}</button>`)}
             <button class="boton secundario" onClick=${() => setOtro(!otro)}>⏱ ${tiempos.length ? 'Otro tiempo' : 'Temporizador'}</button>
@@ -937,8 +945,9 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
     ? xs.filter((x) => normalizar(x.nombre) !== normalizar(nuevo.nombre))   // tocar otra vez lo quita
     : [...xs, { clave: crypto.randomUUID(), cantidad: null, nota: '', ...nuevo }]));
 
-  const separar = () => {
-    const leidos = entenderIngredientes(pegar, datos.articulos);
+  const separar = (texto = pegar) => {
+    const leidos = entenderIngredientes(texto, datos.articulos);
+    if (!leidos.length) return;
     setIngs((xs) => [...xs, ...leidos.map((l) => ({
       clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, ...separarMedida(l.nota),
     }))]);
@@ -1078,9 +1087,16 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
         <div class="pegar">
           <label>Pega o escribe los ingredientes, separados por comas o en líneas
             <textarea rows="4" placeholder="80 g fideos, 1/2 cebolla, 2 tazas de caldo, sal" value=${pegar}
-              onInput=${(e) => setPegar(e.target.value)}></textarea></label>
+              onInput=${(e) => {
+                const nuevo = e.target.value;
+                // Al pegar (con el menú o desde el teclado) se separa solo, sin tener que pulsar nada
+                const pegado = e.inputType === 'insertFromPaste' || nuevo.length - (pegar ?? '').length > 25;
+                setPegar(nuevo);
+                if (pegado && nuevo.trim()) separar(nuevo);
+              }}></textarea></label>
+          <small class="meta">Al pegar, los ingredientes se colocan solos. Si lo escribes a mano, pulsa «Separar ingredientes».</small>
           <div class="acciones">
-            <button class="boton" disabled=${!pegar.trim()} onClick=${separar}>Separar ingredientes</button>
+            <button class="boton" disabled=${!pegar.trim()} onClick=${() => separar()}>Separar ingredientes</button>
             <button class="enlace" onClick=${() => setPegar(null)}>Cancelar</button>
           </div>
         </div>`}

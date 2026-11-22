@@ -41,3 +41,39 @@ test('categorías', () => {
   assert.equal(adivinarCategoria('Cebolla'), 'Frutas y verduras');
   assert.equal(adivinarCategoria('Gambas'), 'Pescado');
 });
+
+test('lista pegada en líneas: cada línea es un ingrediente y nada se mezcla', () => {
+  const r = entenderIngredientes(`Ingredientes:
+2 cucharadas de aceite de oliva virgen
+extra
+1 hoja de laurel
+Sal al gusto
+Pimienta negra al gusto
+2 tomates maduros, pelados y picados
+1 lata de tomate triturado (400 g)
+1,5 l de agua
+½ cucharadita de bicarbonato
+10 g de pistachos picados (opcional)
+Harina de trigo 200 g
+Huevos: 2
+200gr. de harina
+2 tazas de arroz
+Zumo de 1 limón`, []);
+  const ver = r.map((x) => [x.nombre, x.cantidad, x.unidad, x.nota]);
+  assert.deepEqual(ver, [
+    ['Aceite de oliva virgen extra', null, 'ml', '2 cucharadas'],
+    ['Laurel', null, 'ud', '1 hoja'],
+    ['Sal', null, 'ud', 'al gusto'],
+    ['Pimienta negra', null, 'ud', 'al gusto'],
+    ['Tomates maduros', 2, 'ud', 'pelados y picados'],
+    ['Tomate triturado', 400, 'g', '1 lata'],
+    ['Agua', 1500, 'ml', null],
+    ['Bicarbonato', null, 'ud', '1/2 cucharadita'],
+    ['Pistachos', 10, 'g', 'picados, opcional'],
+    ['Harina de trigo', 200, 'g', null],
+    ['Huevos', 2, 'ud', null],
+    ['Harina', 200, 'g', null],
+    ['Arroz', null, 'ud', '2 tazas'],
+    ['Limón', 1, 'ud', 'zumo'],
+  ]);
+});
