@@ -158,6 +158,7 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .ingredientes li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--linea); }
 .en-casa { display: block; text-align: right; color: var(--verde); }
 .pasos p { margin: 0 0 10px; }
+.pasos p.paso-titulo { margin-top: 16px; }
 .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* Plan */

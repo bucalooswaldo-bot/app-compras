@@ -74,3 +74,12 @@ test('descontar lo cocinado: escala, usa variantes y marca lo que no está en ca
     ['Arroz', 400, true], ['Tomate pera', 4, true], ['Leche', 200, false],
   ]);
 });
+
+test('encabezados de la preparación (van en negrita)', async () => {
+  const { encabezadoPaso } = await import('../web/src/cocina.js');
+  assert.deepEqual(encabezadoPaso('Truco o recomendación:'), { titulo: 'Truco o recomendación:', resto: '' });
+  assert.deepEqual(encabezadoPaso('Consejo: sírvelo frío'), { titulo: 'Consejo:', resto: 'sírvelo frío' });
+  assert.equal(encabezadoPaso('Para la salsa:').titulo, 'Para la salsa:');
+  assert.equal(encabezadoPaso('1. Mezcla todo: harina y huevos'), null);
+  assert.equal(encabezadoPaso('Deja reposar 10 minutos.'), null);
+});
