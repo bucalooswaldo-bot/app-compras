@@ -34,7 +34,7 @@ import { iniciarAtras, useAtras } from './atras.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 41;
+const VERSION_APP = 42;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
