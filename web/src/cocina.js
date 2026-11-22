@@ -44,6 +44,7 @@ export function textoReceta(receta, ingredientes, articulos, raciones = receta.r
   if (ings.length) {
     lineas.push('', '*Ingredientes*');
     for (const i of ings) {
+      if (i.texto && raciones === receta.raciones) { lineas.push(`• ${i.texto}`); continue; }
       const a = art.get(i.articulo_id);
       const c = escalar(i.cantidad, receta.raciones, raciones);
       const cuanto = c == null ? (i.nota || '') : `${cantidadTexto(c, a?.unidad)}${i.nota ? ` (${i.nota})` : ''}`;
