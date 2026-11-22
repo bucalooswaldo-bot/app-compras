@@ -34,7 +34,7 @@ import { iniciarAtras, useAtras } from './atras.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 42;
+const VERSION_APP = 43;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -485,6 +485,14 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
           const a = articulo(datos, i.articulo_id);
           const hay = datos.despensa.find((d) => d.articulo_id === i.articulo_id);
           const c = escalar(i.cantidad, r.raciones, raciones);
+          // Tal cual se pegó, salvo si se cambian las raciones (entonces la cantidad la calcula la app)
+          if (i.texto && raciones === r.raciones) {
+            return html`<li class="tal-cual">
+              <span>${i.texto}
+                <small class="entendido">🛒 ${a?.nombre} · ${c == null ? (i.nota || 'sin cantidad') : `${formatoCantidad(c, a?.unidad)}${i.nota ? ` (${i.nota})` : ''}`}</small></span>
+              ${hay && hay.cantidad > 0 && html`<span class="cant"><small class="en-casa" title="En casa">🏠 ${formatoCantidad(hay.cantidad, a?.unidad)}</small></span>`}
+            </li>`;
+          }
           return html`<li>
             <span>${a?.nombre}${i.nota && c != null ? html` <small>(${i.nota})</small>` : ''}</span>
             <span class="cant">${c == null ? (i.nota || 'al gusto') : formatoCantidad(c, a?.unidad)}
@@ -755,8 +763,10 @@ function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
               return html`<li key=${i.id} class=${hecho ? 'hecho' : ''}>
                 <button onClick=${() => setHechos((s) => { const n = new Set(s); if (n.has(i.id)) n.delete(i.id); else n.add(i.id); return n; })}>
                   <span class="marca">${hecho ? '✓' : ''}</span>
-                  <span class="nombre">${a?.nombre}</span>
-                  <span class="cant">${c == null ? (i.nota || 'al gusto') : formatoCantidad(c, a?.unidad)}</span>
+                  ${i.texto && raciones === receta.raciones
+                    ? html`<span class="nombre">${i.texto}</span>`
+                    : html`<span class="nombre">${a?.nombre}</span>
+                  <span class="cant">${c == null ? (i.nota || 'al gusto') : formatoCantidad(c, a?.unidad)}</span>`}
                 </button>
               </li>`;
             })}
@@ -934,7 +944,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
   });
   const [ings, setIngs] = useState(ingOriginales.map((i) => {
     const a = articulo(datos, i.articulo_id);
-    return { clave: i.id, nombre: a?.nombre ?? '', cantidad: i.cantidad, unidad: a?.unidad ?? 'ud', categoria: a?.categoria, ...separarMedida(i.nota) };
+    return { clave: i.id, nombre: a?.nombre ?? '', cantidad: i.cantidad, unidad: a?.unidad ?? 'ud', categoria: a?.categoria, texto: i.texto ?? null, ...separarMedida(i.nota) };
   }));
   const [elegir, setElegir] = useState(false);
   const [pegar, setPegar] = useState(null); // texto que se está pegando
@@ -954,7 +964,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
     const leidos = entenderIngredientes(texto, datos.articulos);
     if (!leidos.length) return;
     setIngs((xs) => [...xs, ...leidos.map((l) => ({
-      clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, ...separarMedida(l.nota),
+      clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, texto: l.texto, ...separarMedida(l.nota),
     }))]);
     setPegar(null);
     mostrarAviso(`${leidos.length} ingredientes añadidos. Revisa las cantidades.`);
@@ -992,7 +1002,7 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
       setIngs((xs) => [...xs, ...leidos
         .filter((l, k) => !xs.some((x) => normalizar(x.nombre) === normalizar(l.nombre))
           && leidos.findIndex((o) => normalizar(o.nombre) === normalizar(l.nombre)) === k)
-        .map((l) => ({ clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, ...separarMedida(l.nota) }))]);
+        .map((l) => ({ clave: crypto.randomUUID(), nombre: l.nombre, unidad: l.unidad, cantidad: l.cantidad, categoria: l.categoria, texto: l.texto, ...separarMedida(l.nota) }))]);
       mostrarAviso(r.nombre || leidos.length || r.pasos.length
         ? `Leído: ${leidos.length} ingredientes y ${r.pasos.length} pasos. Revísalo antes de guardar.`
         : 'No se ha entendido bien la captura. Abajo tienes el texto leído para copiarlo.');
@@ -1025,7 +1035,8 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
       const cantidad = a.unidad === i.unidad ? i.cantidad : null;
       const medida = a.unidad === i.unidad ? i.medida : (i.medida || (i.cantidad != null ? formatoCantidad(i.cantidad, i.unidad) : ''));
       const nota = [medida, i.nota?.trim()].filter(Boolean).join(', ') || null;
-      filas.push({ receta_id: recetaId, articulo_id: a.id, cantidad, nota, orden: orden++ });
+      // texto: como se pegó; la receta lo enseña así (lo demás es para la compra y la despensa)
+      filas.push({ receta_id: recetaId, articulo_id: a.id, cantidad, nota, orden: orden++, texto: i.texto?.trim() || null });
     }
     if (filas.length) await almacen.insertar('ingredientes', filas);
     if (portada) {
@@ -1074,8 +1085,10 @@ function EditarReceta({ almacen, datos, id, capturas, onCerrar }) {
       ${ings.length === 0 && html`<p class="meta">Añádelos uno a uno desde el listado, o pega un texto con todos.</p>`}
       ${ings.map((i) => html`
         <div class="ing-fila">
+          ${i.texto && html`<div class="ing-tal-cual">
+            <input value=${i.texto} aria-label="Cómo se ve en la receta" onInput=${(e) => cambiarIng(i.clave, { texto: e.target.value })} /></div>`}
           <div class="ing-cab">
-            <strong>${i.nombre}</strong>
+            ${i.texto ? html`<small class="meta">Para la compra: <strong>${i.nombre}</strong></small>` : html`<strong>${i.nombre}</strong>`}
             ${!buscarArticulo(datos.articulos, i.nombre) && html`<small class="meta">nuevo · ${UNIDAD_LARGA[i.unidad]}</small>`}
             <button class="icono peq" aria-label=${`Quitar ${i.nombre}`} onClick=${() => setIngs(ings.filter((x) => x.clave !== i.clave))}>✕</button>
           </div>

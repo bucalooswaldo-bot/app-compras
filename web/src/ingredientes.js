@@ -63,10 +63,11 @@ function sacarParentesis(t) {
  * si viene todo seguido, se parte por comas.
  */
 export function trozosIngredientes(texto) {
-  const limpio = quitarFracciones(String(texto ?? '').replace(/\r/g, ''));
   const lineas = [];
-  for (let l of limpio.split('\n')) {
-    l = l.replace(/^\s*(?:[-•*·▪●◦–—]|\d+[.)](?=\s))\s*/, '').replace(/\s+/g, ' ').trim()
+  const crudas = [];   // las mismas líneas sin retocar, para enseñarlas tal cual
+  for (const cruda of String(texto ?? '').replace(/\r/g, '').split('\n')) {
+    const sinVineta = cruda.replace(/^\s*(?:[-•*·▪●◦–—]|\d+[.)](?=\s))\s*/, '').replace(/\s+/g, ' ').trim();
+    let l = quitarFracciones(cruda).replace(/^\s*(?:[-•*·▪●◦–—]|\d+[.)](?=\s))\s*/, '').replace(/\s+/g, ' ').trim()
       // "200 gr." / "2 cdas." / "aprox." : el punto es de la abreviatura, no corta nada
       .replace(/(?<![a-zñ])(grs?|g|kg|mg|ml|cl|dl|l|cdas?|cdtas?|cditas?|uds?|aprox|approx|pzas?)\.(?=\s|$|,)/gi, '$1')
       // "2 1/2 tazas" -> "2.5 tazas"
@@ -77,21 +78,30 @@ export function trozosIngredientes(texto) {
     const ant = lineas.at(-1);
     if (ant != null && (SIGUE_DETRAS.test(ant) || (/^[a-zñáéíóú(]/.test(l) && ES_CONTINUACION.test(l)) || /^\(/.test(l))) {
       lineas[lineas.length - 1] = `${ant} ${l}`;
-    } else lineas.push(l);
+      crudas[crudas.length - 1] = `${crudas.at(-1)} ${sinVineta}`;
+    } else { lineas.push(l); crudas.push(sinVineta); }
   }
   const variasLineas = lineas.filter((l) => !CABECERA.test(l.replace(/[.…]+$/, ''))).length > 1;
   const salida = [];
+  let deEstaLinea = [];
   const anadir = (t, detalles, par) => {
+    const original = t;
     // "Para la salsa: 2 tomates" -> "2 tomates"; pero "Huevos: 2" se queda (es la cantidad)
     if (!/^[^:]{1,30}:\s*(\d+(?:[.,/]\d+)?\s*[a-zA-Zñ.]{0,12}|al gusto)$/i.test(t)) t = t.replace(/^[^:]{0,30}:\s*/, '');
     t = t.replace(/[.…]+$/, '').trim();
     if (!t || CABECERA.test(t) || /^(ingredientes?|para la .*)$/i.test(t)) return;
-    salida.push({ texto: t, detalles, ...par });
+    const trozo = { texto: t, detalles, ...par, original: original.trim() };
+    salida.push(trozo);
+    deEstaLinea.push(trozo);
   };
-  for (const linea of lineas) {
+  for (const [n, linea] of lineas.entries()) {
+    // Si la línea es un solo ingrediente, su texto tal cual es la línea entera (con paréntesis y todo)
+    if (deEstaLinea.length === 1 && variasLineas) deEstaLinea[0].original = deEstaLinea[0].linea;
+    deEstaLinea = [];
     if (CABECERA.test(linea.replace(/[.…]+$/, ''))) continue;
-    const par = sacarParentesis(linea);
-    const sinPar = { opcional: par.opcional, peso: par.peso, alGusto: par.alGusto };
+    const lineaOriginal = crudas[n];
+    const par = { ...sacarParentesis(linea), linea: lineaOriginal };
+    const sinPar = { opcional: par.opcional, peso: par.peso, alGusto: par.alGusto, linea: lineaOriginal };
     // Comas que no van entre cifras ("1,5 l" es un número)
     const partes = par.texto.split(variasLineas ? /;|,(?!\d)/ : /;|,(?!\d)|\.(?:\s|$)/).map((x) => x.trim()).filter(Boolean);
     if (!variasLineas) {
@@ -112,7 +122,8 @@ export function trozosIngredientes(texto) {
       ys.forEach((y, k) => anadir(y, k === ys.length - 1 ? actual.detalles : [], sinPar));
     } else anadir(actual.texto, actual.detalles, sinPar);
   }
-  return salida;
+  if (deEstaLinea.length === 1 && variasLineas) deEstaLinea[0].original = deEstaLinea[0].linea;
+  return salida.map(({ linea, ...t }) => t);
 }
 
 /** Parte un texto en trozos, uno por ingrediente (solo el texto). */
@@ -225,12 +236,12 @@ export function adivinarCategoria(nombre) {
 
 /**
  * Convierte texto en ingredientes listos para guardar.
- * @returns {Array<{nombre, articulo|null, unidad:'g'|'ml'|'ud', cantidad:number|null, nota:string|null}>}
+ * @returns {Array<{nombre, articulo|null, unidad:'g'|'ml'|'ud', cantidad:number|null, nota:string|null, texto:string}>}
  *   articulo: el ya existente si lo hay; si no, `unidad` es con la que se crearía.
  */
 export function entenderIngredientes(texto, articulos) {
   const salida = [];
-  for (const { texto: trozo, detalles, opcional, peso, alGusto } of trozosIngredientes(texto)) {
+  for (const { texto: trozo, detalles, opcional, peso, alGusto, original } of trozosIngredientes(texto)) {
     const ing = leerIngrediente(trozo);
     if (!ing) continue;
     // Primero el nombre entero ("Queso rallado", "Jamón cocido"); si no, sin la descripción ("Zanahoria" + "rallada").
@@ -274,6 +285,7 @@ export function entenderIngredientes(texto, articulos) {
     const notas = [...new Set([nota, ...descripciones].filter(Boolean))].filter((d, k, xs) => k === 0 || !xs[0].includes(d));
     salida.push({
       nombre: articulo?.nombre ?? ing.nombre, articulo, unidad: unidadArticulo, cantidad, nota: notas.join(', ') || null,
+      texto: mayuscula(original.replace(/[.;,]+$/, '').trim()),   // como se pegó, para enseñarlo así
       categoria: articulo?.categoria ?? adivinarCategoria(ing.nombre),
     });
   }

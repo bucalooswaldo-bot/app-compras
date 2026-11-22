@@ -680,3 +680,9 @@ body.arrastrando { -webkit-user-select: none; user-select: none; }
 .confirmar-botones { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .boton.peligro { background: var(--peligro); color: var(--fondo); }
 .aviso-restar { margin: 4px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--aviso-claro); color: var(--aviso); font-size: 0.9rem; }
+
+/* Ingrediente tal cual se pegó */
+.ing-tal-cual input { width: 100%; font-weight: 600; }
+li.tal-cual span:first-child { flex: 1; }
+.ing-cab > small:first-child { flex: 1; min-width: 0; }
+li.tal-cual small.entendido { display: block; color: var(--suave, #777); font-size: 0.8em; margin-top: 2px; }
