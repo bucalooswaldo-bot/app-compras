@@ -27,13 +27,14 @@ import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe, encabezadoPaso } from './cocina.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
 import * as config from '../config.js';
+import { iniciarAtras, useAtras } from './atras.js';
 
 // ---------------------------------------------------------------------------
 // Utilidades de pantalla
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 41;
+const VERSION_APP = 42;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -45,6 +46,7 @@ function Aviso() {
 }
 
 function Hoja({ titulo, onCerrar, children }) {
+  useAtras(onCerrar);   // el botón atrás del móvil cierra la ventana en vez de salir de la app
   useEffect(() => {
     const esc = (e) => e.key === 'Escape' && onCerrar();
     document.addEventListener('keydown', esc);
@@ -130,6 +132,7 @@ const textoAviso = (d, unidad) => {
 function BotonSeguro({ texto, pregunta, si = 'Sí, borrar', onClick, clase = 'enlace peligro' }) {
   const [abierta, setAbierta] = useState(false);
   const [haciendo, setHaciendo] = useState(false);
+  useAtras(() => (haciendo ? false : setAbierta(false)), abierta);
   useEffect(() => {
     if (!abierta) return;
     const esc = (e) => e.key === 'Escape' && setAbierta(false);
@@ -708,9 +711,11 @@ function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
   const sumarMinuto = (id) => setRelojes((rs) => rs.map((x) => (x.id === id
     ? { ...x, fin: Math.max(x.fin, Date.now()) + 60000, sonando: null } : x)));
   const intentarSalir = () => {
-    if (relojes.some((x) => !x.sonando) && !salir) { setSalir(true); setTimeout(() => setSalir(false), 5000); return; }
+    if (relojes.some((x) => !x.sonando) && !salir) { setSalir(true); setTimeout(() => setSalir(false), 5000); return false; }
     onCerrar();
+    return true;
   };
+  useAtras(intentarSalir);
 
   const texto = paso > 0 ? pasos[paso - 1] : null;
   const tiempos = texto ? tiemposDePaso(texto) : [];
@@ -3719,6 +3724,8 @@ function App({ almacen, sesion }) {
   const [editando, setEditando] = useState(undefined); // undefined = cerrado, null = nueva, id = editar
   const [capturas, setCapturas] = useState(null);      // capturas de una receta para leer al abrir el editor
   const [ajustes, setAjustes] = useState(false);
+  // Fuera de Inicio, el botón atrás del móvil vuelve a Inicio en vez de salir de la app.
+  useAtras(() => setPestana('inicio'), pestana !== 'inicio');
 
   useEffect(() => { setDatos(almacen.datos); return almacen.escuchar(setDatos); }, []);
   useEffect(() => { try { localStorage.setItem('pestana', pestana); } catch { /* nada */ } window.scrollTo(0, 0); }, [pestana]);
@@ -3876,6 +3883,7 @@ async function arrancarPrueba(raiz) {
 }
 
 aplicarApariencia();
+iniciarAtras((texto) => mostrarAviso(texto));
 const raiz = document.getElementById('app');
 raiz.textContent = '';
 const prueba = new URLSearchParams(location.search).has('prueba') || config.MODO === 'prueba' || !config.SUPABASE_URL;
