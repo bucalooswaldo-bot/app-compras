@@ -29,13 +29,15 @@ import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pa
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta, fichaDeOpenFoodFacts } from './foto-producto.js';
 import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
+import { RecetarioApp, useRecetario, delRecetario } from './recetario-vista.js';
+import { esDeLaCasa, guardarDelRecetario } from './recetario.js';
 
 // ---------------------------------------------------------------------------
 // Utilidades de pantalla
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 44;
+const VERSION_APP = 45;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -46,7 +48,7 @@ function Aviso() {
   return texto ? html`<div class="aviso" role="status">${texto}</div>` : null;
 }
 
-function Hoja({ titulo, onCerrar, children }) {
+export function Hoja({ titulo, onCerrar, children }) {
   useAtras(onCerrar);   // el botón atrás del móvil cierra la ventana en vez de salir de la app
   useEffect(() => {
     const esc = (e) => e.key === 'Escape' && onCerrar();
@@ -66,7 +68,7 @@ function Hoja({ titulo, onCerrar, children }) {
     </div>`;
 }
 
-function Contador({ valor, min = 1, onCambio }) {
+export function Contador({ valor, min = 1, onCambio }) {
   return html`
     <div class="contador">
       <button type="button" aria-label="Menos" onClick=${() => onCambio(Math.max(min, valor - 1))}>−</button>
@@ -235,6 +237,11 @@ export function ElegirReceta({ almacen, datos, titulo, momento, onCerrar, onEleg
     .filter((r) => normalizar(r.nombre).includes(normalizar(buscar)) || r.etiquetas.some((e) => normalizar(e).includes(normalizar(buscar))))
     .sort((a, b) => (encaja(b) - encaja(a)) || (b.favorita - a.favorita) || a.nombre.localeCompare(b.nombre, 'es'));
   const fotos = useFotos(almacen, lista.map((r) => r.foto_path));
+  const { recetas: recetario } = useRecetario();
+  const deLaApp = delRecetario(recetario, datos, buscar);
+  const elegirDeLaApp = async (r) => {
+    try { onElegir(await guardarDelRecetario(almacen, r), raciones); } catch (e) { console.error(e); mostrarAviso(`No se pudo guardar: ${e.message ?? e}`); }
+  };
   return html`
     <${Hoja} titulo=${`Añadir: ${titulo}`} onCerrar=${onCerrar}>
       <div class="fila-campo">
@@ -242,14 +249,24 @@ export function ElegirReceta({ almacen, datos, titulo, momento, onCerrar, onEleg
         <${Contador} valor=${raciones} onCambio=${setRaciones} />
       </div>
       <input type="search" placeholder="Buscar receta (o elige de la lista)" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
-      ${lista.length === 0 && html`<p class="vacio">No hay recetas con ese nombre. Créala en la pestaña Recetas.</p>`}
+      ${lista.length === 0 && deLaApp.length === 0 && html`<p class="vacio">No hay recetas con ese nombre. Créala en la pestaña Recetas.</p>`}
       <ul class="lista-recetas">
         ${lista.map((r) => html`<li><button class="tarjeta con-foto" onClick=${() => onElegir(r, raciones)}>
           <${Miniatura} receta=${r} url=${r.foto_path ? fotos[r.foto_path] : null} />
           <span class="texto-tarjeta"><strong>${r.favorita ? '★ ' : ''}${r.nombre}</strong>
-            <small>${[r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas].filter(Boolean).join(' · ')}</small></span>
+            <small>${[r.origen === 'app' && '📖 Recetario de la app', r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas].filter(Boolean).join(' · ')}</small></span>
         </button></li>`)}
       </ul>
+      ${deLaApp.length > 0 && html`
+        <h3>📖 Del recetario de la app</h3>
+        <ul class="lista-recetas">
+          ${deLaApp.map((r) => html`<li><button class="tarjeta con-foto" onClick=${() => elegirDeLaApp(r)}>
+            <${Miniatura} receta=${r} />
+            <span class="texto-tarjeta"><strong>${r.nombre}</strong>
+              <small>${[r.tipo, r.tiempo_min && `${r.tiempo_min} min`].filter(Boolean).join(' · ')}</small></span>
+          </button></li>`)}
+        </ul>`}
+      ${!buscar && recetario?.length > 0 && html`<p class="meta">Escribe para buscar también en las ${recetario.length} recetas del recetario de la app.</p>`}
     </${Hoja}>`;
 }
 
@@ -277,14 +294,33 @@ export function Miniatura({ receta, url }) {
     : html`<span class="miniatura sin-foto" aria-hidden="true">${dibujoReceta(receta)}</span>`;
 }
 
-function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
+const leerVistaRecetas = () => { try { return localStorage.getItem('vista-recetas') === 'app' ? 'app' : 'mias'; } catch { return 'mias'; } };
+
+function PantallaRecetas(props) {
+  const [vista, setVista] = useState(leerVistaRecetas);
+  const elegir = (v) => { setVista(v); try { localStorage.setItem('vista-recetas', v); } catch { /* nada */ } };
+  const mias = props.datos.recetas.filter(esDeLaCasa).length;
+  return html`
+    <section>
+      <div class="partes" role="tablist">
+        <button role="tab" aria-selected=${vista === 'mias'} class=${vista === 'mias' ? 'activa' : ''} onClick=${() => elegir('mias')}>
+          🏠 Mis recetas${mias > 0 && html` <b>${mias}</b>`}</button>
+        <button role="tab" aria-selected=${vista === 'app'} class=${vista === 'app' ? 'activa' : ''} onClick=${() => elegir('app')}>
+          📖 Recetario de la app</button>
+      </div>
+      ${vista === 'app' ? html`<${RecetarioApp} ...${props} />` : html`<${MisRecetas} ...${props} />`}
+    </section>`;
+}
+
+function MisRecetas({ almacen, datos, abrirReceta, editarReceta }) {
   const [buscar, setBuscar] = useState('');
   const [etiqueta, setEtiqueta] = useState(null);
   const [favoritas, setFavoritas] = useState(false);
   const [cargando, setCargando] = useState(false);
   const entradaCaptura = useRef(null);
-  const etiquetas = [...new Set(datos.recetas.flatMap((r) => r.etiquetas))].sort((a, b) => a.localeCompare(b, 'es'));
-  const lista = datos.recetas
+  const propias = datos.recetas.filter(esDeLaCasa);
+  const etiquetas = [...new Set(propias.flatMap((r) => r.etiquetas))].sort((a, b) => a.localeCompare(b, 'es'));
+  const lista = propias
     .filter((r) => !favoritas || r.favorita)
     .filter((r) => !etiqueta || r.etiquetas.includes(etiqueta))
     .filter((r) => normalizar(r.nombre).includes(normalizar(buscar)))
@@ -299,7 +335,6 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
   };
 
   return html`
-    <section>
       <div class="fila-campo">
         <input type="search" placeholder="Buscar receta" value=${buscar} onInput=${(e) => setBuscar(e.target.value)} />
         <button class="boton" onClick=${() => editarReceta(null)}>+ Nueva</button>
@@ -313,9 +348,9 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
         ${etiquetas.map((e) => html`<button class="chip ${etiqueta === e ? 'activo' : ''}"
           onClick=${() => setEtiqueta(etiqueta === e ? null : e)}>${e}</button>`)}
       </div>
-      ${datos.recetas.length === 0 && html`
+      ${propias.length === 0 && html`
         <div class="vacio">
-          <p>Todavía no hay recetas.</p>
+          <p>Todavía no hay recetas tuyas. Crea la primera, sácala de una captura o busca en el 📖 Recetario de la app.</p>
           <button class="boton grande" disabled=${cargando} onClick=${cargar}>
             ${cargando ? 'Cargando…' : `Cargar ${RECETAS.length} recetas propuestas`}</button>
           <p><small>Cocina casera y canaria. Luego se pueden cambiar o borrar.</small></p>
@@ -332,9 +367,8 @@ function PantallaRecetas({ almacen, datos, abrirReceta, editarReceta }) {
             </button>
           </li>`)}
       </ul>
-      ${datos.recetas.length > 0 && datos.recetas.length < RECETAS.length + 50 && html`
-        <p class="pie"><button class="enlace" disabled=${cargando} onClick=${cargar}>Añadir las recetas propuestas que falten</button></p>`}
-    </section>`;
+      ${propias.length > 0 && propias.length < RECETAS.length + 50 && html`
+        <p class="pie"><button class="enlace" disabled=${cargando} onClick=${cargar}>Añadir las recetas propuestas que falten</button></p>`}`;
 }
 
 /** Una línea de la preparación; "Truco o recomendación:" y parecidos, en negrita. */
@@ -345,11 +379,11 @@ function LineaPaso({ texto, enLinea }) {
   return html`<p class=${e ? 'paso-titulo' : ''}>${dentro}</p>`;
 }
 
-function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }) {
+function VerReceta({ almacen, datos, id, racionesIniciales, cocinarYa = false, onCerrar, onEditar }) {
   const r = datos.recetas.find((x) => x.id === id);
   const [raciones, setRaciones] = useState(racionesIniciales ?? r?.raciones ?? 4);
   const [alPlan, setAlPlan] = useState(false);
-  const [cocinando, setCocinando] = useState(false);
+  const [cocinando, setCocinando] = useState(cocinarYa);
   const [cocinado, setCocinado] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const entradaFoto = useRef(null);
@@ -436,6 +470,17 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
     almacen.motor.borrarFoto(anterior).catch(() => {});
   };
 
+  const deLaApp = r.origen === 'app';
+  /** Las del recetario de la app no se cambian: se copian a «Mis recetas» y se cambia la copia. */
+  const copiarAMias = async () => {
+    const nuevoId = crypto.randomUUID();
+    await almacen.insertar('recetas', { id: nuevoId, nombre: r.nombre, raciones: r.raciones, tiempo_min: r.tiempo_min, pasos: r.pasos,
+      etiquetas: r.etiquetas, favorita: false, origen: 'manual', catalogo_id: null });
+    await almacen.insertar('ingredientes', ingredientes.map(({ articulo_id, cantidad, nota, orden, texto }) =>
+      ({ receta_id: nuevoId, articulo_id, cantidad, nota, orden, texto: texto ?? null })));
+    mostrarAviso('Copiada a «Mis recetas». Cámbiala a tu gusto.');
+    onEditar(nuevoId);
+  };
   const borrar = async () => {
     await almacen.borrar('ingredientes', ingredientes.map((i) => i.id));
     await almacen.borrar('plan', datos.plan.filter((p) => p.receta_id === id).map((p) => p.id));
@@ -462,8 +507,10 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
           ${r.favorita ? '★ Favorita' : '☆ Favorita'}</button>
         <button class="chip" onClick=${() => setAlPlan(true)}>+ Al plan</button>
         <button class="chip" onClick=${() => compartir({ titulo: r.nombre, texto: textoReceta(r, ingredientes, datos.articulos, raciones), foto: fotoEnviar })}>📤 Enviar</button>
-        <button class="chip" onClick=${() => onEditar(id)}>Editar</button>
-        ${!r.video_path && !video && html`<button class="chip" onClick=${() => entradaVideo.current?.click()}>🎬 Añadir vídeo</button>`}
+        ${deLaApp
+          ? html`<button class="chip" onClick=${copiarAMias}>✏️ Copiar a mis recetas</button>`
+          : html`<button class="chip" onClick=${() => onEditar(id)}>Editar</button>`}
+        ${!deLaApp && !r.video_path && !video && html`<button class="chip" onClick=${() => entradaVideo.current?.click()}>🎬 Añadir vídeo</button>`}
       </div>
       <input ref=${entradaVideo} type="file" accept="video/*" hidden onChange=${ponerVideo} />
       ${video && html`<p class="leyendo-captura" role="status">⏳ ${video}<br /><small>No cierres la app hasta que termine.</small></p>`}
@@ -478,7 +525,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
             <${BotonSeguro} texto="Quitar vídeo" pregunta="¿Quieres quitar el vídeo de esta receta?" si="Sí, quitarlo" onClick=${quitarVideo} />
           </div>`}
         </div>`}
-      <p class="meta">${[r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas, r.origen === 'ia' ? 'Propuesta por la IA' : ''].filter(Boolean).join(' · ')}</p>
+      <p class="meta">${[r.tiempo_min && `${r.tiempo_min} min`, ...r.etiquetas, r.origen === 'ia' ? 'Propuesta por la IA' : '', deLaApp ? '📖 Recetario de la app' : ''].filter(Boolean).join(' · ')}</p>
       <div class="fila-campo"><label>Raciones</label><${Contador} valor=${raciones} onCambio=${setRaciones} /></div>
       <h3>Ingredientes</h3>
       <ul class="ingredientes">
@@ -507,7 +554,9 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
         <button class="boton grande" onClick=${() => setCocinando(true)}>👩‍🍳 Modo cocina</button>
         <button class="boton grande secundario" onClick=${() => setCocinado(true)}>✅ La he cocinado</button>
       </div>
-      <p class="pie"><${BotonSeguro} texto="Borrar receta" pregunta=${`¿Quieres realmente borrar la receta «${r.nombre}»? También se quita del plan.`} onClick=${borrar} /></p>
+      <p class="pie">${deLaApp
+        ? html`<${BotonSeguro} texto="Dejar de usarla" pregunta=${`¿Quitar «${r.nombre}» de las que usas? Sigue en el recetario de la app, pero se quita del plan.`} si="Sí, quitarla" onClick=${borrar} />`
+        : html`<${BotonSeguro} texto="Borrar receta" pregunta=${`¿Quieres realmente borrar la receta «${r.nombre}»? También se quita del plan.`} onClick=${borrar} />`}</p>
       ${cocinando && html`<${ModoCocina} datos=${datos} receta=${r} raciones=${raciones}
         onCerrar=${() => setCocinando(false)} onTerminar=${() => { setCocinando(false); setCocinado(true); }} />`}
       ${cocinado && html`<${DescontarCocinado} almacen=${almacen} datos=${datos} recetaId=${id} raciones=${raciones}
@@ -527,7 +576,7 @@ function VerReceta({ almacen, datos, id, racionesIniciales, onCerrar, onEditar }
  * Abre "Compartir" del móvil (ahí sale WhatsApp) con el texto y, si se puede, la foto.
  * Sin "Compartir" (ordenador) abre WhatsApp Web con el texto.
  */
-async function compartir({ titulo, texto, foto }) {
+export async function compartir({ titulo, texto, foto }) {
   try {
     if (foto && navigator.canShare?.({ files: [foto], text: texto })) {
       await navigator.share({ files: [foto], text: texto, title: titulo });
@@ -794,7 +843,7 @@ function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
     </div>`;
 }
 
-function ElegirDia({ onCerrar, onElegir }) {
+export function ElegirDia({ onCerrar, onElegir }) {
   const hoy = fechaISO();
   const dias = Array.from({ length: 14 }, (_, i) => sumarDias(hoy, i));
   return html`
@@ -3659,7 +3708,7 @@ function App({ almacen, sesion }) {
     const pedida = new URLSearchParams(location.search).get('pestana');
     return PESTANAS.some((p) => p[0] === pedida) ? pedida : 'inicio';
   });
-  const [receta, setReceta] = useState(null); // { id, raciones }
+  const [receta, setReceta] = useState(null); // { id, raciones, cocinar }
   const [editando, setEditando] = useState(undefined); // undefined = cerrado, null = nueva, id = editar
   const [capturas, setCapturas] = useState(null);      // capturas de una receta para leer al abrir el editor
   const [ajustes, setAjustes] = useState(false);
@@ -3678,7 +3727,7 @@ function App({ almacen, sesion }) {
 
   const props = {
     almacen, datos, sesion,
-    abrirReceta: (id, raciones) => setReceta({ id, raciones }),
+    abrirReceta: (id, raciones, { cocinar = false } = {}) => setReceta({ id, raciones, cocinar }),
     irA: setPestana,
     editarReceta: (id, fotos = null) => { setCapturas(fotos); setEditando(id); },
   };
@@ -3703,7 +3752,7 @@ function App({ almacen, sesion }) {
           <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}</span>${nombre}
         </button>`)}
     </nav>
-    ${receta && html`<${VerReceta} ...${props} id=${receta.id} racionesIniciales=${receta.raciones}
+    ${receta && html`<${VerReceta} key=${receta.id} ...${props} id=${receta.id} racionesIniciales=${receta.raciones} cocinarYa=${receta.cocinar}
       onCerrar=${() => setReceta(null)} onEditar=${(id) => { setReceta(null); setEditando(id); }} />`}
     ${editando !== undefined && html`<${EditarReceta} ...${props} id=${editando} capturas=${capturas}
       onCerrar=${(id) => { setEditando(undefined); setCapturas(null); if (id) setReceta({ id }); }} />`}
