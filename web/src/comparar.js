@@ -6,14 +6,9 @@
 
 import { normalizar, redondear } from './logica.js';
 
-export const SUPERS = [
-  ['mercadona', 'Mercadona'],
-  ['hiperdino', 'HiperDino'],
-  ['lidl', 'Lidl'],
-];
-// Los que se buscan en su web. Lidl no vende online: sus precios salen de los tiques.
-export const SUPERS_WEB = ['mercadona', 'hiperdino'];
-export const nombreSuper = (id) => SUPERS.find((s) => s[0] === id)?.[1] ?? id;
+// Los súper de la casa viven en supers.js (cadenas conocidas + los que se añaden a mano).
+import { SUPERS } from './supers.js';
+export { SUPERS, SUPERS_WEB, nombreSuper } from './supers.js';
 
 // Solo se recomienda ir a dos súper si se ahorra al menos esto (euros).
 export const AHORRO_MINIMO_PARA_REPARTIR = 3;
@@ -387,7 +382,7 @@ export function calcularCesta(items, supers = SUPERS.map((s) => s[0])) {
   });
 
   // Se comparan los súper con precio para al menos la mitad de lo que tiene precio
-  // (Lidl, con pocos precios de tiques, entra en el reparto pero no en el total).
+  // (un súper con pocos precios de tiques entra en el reparto pero no en el total).
   const conPrecio = lineas.filter((l) => l.mejor).length;
   const activos = supers.filter((s) => {
     const n = lineas.filter((l) => l.porSuper[s]).length;

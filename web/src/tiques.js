@@ -19,13 +19,9 @@ const PRECIO_FINAL = /(-?\s?\d{1,4}[.,]\s?\d{2})\s*(?:€|eur)?\s*[a-e]?\s*\*?$/
 const PESO = /(\d+[.,]\d{1,3})\s*kg\b/i;
 const VECES = /^\s*(\d{1,3})\s*[x×*]\s*(\d{1,4}[.,]\d{2})\b/i;
 
-export function detectarSuper(texto) {
-  const t = normalizar(texto);
-  if (/\blidl\b/.test(t)) return 'lidl';
-  if (/mercadona/.test(t)) return 'mercadona';
-  if (/hiper\s?dino|dinosol|superdino/.test(t)) return 'hiperdino';
-  return null;
-}
+// Qué súper es: ver supers.js (cadenas de toda España y los añadidos por la casa).
+export { detectarSuper } from './supers.js';
+import { detectarSuper } from './supers.js';
 
 /** Fecha del tique ("15/11/2026", "15.11.26", "15-11-2026 18:32") como AAAA-MM-DD. */
 export function detectarFecha(texto) {

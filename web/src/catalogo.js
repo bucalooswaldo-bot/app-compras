@@ -1,5 +1,7 @@
-// Catálogo de productos de los súper (común a todas las casas) y búsqueda en sus webs.
-// La búsqueda la hace la función "precios" de Supabase: la app nunca habla con los súper directamente.
+// Productos de los súper que la casa ha comprado, con lo que pagó por ellos.
+// Todo sale de los tiques: la app no lee las webs de los supermercados.
+
+import { normalizar } from './logica.js';
 
 const num = (x) => (x == null ? null : Number(x));
 
@@ -13,6 +15,29 @@ function normalizarProducto(p) {
   };
 }
 
+/** Palabras de búsqueda: sin tildes, de más de dos letras, recortadas para que "tomates" encuentre "tomate". */
+const trozos = (texto) => normalizar(texto).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2).map((w) => w.slice(0, 5));
+
+/**
+ * Productos que encajan con `texto` entre los de `lista`: primero los que llevan todas las palabras,
+ * luego los que llevan alguna. Solo con precio.
+ */
+export function buscarEn(lista, texto, max = 12) {
+  const ws = trozos(texto);
+  if (!ws.length) return [];
+  const puntos = (p) => {
+    const n = normalizar(p.nombre);
+    return ws.filter((w) => n.includes(w)).length;
+  };
+  return lista
+    .filter((p) => Number.isFinite(p.precio))
+    .map((p) => ({ p, n: puntos(p) }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n || a.p.precio - b.p.precio)
+    .slice(0, max)
+    .map((x) => x.p);
+}
+
 export function crearCatalogo(cliente) {
   const productos = new Map();     // id -> producto con su último precio
   const busquedas = new Map();     // "super|texto" -> [ids] (lo buscado en esta sesión)
@@ -20,6 +45,7 @@ export function crearCatalogo(cliente) {
   const guardar = (lista) => {
     for (const p of lista) if (p?.id) productos.set(p.id, normalizarProducto(p));
   };
+  const deSuper = (s) => [...productos.values()].filter((p) => p.supermercado_id === s);
 
   return {
     productos,
@@ -45,26 +71,29 @@ export function crearCatalogo(cliente) {
       }
     },
 
+    /** Productos que han salido en los tiques de la casa (sus precios cambian con cada tique). */
+    async cargarDeTiques() {
+      const { data, error } = await cliente.from('productos_super').select('id');
+      if (error) throw error;
+      const ids = data.map((x) => x.id);
+      for (const id of ids) productos.delete(id);
+      await this.cargar(ids);
+    },
+
     /**
-     * Busca en las webs de los súper.
+     * Busca entre lo comprado en cada súper (nada de internet).
      * @param {{texto:string, supers:string[]}[]} consultas
-     * @returns resultados: [{texto, mercadona:[producto]|{error}, hiperdino:[...]}]
+     * @returns resultados: [{texto, <super>: [producto]}]
      */
     async buscar(consultas) {
-      const { data, error } = await cliente.functions.invoke('precios', { body: { accion: 'buscar', consultas } });
-      if (error) {
-        let msg = error.message;
-        try { msg = (await error.context?.json())?.error ?? msg; } catch { /* nada */ }
-        throw new Error(msg);
-      }
-      for (const r of data.resultados ?? []) {
-        for (const [s, lista] of Object.entries(r)) {
-          if (!Array.isArray(lista)) continue;
-          guardar(lista);
-          busquedas.set(`${s}|${r.texto.toLowerCase()}`, lista.map((p) => p.id));
+      return consultas.map(({ texto, supers }) => {
+        const r = { texto };
+        for (const s of supers) {
+          r[s] = buscarEn(deSuper(s), texto);
+          busquedas.set(`${s}|${texto.toLowerCase()}`, r[s].map((p) => p.id));
         }
-      }
-      return data.resultados ?? [];
+        return r;
+      });
     },
 
     /** Precios anteriores de esos productos desde `desde` (para saber si hoy están más baratos de lo normal). */
@@ -83,20 +112,9 @@ export function crearCatalogo(cliente) {
       return salida;
     },
 
-    /** Productos de Lidl (salen de los tiques de la casa). */
-    async cargarLidl() {
-      const { data, error } = await cliente.from('productos_super').select('id').eq('supermercado_id', 'lidl');
-      if (error) throw error;
-      const ids = data.map((x) => x.id);
-      for (const id of ids) productos.delete(id); // sus precios cambian con cada tique
-      await this.cargar(ids);
-    },
-
-    /** Productos de Lidl cuyo nombre lleva las palabras de `texto`. */
-    deLidl(texto) {
-      const ws = String(texto).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter((w) => w.length > 2);
-      return [...productos.values()].filter((p) => p.supermercado_id === 'lidl' && Number.isFinite(p.precio)
-        && ws.some((w) => p.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(w.slice(0, 5))));
+    /** Productos de ese súper, de los tiques, cuyo nombre lleva las palabras de `texto`. */
+    deTiques(supermercado, texto) {
+      return buscarEn(deSuper(supermercado), texto, 30);
     },
 
     buscado(supermercado, texto) {

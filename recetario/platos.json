@@ -1,0 +1,4158 @@
+[
+ {
+  "nombre": "Lentejas con verduras",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas con chorizo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas estofadas con arroz",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas con calabaza",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas al curry",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas rojas con zanahoria",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Ensalada templada de lentejas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con espinacas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con bacalao",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Cocido madrileño",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de vigilia",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos estofados con costilla",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con langostinos",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos salteados con chorizo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Hummus casero",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Fabada asturiana",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias blancas con almejas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias rojas con arroz",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias pintas con chorizo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Judiones de la Granja",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Pochas con almejas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias con verduras",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Fabes con almejas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de garbanzos y acelgas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Olla gitana",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Caldo gallego",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Puchero andaluz",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Escudella",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de lentejas con calabaza",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con pollo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos al curry con coco",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de alubias y calabaza",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas con pollo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con champiñones",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias blancas estofadas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Ensalada de garbanzos",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Ensalada de alubias blancas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas con arroz integral",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Guiso de garbanzos con huevo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias con codorniz",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Cocido montañés",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Pote asturiano",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de garbanzos con bacalao y espinacas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas a la riojana",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos fritos con jamón",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Falafel al horno",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Hamburguesas de lentejas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Albóndigas de garbanzos",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Chili de alubias",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias con oreja",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Guiso de soja texturizada",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos tostados con especias",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Crema de lentejas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas con setas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con tomate y huevo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias verdes con jamón",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de habichuelas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Michirones",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Fabes con bacalao",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Cocido maragato",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Gazpacho manchego",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas a la riojana",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas con costillas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas guisadas con sepia",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Marmitako",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas con bacalao",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas con carne",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas a la importancia",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Guiso de patatas con calamares",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas con chorizo y huevo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Caldereta de patatas y conejo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Ajoarriero",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas en salsa verde",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Patatas viudas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Guiso de patatas con pollo",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Arroz caldoso con alubias y nabos",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con calabaza y pimentón",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas viudas",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias rojas con calabaza",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Potaje de espinacas y garbanzos",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Lentejas con verduras al horno",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Garbanzos con calamares",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Fabada vegetal",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Ensalada de lentejas y atún",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Alubias con perdiz",
+  "tipo": "Legumbres y cuchara"
+ },
+ {
+  "nombre": "Sopa de fideos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de pollo con fideos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de cocido",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de ajo castellana",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de picadillo",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Caldo de pollo casero",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Caldo de verduras casero",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Consomé al jerez",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de pescado",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de marisco",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de tomate",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa minestrone",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de cebolla gratinada",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa juliana",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de letras para niños",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de calabacín",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de calabaza",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de zanahoria y jengibre",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de puerros",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Vichyssoise",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de champiñones",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de espárragos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de brócoli",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de coliflor",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de guisantes con menta",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de espinacas",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de verduras",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de tomate asado",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de pimientos rojos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de alcachofas",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de boniato",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de berenjena asada",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de garbanzos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de marisco",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de pollo",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de castañas",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de apio y manzana",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de remolacha",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de setas",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Salmorejo",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Gazpacho andaluz",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Ajoblanco",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Gazpacho de sandía",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Gazpacho de remolacha",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Porra antequerana",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de miso con tofu",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de verduras con pasta",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de arroz",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de calabaza y coco",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa castellana con huevo",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de lentejas rojas",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Caldo de huesos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de pescado y fideos",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de calabacín y queso",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema fría de pepino y yogur",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de lombarda",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Crema de puerro y patata",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de tortilla",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de cebolla y queso",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Sopa de pollo y verduras",
+  "tipo": "Sopas y cremas"
+ },
+ {
+  "nombre": "Paella valenciana",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Paella de marisco",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Paella mixta",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz negro",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz a banda",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con pollo",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con costillas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz al horno",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con verduras",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con bogavante",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz caldoso de marisco",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz caldoso de pollo",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz meloso de setas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con conejo",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz del senyoret",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz tres delicias",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz frito con huevo y verduras",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con calamares",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con alcachofas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con bacalao",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con atún",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con salchichas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con champiñones",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz blanco con tomate",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Risotto de setas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Risotto de calabaza",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Risotto de espárragos",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Risotto de gambas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Risotto de queso",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con pollo al curry",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con costra",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con sepia y alcachofa",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con verduras al horno",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con lentejas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz caldoso de verduras",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con conejo y caracoles",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con pato",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con chorizo",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con mejillones",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz meloso de carrillera",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con pulpo",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con secreto ibérico",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con huevo frito",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Ensalada de arroz",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con calabaza y garbanzos",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con boletus",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Fideuá",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Fideuá negra",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz integral salteado con verduras",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz pilaf",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con pimientos y bacalao",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con almejas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con pollo y verduras al horno",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con salmón",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz basmati con pollo especiado",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz meloso de gambas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con coliflor",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con rape",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Arroz con habas",
+  "tipo": "Arroces"
+ },
+ {
+  "nombre": "Macarrones con carne y tomate",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Macarrones con chorizo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Macarrones gratinados",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis a la boloñesa",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis carbonara",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis con tomate y albahaca",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis aglio e olio",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis con almejas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis con gambas y ajo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis al pesto",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Lasaña de carne",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Lasaña de verduras",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Lasaña de atún",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Lasaña de espinacas y ricotta",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Canelones de carne",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Canelones de atún",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Canelones de espinacas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Tallarines con setas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Tallarines al pesto con pollo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Tallarines con salmón y nata",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con atún y tomate",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con brócoli",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con calabacín y gambas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con verduras salteadas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta cuatro quesos",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con pollo y champiñones",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta a la puttanesca",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta arrabbiata",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con espinacas y queso",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con salsa de calabaza",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Ensalada de pasta",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Ensalada de pasta con atún",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con lentejas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con garbanzos",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con chorizo y pimiento",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Ñoquis con tomate",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Ñoquis con salsa de queso",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Ñoquis con mantequilla y salvia",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Fideos a la cazuela",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Fideos con costillas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Tortellini con nata y jamón",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Raviolis con salsa de tomate",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con salchichas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con atún y aceitunas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Macarrones con queso",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con pesto rojo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con calabacín y limón",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con berenjena",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con bacon y guisantes",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con pimientos asados",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis con albóndigas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con pollo al curry",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con setas y jamón",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con salmón ahumado",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con sardinas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Espaguetis con calamares",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con carne picada y verduras",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta al horno con bechamel",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con alcachofas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con brócoli y anchoas",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Fideos chinos con verduras",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Fideos de arroz con pollo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Tallarines con gambas y verduras",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con queso y pimienta",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta fresca con tomate crudo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta integral con verduras",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Lasaña de pollo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Canelones de pollo",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Macarrones con tomate y atún",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pasta con ricotta y limón",
+  "tipo": "Pasta"
+ },
+ {
+  "nombre": "Pollo al horno con papas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al ajillo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo en pepitoria",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo a la cerveza",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al limón",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con tomate",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo guisado con patatas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al chilindrón",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al curry",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con champiñones",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo a la naranja",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con almendras",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo en salsa de cebolla",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al vino blanco",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con pimientos",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo asado entero",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Muslos de pollo al horno",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Alitas de pollo al horno",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Alitas con miel y soja",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pechugas a la plancha",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pechugas rellenas de jamón y queso",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pechugas empanadas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Filetes de pollo a la milanesa",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Nuggets caseros",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Fingers de pollo al horno",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo teriyaki",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con verduras salteadas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al estragón",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo a la mostaza",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con salsa de yogur",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo tikka masala",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con cacahuete",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Brochetas de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Fajitas de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Burritos de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al pimentón",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al romero",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con ciruelas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo en salsa de almendras",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo agridulce",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con arroz y verduras al horno",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con calabaza",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con aceitunas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con salsa de queso",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al horno con limón y hierbas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo en papillote",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al chocolate",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con setas y nata",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo a la cazadora",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con alcachofas",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con salsa barbacoa",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Albóndigas de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Hamburguesas de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Croquetas de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo desmenuzado para bocadillos",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Ensalada de pollo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al horno con boniato",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo con garbanzos y especias",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo frito crujiente",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo al pil pil",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pavo al horno",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pavo guisado con verduras",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Filetes de pavo con salsa de champiñones",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pavo al curry",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Albóndigas de pavo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Rollitos de pavo con espárragos",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pavo a la plancha con salsa de yogur",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pavo con pimientos",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Hamburguesas de pavo",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pavo salteado con verduras",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Lomo a la plancha",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo al horno",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo con pimientos",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo adobado",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo con salsa de queso",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo con leche",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo relleno",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Solomillo de cerdo a la mostaza",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Solomillo al whisky",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Solomillo con salsa de setas",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Solomillo con salsa de Pedro Ximénez",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Costillas al horno",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Costillas a la barbacoa",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Costillas con miel",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Costillas guisadas con patatas",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Chuletas de cerdo a la plancha",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Chuletas con salsa de manzana",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Secreto ibérico a la plancha",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Presa ibérica",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Carrillera de cerdo al vino tinto",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Codillo al horno",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Magro con tomate",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cerdo agridulce",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cerdo al ajillo",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cinta de lomo con champiñones",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Filetes de cerdo empanados",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "San Jacobos caseros",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Flamenquines",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Carne de cerdo con pimentón",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Estofado de cerdo",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cerdo con ciruelas",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Albóndigas en salsa",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Albóndigas con tomate",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Salchichas al vino blanco",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Salchichas con tomate",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Pinchos morunos",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Lomo con castañas",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cerdo con verduras al wok",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Pulled pork",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cachopo",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Cerdo con piña",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Carne de cerdo guisada con patatas",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Panceta al horno",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Chorizo a la sidra",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Morcilla con manzana",
+  "tipo": "Cerdo"
+ },
+ {
+  "nombre": "Filetes de ternera a la plancha",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Filetes de ternera empanados",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Filetes en salsa",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera guisada con patatas",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Estofado de ternera",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera en salsa de cebolla",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera al vino tinto",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera con champiñones",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera con pimientos",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera a la jardinera",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Redondo de ternera en salsa",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Carne mechada",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Rabo de toro",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Carrilleras de ternera",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ossobuco",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Hamburguesas caseras",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Albóndigas de ternera",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Pastel de carne",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Rollo de carne picada",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Carne picada con tomate",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Chili con carne",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera salteada con verduras",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera al curry",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Tacos de ternera",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Entrecot a la plancha",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Solomillo de ternera",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ropa vieja",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Pimientos rellenos de carne",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Calabacines rellenos de carne",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Berenjenas rellenas de carne",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Picadillo de carne",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera a la cerveza",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Ternera con salsa de almendras",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Goulash",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Lengua en salsa",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Cordero asado",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Caldereta de cordero",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Chuletas de cordero a la plancha",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Paletilla de cordero al horno",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Cordero al chilindrón",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Conejo al ajillo",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Conejo guisado",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Conejo al salmorejo",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Conejo con tomate",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Codornices estofadas",
+  "tipo": "Ternera y otras carnes"
+ },
+ {
+  "nombre": "Merluza a la romana",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Merluza en salsa verde",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Merluza al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Merluza a la gallega",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Merluza con almejas",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Merluza en papillote",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Rape a la marinera",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Rape al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bacalao a la vizcaína",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bacalao al pil pil",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bacalao con tomate",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bacalao al horno con patatas",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bacalao dorado",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Buñuelos de bacalao",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Croquetas de bacalao",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Salmón al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Salmón a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Salmón en papillote",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Salmón con salsa de eneldo",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Salmón teriyaki",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Lubina a la sal",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Lubina al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Dorada al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Dorada a la espalda",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Sardinas a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Sardinas al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Boquerones fritos",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Boquerones en vinagre",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Caballa al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Caballa en escabeche",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Atún encebollado",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Atún con tomate",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Atún a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bonito con tomate",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Emperador a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pez espada en salsa",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Gallo empanado",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Lenguado a la meunière",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Rodaballo al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Besugo al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Cherne en salsa",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Sama al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Vieja sancochada",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pescado frito variado",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pescado en adobo",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pescado al horno con verduras",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Albóndigas de pescado",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Hamburguesas de salmón",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pastel de pescado",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pastel de cabracho",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Calamares a la romana",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Calamares en su tinta",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Calamares encebollados",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Sepia a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Sepia con guisantes",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pulpo a la gallega",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pulpo a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Chipirones a la plancha",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Chipirones en su tinta",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Choco con patatas",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Rosada al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Panga con verduras",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Abadejo con pisto",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Truchas a la navarra",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Fletán al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Merluza con pimientos",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Salmón con verduras al horno",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Bacalao con garbanzos",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Pescado en salsa de tomate",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Ventresca con pimientos",
+  "tipo": "Pescados"
+ },
+ {
+  "nombre": "Gambas al ajillo",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Gambas a la plancha",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Langostinos cocidos",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Langostinos al ajillo",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Mejillones al vapor",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Mejillones a la marinera",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Mejillones en escabeche caseros",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Mejillones tigre",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Almejas a la marinera",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Almejas al ajillo",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Berberechos al vapor",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Navajas a la plancha",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Zamburiñas a la plancha",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Vieiras gratinadas",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Salpicón de marisco",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Cóctel de gambas",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Brochetas de langostinos",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Gambas con gabardina",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Revuelto de gambas y ajetes",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Tortillitas de camarones",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Cazuela de marisco",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Zarzuela de pescado y marisco",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Langostinos con salsa rosa",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Gambas al pil pil",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Cangrejos en salsa",
+  "tipo": "Marisco"
+ },
+ {
+  "nombre": "Tortilla de papas",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de patatas con cebolla",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla francesa",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de espinacas",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de atún",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de calabacín",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de champiñones",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de queso",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de jamón",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla paisana",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de verduras",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de bacalao",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de berenjena",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de chorizo",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de pimientos",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos rotos con jamón",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos estrellados con chorizo",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos a la flamenca",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos rellenos",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos rellenos de atún",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos en salsa",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos al plato",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos escalfados",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos revueltos con champiñones",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Revuelto de espárragos trigueros",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Revuelto de setas",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Revuelto de espinacas y gambas",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos con pisto",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos con tomate",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Shakshuka",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos fritos con patatas",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos poché con espinacas",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Frittata de verduras",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos a la cazuela",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos con bechamel",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Revuelto de morcilla",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de patatas sin huevo",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Tortilla de calabaza",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Revuelto de bacalao",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Huevos duros con mayonesa",
+  "tipo": "Huevos"
+ },
+ {
+  "nombre": "Pisto manchego",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Ratatouille",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Escalivada",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Menestra de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Verduras al horno",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Verduras a la plancha",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Verduras salteadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Wok de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Judías verdes con patatas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Judías verdes con tomate",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Judías verdes salteadas con jamón",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Coliflor gratinada",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Coliflor rebozada",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Coliflor al ajoarriero",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Brócoli al vapor con ajo",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Brócoli gratinado",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Espinacas a la crema",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Espinacas con garbanzos",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Espinacas salteadas con pasas y piñones",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Acelgas rehogadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Acelgas con patatas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Alcachofas con jamón",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Alcachofas al horno",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Alcachofas rebozadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Espárragos trigueros a la plancha",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Berenjenas rellenas de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Berenjenas fritas con miel",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Berenjenas a la parmesana",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Calabacín relleno de atún",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Calabacín gratinado",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Calabacín a la plancha",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Champiñones al ajillo",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Setas salteadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Pimientos asados",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Pimientos del padrón",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Pimientos rellenos de arroz",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Pimientos de piquillo rellenos de bacalao",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Tomates rellenos",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Tomates asados",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Puerros gratinados",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Cebolla caramelizada",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Zanahorias glaseadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Calabaza asada",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Boniato asado",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas asadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas panaderas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas bravas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas fritas caseras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas al horno con romero",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Puré de patatas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas gratinadas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas rellenas",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas a lo pobre",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas con alioli",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Patatas cocidas con mojo",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Lombarda con manzana",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Repollo rehogado",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Coles de Bruselas al horno",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Guisantes con jamón",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Habas con jamón",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Hamburguesas de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Croquetas de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Buñuelos de calabacín",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Tempura de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Pastel de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Quiche de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Flan de verduras",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Pudin de calabacín",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Calabacín relleno de verduras y queso",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Champiñones rellenos",
+  "tipo": "Verduras y guarniciones"
+ },
+ {
+  "nombre": "Ensalada mixta",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de tomate",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de tomate y ventresca",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada campera",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensaladilla rusa",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada César",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada caprese",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada griega",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de pollo y aguacate",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de atún y huevo",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de patata",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de pasta fresca",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de arroz con atún",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de quinoa",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de cuscús",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de lentejas con verduras",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de garbanzos y pimiento",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de judías verdes",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de espinacas y fresas",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de rúcula y queso de cabra",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de canónigos",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de aguacate y tomate",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de pepino y yogur",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de zanahoria",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de col",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de remolacha",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de naranja y bacalao",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Remojón granadino",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Pipirrana",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada murciana",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Esqueixada",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Xató",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de pimientos asados",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de salmón ahumado",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de marisco",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de pollo al curry",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de frutas y queso fresco",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de manzana y nueces",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada tibia de setas",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de mango y gambas",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de tomate y queso fresco",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de pasta con pesto",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de arroz y verduras",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de alubias rojas",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de lechuga y cebolla",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de berenjena asada",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de patata y huevo",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de brócoli",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de calabacín crudo",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Ensalada de tomate y aguacate con mango",
+  "tipo": "Ensaladas"
+ },
+ {
+  "nombre": "Sándwich mixto",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Sándwich de pollo",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Sándwich vegetal",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Club sándwich",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Bocadillo de tortilla",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Bocadillo de calamares",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Bocadillo de lomo con queso",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pepito de ternera",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Serranito",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Montadito de pringá",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Bikini de jamón y queso",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tostas de tomate y jamón",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tostas de aguacate",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tostas de salmón",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tostas de champiñones",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Wrap de pollo",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Wrap vegetal",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Quesadillas",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tacos de pollo",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Nachos con queso",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Perritos calientes caseros",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Hamburguesa completa",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pita de pollo",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pita de falafel",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Kebab casero",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pizza margarita casera",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pizza de jamón y champiñones",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pizza barbacoa",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pizza de verduras",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pizza de atún",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pan pizza",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Cena de tortilla y ensalada",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Croquetas de jamón",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Empanadillas de atún",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Empanadillas de carne",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Sopa rápida de verduras",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Huevos revueltos con pan",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Salteado de pollo y verduras",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Fajitas de verduras",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Pasta rápida con tomate",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tosta de queso de cabra y cebolla",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Molletes con tomate",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Sándwich de atún",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Bocadillo de pechuga",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Hamburguesa vegetal",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Crepes salados de jamón y queso",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Revuelto de calabacín",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Montaditos variados",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Sándwich de salmón y queso crema",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Tostas de pisto",
+  "tipo": "Cenas rápidas y bocadillos"
+ },
+ {
+  "nombre": "Empanada gallega de atún",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Empanada de carne",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Empanada de pollo",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Empanada de bacalao y pasas",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Empanada de verduras",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Quiche lorraine",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Quiche de espinacas",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Quiche de puerros",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Quiche de salmón",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Hojaldre de espinacas y queso",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Lasaña de berenjena",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Musaka",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Pastel de patata y carne",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Gratinado de patata y jamón",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Canelones de verduras",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Flamenquines al horno",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Croquetas de pollo y jamón",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Croquetas de queso",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Croquetas de setas",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Croquetas de cocido",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Pan de pita casero",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Pan casero",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Pan de molde casero",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Focaccia",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Masa de pizza casera",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Coca de recapte",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Coca de trempó",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Hornazo",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Torta de aceite salada",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Calzone",
+  "tipo": "Horno, masas y empanadas"
+ },
+ {
+  "nombre": "Potaje de berros",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Potaje de verduras canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Puchero canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Rancho canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Sancocho canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Papas arrugadas con mojo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Mojo rojo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Mojo verde",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Mojo de cilantro",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Gofio escaldado",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Pella de gofio",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Carne de cochino frita",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Carne fiesta",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Conejo en salmorejo canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Garbanzas compuestas",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Ropa vieja canaria",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Escaldón de gofio",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Caldo de papas",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Caldo de millo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Potaje de lentejas canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Potaje de jaramagos",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Pescado salado con papas",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Cherne a la canaria",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Vieja guisada",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Sama con papas",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Chicharros fritos",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Lapas con mojo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Pulpo en mojo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Atún en adobo canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Tollos en salsa",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Queso asado con mojo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Bienmesabe",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Frangollo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Quesillo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Truchas de batata",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Rapaduras",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Leche asada",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Bizcochón canario",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Polvito uruguayo",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Arepas",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Cocido lebaniego",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Porrusalda",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Bacalao al ajoarriero",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Txangurro",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pimientos de piquillo rellenos de carne",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Migas extremeñas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Migas de pastor",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Gachas manchegas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Duelos y quebrantos",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Morteruelo",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pollo al chilindrón aragonés",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Ternasco al horno",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Trucha a la navarra",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Callos a la madrileña",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Soldaditos de Pavía",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pescaíto frito",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Cazón en adobo",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Rabo de toro cordobés",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Flamenquín cordobés",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Espinacas con garbanzos sevillanas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Arroz con costra ilicitano",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Caldero murciano",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Michirones murcianos",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Zarangollo",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pastel de carne murciano",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Escalivada con anchoas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Escudella i carn d'olla",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Fricandó",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Suquet de peix",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pa amb tomàquet",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Tumbet mallorquín",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Sobrasada con miel",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Frit mallorquí",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pulpo con cachelos",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Lacón con grelos",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Zorza con patatas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Caldereta de langosta",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Fabada con almejas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Cachopo asturiano",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Sopa castellana",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Cochinillo asado",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Lechazo asado",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Judiones con chorizo",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Patatas revolconas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pisto con huevo",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Ajo blanco malagueño",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Gazpachuelo",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Porra con huevo y jamón",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Papas a lo pobre andaluzas",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Pipirrana jaenera",
+  "tipo": "Cocina de otras regiones"
+ },
+ {
+  "nombre": "Croquetas de jamón ibérico",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Calamares fritos",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Patatas con salsa brava y alioli",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Champiñones a la plancha",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Pimientos de padrón fritos",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Gildas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Banderillas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Ensaladilla con gambas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Boquerones con ajo y perejil",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Pinchos de tortilla",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Chorizo al vino",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Morcilla frita",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Queso frito",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Berenjenas con miel de caña",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Croquetas de espinacas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Huevos rotos con pimientos",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Tabla de quesos",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Pan con tomate y jamón",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Aceitunas aliñadas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Patatas aliñadas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Mejillones rellenos",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Pulpo a feira",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Sepia con alioli",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Tigres de mejillón",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Rollitos de jamón y queso",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Montaditos de anchoa",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Tostas de sardina",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Dátiles con bacon",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Pinchos de pollo",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Alcachofas fritas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Paté casero de higaditos",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Paté de atún",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Paté de aceitunas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Guacamole",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Salsa de yogur con pepino",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Crema de berenjena",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Champiñones rellenos de jamón",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Huevos de codorniz con jamón",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Mini hamburguesas",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Brochetas caprese",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Rollitos de primavera caseros",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Empanadillas de pisto",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Buñuelos de queso",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Palitos de queso",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Tostadas de hummus",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Ensaladilla de pulpo",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Salpicón de pulpo",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Hojaldritos de salchicha",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Volovanes de marisco",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Tartaletas de atún",
+  "tipo": "Tapas y entrantes"
+ },
+ {
+  "nombre": "Tostadas con tomate y aceite",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Tostadas con aguacate y huevo",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Porridge de avena",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Avena con frutas",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Yogur con granola casera",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Granola casera",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Tortitas americanas",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Tortitas de avena y plátano",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Crepes dulces",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Gofres caseros",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Batido de plátano",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Batido de fresa",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Batido verde",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Zumo de naranja con zanahoria",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Smoothie de frutos rojos",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Bizcocho de yogur",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Bizcocho de naranja",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Magdalenas caseras",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Muffins de arándanos",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Pan de plátano",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Galletas de mantequilla",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Galletas de avena",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Bocadillo de chocolate",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Tostadas francesas",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Churros caseros",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Rosquillas",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Pestiños",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Huevos revueltos con tostada",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Sándwich de pavo y queso",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Fruta con yogur y miel",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Barritas de cereales caseras",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Bolitas de dátiles y avena",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Chocolate a la taza",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Leche con gofio",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Café con leche y tostada de mantequilla",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Pudin de chía",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Tostada de queso fresco y mermelada",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Bizcocho de zanahoria",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Muffins salados de jamón y queso",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Bollos de leche",
+  "tipo": "Desayunos y meriendas"
+ },
+ {
+  "nombre": "Flan de huevo",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Flan de queso",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Natillas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Arroz con leche",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Crema catalana",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Torrijas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Leche frita",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de queso al horno",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de queso sin horno",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de manzana",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de Santiago",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de la abuela",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Brownie",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Bizcocho de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Mousse de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Mousse de limón",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Mousse de fresa",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tiramisú",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Panna cotta",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Natillas de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Cuajada con miel",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Yogur casero",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Peras al vino",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Manzanas asadas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Macedonia de frutas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Fresas con nata",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Sorbete de limón",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Helado de vainilla casero",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Helado de plátano",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Polos de fruta caseros",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Coulant de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Profiteroles",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Bizcocho de limón",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Rosquillas de anís",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Galletas de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Trufas de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Turrón casero de chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Mazapanes",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Polvorones",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Roscón de Reyes",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Buñuelos de viento",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de galletas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta tres chocolates",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de zanahoria",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Pudin de pan",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tocino de cielo",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tejas de almendra",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Bizcocho de calabaza",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Compota de manzana",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Crema pastelera",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Hojaldre de crema",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Palmeras de hojaldre",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta de limón y merengue",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Bizcocho de plátano y chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Galletas de jengibre",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Crepes con chocolate",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Gelatina de frutas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Semifrío de turrón",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Tarta helada",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Pastel de plátano canario",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Quesada pasiega",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Sobaos caseros",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Carquiñoles",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Ensaimada casera",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Filloas",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Frixuelos",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Casadielles",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Leche merengada",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Arroz con leche de coco",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Salsa de tomate casera",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Sofrito básico",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Bechamel",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Mayonesa casera",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Alioli",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa rosa",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa vinagreta",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Pesto de albahaca",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa de queso",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa de setas",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa barbacoa casera",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa de yogur",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa verde de perejil",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Romesco",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa de pimienta",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa española",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Caldo de pescado casero",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Salsa de mostaza y miel",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Tomate frito casero",
+  "tipo": "Salsas y bases"
+ },
+ {
+  "nombre": "Mojo picón",
+  "tipo": "Salsas y bases"
+ }
+]

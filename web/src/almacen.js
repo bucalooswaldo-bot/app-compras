@@ -16,6 +16,7 @@ export const TABLAS = {
   preferencias: 'preferencias',
   tiques: 'tiques',
   tique_lineas: 'tique_lineas',
+  supers: 'supermercados_casa',
 };
 
 export const nuevoId = () =>
