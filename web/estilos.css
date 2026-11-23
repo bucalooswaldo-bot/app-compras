@@ -291,6 +291,7 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
   background: var(--verde-claro);
 }
 .foto-receta .sin-foto.grande { font-size: 4.5rem; }
+.foto-receta.corta img, .foto-receta.corta .sin-foto.grande { aspect-ratio: auto; height: 110px; font-size: 3.5rem; }
 .acciones-foto { display: flex; align-items: center; gap: 12px; padding: 10px 16px 0; flex-wrap: wrap; }
 
 /* Editor de ingredientes */

@@ -83,6 +83,17 @@ y la cesta más barata se calcula sobre la lista que ya genera esta app.
 - Lector de código de barras para la despensa (Chrome en Android lo permite).
 - Alergias o productos prohibidos (por preguntar).
 
+## Recetario de la app (aparte de las recetas de cada casa)
+
+- En **Recetas** hay dos partes: **🏠 Mis recetas** (las que crea o trae cada casa, como las de Mary) y
+  **📖 Recetario de la app** (recetas escritas para la app, iguales para todas las casas).
+- Las recetas del recetario se escriben por tandas en `recetario/tanda-*.json` (índice de platos en `recetario/platos.py`)
+  y `python3 recetario/construir.py` las comprueba y las junta en `web/recetario.json`, que es lo que carga la app.
+- Una receta del recetario solo se guarda en la casa cuando se usa (favorita, plan o cocinarla), con `origen = 'app'` y
+  `catalogo_id` (migración `0015_recetario_app.sql`). Así cuenta para la lista y la despensa, pero no sale en «Mis recetas».
+  «Copiar a mis recetas» hace una copia propia para cambiarla. Las patatas del recetario son las «papas» de la casa si las tiene.
+- Al elegir receta para el plan, al buscar salen también las del recetario.
+
 ## Fotos de las recetas
 
 - En cada receta: "📷 Añadir foto" abre la cámara o la galería del móvil. La foto se reduce en el móvil (1280 px) antes de guardarse.
