@@ -112,10 +112,6 @@
   "tipo": "Legumbres y cuchara"
  },
  {
-  "nombre": "Potaje de lentejas con calabaza",
-  "tipo": "Legumbres y cuchara"
- },
- {
   "nombre": "Garbanzos con pollo",
   "tipo": "Legumbres y cuchara"
  },
@@ -244,10 +240,6 @@
   "tipo": "Legumbres y cuchara"
  },
  {
-  "nombre": "Patatas con costillas",
-  "tipo": "Legumbres y cuchara"
- },
- {
   "nombre": "Patatas guisadas con sepia",
   "tipo": "Legumbres y cuchara"
  },
@@ -280,10 +272,6 @@
   "tipo": "Legumbres y cuchara"
  },
  {
-  "nombre": "Ajoarriero",
-  "tipo": "Legumbres y cuchara"
- },
- {
   "nombre": "Patatas en salsa verde",
   "tipo": "Legumbres y cuchara"
  },
@@ -309,10 +297,6 @@
  },
  {
   "nombre": "Alubias rojas con calabaza",
-  "tipo": "Legumbres y cuchara"
- },
- {
-  "nombre": "Potaje de espinacas y garbanzos",
   "tipo": "Legumbres y cuchara"
  },
  {
@@ -553,10 +537,6 @@
  },
  {
   "nombre": "Sopa de tortilla",
-  "tipo": "Sopas y cremas"
- },
- {
-  "nombre": "Sopa de cebolla y queso",
   "tipo": "Sopas y cremas"
  },
  {
@@ -1228,10 +1208,6 @@
   "tipo": "Pollo y pavo"
  },
  {
-  "nombre": "Pollo en salsa de almendras",
-  "tipo": "Pollo y pavo"
- },
- {
   "nombre": "Pollo agridulce",
   "tipo": "Pollo y pavo"
  },
@@ -1349,6 +1325,10 @@
  },
  {
   "nombre": "Pavo salteado con verduras",
+  "tipo": "Pollo y pavo"
+ },
+ {
+  "nombre": "Pollo a la sal",
   "tipo": "Pollo y pavo"
  },
  {
@@ -1532,6 +1512,10 @@
   "tipo": "Cerdo"
  },
  {
+  "nombre": "Lomo a la sal",
+  "tipo": "Cerdo"
+ },
+ {
   "nombre": "Filetes de ternera a la plancha",
   "tipo": "Ternera y otras carnes"
  },
@@ -1633,10 +1617,6 @@
  },
  {
   "nombre": "Solomillo de ternera",
-  "tipo": "Ternera y otras carnes"
- },
- {
-  "nombre": "Ropa vieja",
   "tipo": "Ternera y otras carnes"
  },
  {
@@ -1980,6 +1960,10 @@
   "tipo": "Pescados"
  },
  {
+  "nombre": "Rape alangostado",
+  "tipo": "Pescados"
+ },
+ {
   "nombre": "Gambas al ajillo",
   "tipo": "Marisco"
  },
@@ -2308,10 +2292,6 @@
   "tipo": "Verduras y guarniciones"
  },
  {
-  "nombre": "Espinacas con garbanzos",
-  "tipo": "Verduras y guarniciones"
- },
- {
   "nombre": "Espinacas salteadas con pasas y piñones",
   "tipo": "Verduras y guarniciones"
  },
@@ -2437,10 +2417,6 @@
  },
  {
   "nombre": "Puré de patatas",
-  "tipo": "Verduras y guarniciones"
- },
- {
-  "nombre": "Patatas gratinadas",
   "tipo": "Verduras y guarniciones"
  },
  {
@@ -2816,10 +2792,6 @@
   "tipo": "Cenas rápidas y bocadillos"
  },
  {
-  "nombre": "Pizza de jamón y champiñones",
-  "tipo": "Cenas rápidas y bocadillos"
- },
- {
   "nombre": "Pizza barbacoa",
   "tipo": "Cenas rápidas y bocadillos"
  },
@@ -3184,6 +3156,22 @@
   "tipo": "Cocina canaria"
  },
  {
+  "nombre": "Carajacas",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Costillas con piña",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Garbanzada canaria",
+  "tipo": "Cocina canaria"
+ },
+ {
+  "nombre": "Huevos moles",
+  "tipo": "Cocina canaria"
+ },
+ {
   "nombre": "Cocido lebaniego",
   "tipo": "Cocina de otras regiones"
  },
@@ -3224,10 +3212,6 @@
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Pollo al chilindrón aragonés",
-  "tipo": "Cocina de otras regiones"
- },
- {
   "nombre": "Ternasco al horno",
   "tipo": "Cocina de otras regiones"
  },
@@ -3249,10 +3233,6 @@
  },
  {
   "nombre": "Cazón en adobo",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Rabo de toro cordobés",
   "tipo": "Cocina de otras regiones"
  },
  {
@@ -3341,10 +3321,6 @@
  },
  {
   "nombre": "Patatas revolconas",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Pisto con huevo",
   "tipo": "Cocina de otras regiones"
  },
  {
@@ -3876,10 +3852,6 @@
   "tipo": "Postres y dulces"
  },
  {
-  "nombre": "Tarta de galletas",
-  "tipo": "Postres y dulces"
- },
- {
   "nombre": "Tarta tres chocolates",
   "tipo": "Postres y dulces"
  },
@@ -3972,10 +3944,6 @@
   "tipo": "Postres y dulces"
  },
  {
-  "nombre": "Frixuelos",
-  "tipo": "Postres y dulces"
- },
- {
   "nombre": "Casadielles",
   "tipo": "Postres y dulces"
  },
@@ -3985,6 +3953,14 @@
  },
  {
   "nombre": "Arroz con leche de coco",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Brazo de gitano",
+  "tipo": "Postres y dulces"
+ },
+ {
+  "nombre": "Flan de café",
   "tipo": "Postres y dulces"
  },
  {
