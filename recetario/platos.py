@@ -202,7 +202,7 @@ Cocido lebaniego; Porrusalda; Bacalao al ajoarriero; Txangurro; Pimientos de piq
 Migas extremeñas; Migas de pastor; Gachas manchegas; Duelos y quebrantos; Morteruelo;
 Pollo al chilindrón aragonés; Ternasco al horno; Trucha a la navarra; Callos a la madrileña; Soldaditos de Pavía;
 Pescaíto frito; Cazón en adobo; Rabo de toro cordobés; Flamenquín cordobés; Espinacas con garbanzos sevillanas;
-Arroz con costra ilicitano; Caldero murciano; Michirones murcianos; Zarangollo; Pastel de carne murciano;
+Caldereta extremeña; Caldero murciano; Michirones murcianos; Zarangollo; Pastel de carne murciano;
 Escalivada con anchoas; Escudella i carn d'olla; Fricandó; Suquet de peix; Pa amb tomàquet;
 Tumbet mallorquín; Sobrasada con miel; Frit mallorquí; Pulpo con cachelos; Lacón con grelos;
 Zorza con patatas; Caldereta de langosta; Fabada con almejas; Cachopo asturiano; Sopa castellana;
@@ -214,7 +214,7 @@ Croquetas de jamón ibérico; Calamares fritos; Patatas con salsa brava y alioli
 Gildas; Banderillas; Ensaladilla con gambas; Boquerones con ajo y perejil; Pinchos de tortilla;
 Chorizo al vino; Morcilla frita; Queso frito; Berenjenas con miel de caña; Croquetas de espinacas;
 Huevos rotos con pimientos; Tabla de quesos; Pan con tomate y jamón; Aceitunas aliñadas; Patatas aliñadas;
-Mejillones rellenos; Pulpo a feira; Sepia con alioli; Tigres de mejillón; Rollitos de jamón y queso;
+Mejillones rellenos; Pulpo a feira; Sepia con alioli; Montaditos de lomo; Rollitos de jamón y queso;
 Montaditos de anchoa; Tostas de sardina; Dátiles con bacon; Pinchos de pollo; Alcachofas fritas;
 Paté casero de higaditos; Paté de atún; Paté de aceitunas; Guacamole; Salsa de yogur con pepino;
 Crema de berenjena; Champiñones rellenos de jamón; Huevos de codorniz con jamón; Mini hamburguesas; Brochetas caprese;
