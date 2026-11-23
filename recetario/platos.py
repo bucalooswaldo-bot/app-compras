@@ -11,17 +11,17 @@ Lentejas rojas con zanahoria; Ensalada templada de lentejas; Garbanzos con espin
 Potaje de vigilia; Garbanzos estofados con costilla; Garbanzos con langostinos; Garbanzos salteados con chorizo; Hummus casero;
 Fabada asturiana; Alubias blancas con almejas; Alubias rojas con arroz; Alubias pintas con chorizo; Judiones de la Granja;
 Pochas con almejas; Alubias con verduras; Fabes con almejas; Potaje de garbanzos y acelgas; Olla gitana;
-Caldo gallego; Puchero andaluz; Escudella; Potaje de lentejas con calabaza; Garbanzos con pollo;
+Caldo gallego; Puchero andaluz; Escudella; Garbanzos con pollo;
 Garbanzos al curry con coco; Potaje de alubias y calabaza; Lentejas con pollo; Garbanzos con champiñones; Alubias blancas estofadas;
 Ensalada de garbanzos; Ensalada de alubias blancas; Lentejas con arroz integral; Guiso de garbanzos con huevo; Alubias con codorniz;
 Cocido montañés; Pote asturiano; Potaje de garbanzos con bacalao y espinacas; Lentejas a la riojana; Garbanzos fritos con jamón;
 Falafel al horno; Hamburguesas de lentejas; Albóndigas de garbanzos; Chili de alubias; Alubias con oreja;
 Guiso de soja texturizada; Garbanzos tostados con especias; Crema de lentejas; Lentejas con setas; Garbanzos con tomate y huevo;
 Alubias verdes con jamón; Potaje de habichuelas; Fabes con bacalao; Cocido maragato;
-Gazpacho manchego; Patatas a la riojana; Patatas con costillas; Patatas guisadas con sepia; Marmitako;
+Gazpacho manchego; Patatas a la riojana; Patatas guisadas con sepia; Marmitako;
 Patatas con bacalao; Patatas con carne; Patatas a la importancia; Guiso de patatas con calamares; Patatas con chorizo y huevo;
-Caldereta de patatas y conejo; Ajoarriero; Patatas en salsa verde; Patatas viudas; Guiso de patatas con pollo;
-Arroz caldoso con alubias y nabos; Garbanzos con calabaza y pimentón; Lentejas viudas; Alubias rojas con calabaza; Potaje de espinacas y garbanzos;
+Caldereta de patatas y conejo; Patatas en salsa verde; Patatas viudas; Guiso de patatas con pollo;
+Arroz caldoso con alubias y nabos; Garbanzos con calabaza y pimentón; Lentejas viudas; Alubias rojas con calabaza;
 Lentejas con verduras al horno; Garbanzos con calamares; Fabada vegetal; Ensalada de lentejas y atún; Alubias con perdiz
 """,
   'Sopas y cremas': """
@@ -76,13 +76,13 @@ Pollo asado entero; Muslos de pollo al horno; Alitas de pollo al horno; Alitas c
 Pechugas rellenas de jamón y queso; Pechugas empanadas; Filetes de pollo a la milanesa; Nuggets caseros; Fingers de pollo al horno;
 Pollo teriyaki; Pollo con verduras salteadas; Pollo al estragón; Pollo a la mostaza; Pollo con salsa de yogur;
 Pollo tikka masala; Pollo con cacahuete; Brochetas de pollo; Fajitas de pollo; Burritos de pollo;
-Pollo al pimentón; Pollo al romero; Pollo con ciruelas; Pollo en salsa de almendras; Pollo agridulce;
+Pollo al pimentón; Pollo al romero; Pollo con ciruelas; Pollo agridulce;
 Pollo con arroz y verduras al horno; Pollo con calabaza; Pollo con aceitunas; Pollo con salsa de queso; Pollo al horno con limón y hierbas;
 Pollo en papillote; Pollo al chocolate; Pollo con setas y nata; Pollo a la cazadora; Pollo con alcachofas;
 Pollo con salsa barbacoa; Albóndigas de pollo; Hamburguesas de pollo; Pollo desmenuzado para bocadillos;
 Ensalada de pollo; Pollo al horno con boniato; Pollo con garbanzos y especias; Pollo frito crujiente; Pollo al pil pil;
 Pavo al horno; Pavo guisado con verduras; Filetes de pavo con salsa de champiñones; Pavo al curry; Albóndigas de pavo;
-Rollitos de pavo con espárragos; Pavo a la plancha con salsa de yogur; Pavo con pimientos; Hamburguesas de pavo; Pavo salteado con verduras
+Rollitos de pavo con espárragos; Pavo a la plancha con salsa de yogur; Pavo con pimientos; Hamburguesas de pavo; Pavo salteado con verduras; Pollo a la sal;
 """,
   'Cerdo': """
 Lomo a la plancha; Lomo al horno; Lomo con pimientos; Lomo adobado; Lomo con salsa de queso;
@@ -93,7 +93,7 @@ Codillo al horno; Magro con tomate; Cerdo agridulce; Cerdo al ajillo; Cinta de l
 Filetes de cerdo empanados; San Jacobos caseros; Flamenquines; Carne de cerdo con pimentón; Estofado de cerdo;
 Cerdo con ciruelas; Albóndigas en salsa; Albóndigas con tomate; Salchichas al vino blanco; Salchichas con tomate;
 Pinchos morunos; Lomo con castañas; Cerdo con verduras al wok; Pulled pork; Cachopo;
-Cerdo con piña; Carne de cerdo guisada con patatas; Panceta al horno; Chorizo a la sidra; Morcilla con manzana
+Cerdo con piña; Carne de cerdo guisada con patatas; Panceta al horno; Chorizo a la sidra; Morcilla con manzana; Lomo a la sal;
 """,
   'Ternera y otras carnes': """
 Filetes de ternera a la plancha; Filetes de ternera empanados; Filetes en salsa; Ternera guisada con patatas; Estofado de ternera;
@@ -101,7 +101,7 @@ Ternera en salsa de cebolla; Ternera al vino tinto; Ternera con champiñones; Te
 Redondo de ternera en salsa; Carne mechada; Rabo de toro; Carrilleras de ternera; Ossobuco;
 Hamburguesas caseras; Albóndigas de ternera; Pastel de carne; Rollo de carne picada; Carne picada con tomate;
 Chili con carne; Ternera salteada con verduras; Ternera al curry; Tacos de ternera; Entrecot a la plancha;
-Solomillo de ternera; Ropa vieja; Pimientos rellenos de carne; Calabacines rellenos de carne; Berenjenas rellenas de carne;
+Solomillo de ternera; Pimientos rellenos de carne; Calabacines rellenos de carne; Berenjenas rellenas de carne;
 Picadillo de carne; Ternera a la cerveza; Ternera con salsa de almendras; Goulash; Lengua en salsa;
 Cordero asado; Caldereta de cordero; Chuletas de cordero a la plancha; Paletilla de cordero al horno; Cordero al chilindrón;
 Conejo al ajillo; Conejo guisado; Ternasco asado; Conejo con tomate; Codornices estofadas
@@ -119,7 +119,7 @@ Cherne en salsa; Sama al horno; Vieja sancochada; Merluza a la koskera; Dorada a
 Pescado al horno con verduras; Albóndigas de pescado; Hamburguesas de salmón; Pastel de pescado; Pastel de cabracho;
 Calamares a la romana; Calamares en su tinta; Calamares encebollados; Sepia a la plancha; Sepia con guisantes; Pulpo a la plancha; Chipirones a la plancha; Choco con patatas;
 Rosada al horno; Panga con verduras; Abadejo con pisto; Fletán al horno;
-Merluza con pimientos; Salmón con verduras al horno; Bacalao con garbanzos; Pescado en salsa de tomate; Ventresca con pimientos
+Merluza con pimientos; Salmón con verduras al horno; Bacalao con garbanzos; Pescado en salsa de tomate; Ventresca con pimientos; Rape alangostado;
 """,
   'Marisco': """
 Gambas al ajillo; Gambas a la plancha; Langostinos cocidos; Langostinos al ajillo; Mejillones al vapor;
@@ -142,7 +142,7 @@ Revuelto de morcilla; Tortilla de patatas sin huevo; Tortilla de calabaza; Revue
 Pisto manchego; Ratatouille; Escalivada; Menestra de verduras; Verduras al horno;
 Verduras a la plancha; Verduras salteadas; Wok de verduras; Judías verdes con patatas; Judías verdes con tomate;
 Judías verdes salteadas con jamón; Coliflor gratinada; Coliflor rebozada; Coliflor al ajoarriero; Brócoli al vapor con ajo;
-Brócoli gratinado; Espinacas a la crema; Espinacas con garbanzos; Espinacas salteadas con pasas y piñones; Acelgas rehogadas;
+Brócoli gratinado; Espinacas a la crema; Espinacas salteadas con pasas y piñones; Acelgas rehogadas;
 Acelgas con patatas; Alcachofas con jamón; Alcachofas al horno; Alcachofas rebozadas; Espárragos trigueros a la plancha;
 Berenjenas rellenas de verduras; Berenjenas fritas con miel; Berenjenas a la parmesana; Calabacín relleno de atún; Calabacín gratinado;
 Calabacín a la plancha; Champiñones al ajillo; Setas salteadas; Pimientos asados; Borraja con patatas;
@@ -171,7 +171,7 @@ Bocadillo de calamares; Bocadillo de lomo con queso; Pepito de ternera; Serranit
 Bikini de jamón y queso; Tostas de tomate y jamón; Tostas de aguacate; Tostas de salmón; Tostas de champiñones;
 Wrap de pollo; Wrap vegetal; Quesadillas; Tacos de pollo; Nachos con queso;
 Perritos calientes caseros; Hamburguesa completa; Pita de pollo; Pita de falafel; Kebab casero;
-Pizza margarita casera; Pizza de jamón y champiñones; Pizza barbacoa; Pizza de verduras; Pizza de atún;
+Pizza margarita casera; Pizza barbacoa; Pizza de verduras; Pizza de atún;
 Pan pizza; Cena de tortilla y ensalada; Croquetas de jamón; Empanadillas de atún; Empanadillas de carne;
 Sopa rápida de verduras; Salteado de pollo y verduras; Fajitas de verduras;
 Tosta de queso de cabra y cebolla; Molletes con tomate; Sándwich de atún; Bocadillo de pechuga; Hamburguesa vegetal;
@@ -193,13 +193,12 @@ Ropa vieja canaria; Escaldón de gofio; Caldo de papas; Caldo de millo; Potaje d
 Potaje de jaramagos; Pescado salado con papas; Cherne a la canaria; Vieja guisada; Sama con papas;
 Chicharros fritos; Lapas con mojo; Pulpo en mojo; Atún en adobo canario; Tollos en salsa;
 Queso asado con mojo; Bienmesabe; Frangollo; Quesillo; Truchas de batata;
-Rapaduras; Leche asada; Bizcochón canario; Polvito uruguayo; Arepas
+Rapaduras; Leche asada; Bizcochón canario; Polvito uruguayo; Arepas; Carajacas; Costillas con piña; Garbanzada canaria; Huevos moles;
 """,
   'Cocina de otras regiones': """
 Cocido lebaniego; Porrusalda; Bacalao al ajoarriero; Txangurro; Pimientos de piquillo rellenos de carne;
-Migas extremeñas; Migas de pastor; Gachas manchegas; Duelos y quebrantos; Morteruelo;
-Pollo al chilindrón aragonés; Ternasco al horno; Trucha a la navarra; Callos a la madrileña; Soldaditos de Pavía;
-Pescaíto frito; Cazón en adobo; Rabo de toro cordobés; Flamenquín cordobés; Espinacas con garbanzos sevillanas;
+Migas extremeñas; Migas de pastor; Gachas manchegas; Duelos y quebrantos; Morteruelo; Ternasco al horno; Trucha a la navarra; Callos a la madrileña; Soldaditos de Pavía;
+Pescaíto frito; Cazón en adobo; Flamenquín cordobés; Espinacas con garbanzos sevillanas;
 Caldereta extremeña; Caldero murciano; Michirones murcianos; Zarangollo; Pastel de carne murciano;
 Fritura malagueña; Empedrat; Fricandó; Suquet de peix; Caparrones;
 Tumbet mallorquín; Sobrasada con miel; Frit mallorquí; Pulpo con cachelos; Lacón con grelos;
@@ -241,7 +240,7 @@ Pudin de pan; Tocino de cielo; Tejas de almendra; Bizcocho de calabaza; Compota 
 Crema pastelera; Hojaldre de crema; Palmeras de hojaldre; Tarta de limón y merengue; Bizcocho de plátano y chocolate;
 Galletas de jengibre; Crepes con chocolate; Gelatina de frutas; Semifrío de turrón; Tarta helada;
 Pastel de plátano canario; Quesada pasiega; Sobaos caseros; Carquiñoles; Ensaimada casera;
-Filloas; Frixuelos; Casadielles; Leche merengada; Arroz con leche de coco
+Filloas; Casadielles; Leche merengada; Arroz con leche de coco; Brazo de gitano; Flan de café;
 """,
   'Salsas y bases': """
 Salsa de tomate casera; Sofrito básico; Bechamel; Mayonesa casera; Alioli;
