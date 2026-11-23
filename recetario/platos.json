@@ -228,10 +228,6 @@
   "tipo": "Legumbres y cuchara"
  },
  {
-  "nombre": "Michirones",
-  "tipo": "Legumbres y cuchara"
- },
- {
   "nombre": "Fabes con bacalao",
   "tipo": "Legumbres y cuchara"
  },
@@ -536,10 +532,6 @@
   "tipo": "Sopas y cremas"
  },
  {
-  "nombre": "Sopa castellana con huevo",
-  "tipo": "Sopas y cremas"
- },
- {
   "nombre": "Sopa de lentejas rojas",
   "tipo": "Sopas y cremas"
  },
@@ -552,19 +544,11 @@
   "tipo": "Sopas y cremas"
  },
  {
-  "nombre": "Crema de calabacín y queso",
-  "tipo": "Sopas y cremas"
- },
- {
   "nombre": "Crema fría de pepino y yogur",
   "tipo": "Sopas y cremas"
  },
  {
   "nombre": "Crema de lombarda",
-  "tipo": "Sopas y cremas"
- },
- {
-  "nombre": "Crema de puerro y patata",
   "tipo": "Sopas y cremas"
  },
  {
@@ -785,10 +769,6 @@
  },
  {
   "nombre": "Arroz con almejas",
-  "tipo": "Arroces"
- },
- {
-  "nombre": "Arroz con pollo y verduras al horno",
   "tipo": "Arroces"
  },
  {
@@ -1305,10 +1285,6 @@
  },
  {
   "nombre": "Hamburguesas de pollo",
-  "tipo": "Pollo y pavo"
- },
- {
-  "nombre": "Croquetas de pollo",
   "tipo": "Pollo y pavo"
  },
  {
@@ -1956,19 +1932,11 @@
   "tipo": "Pescados"
  },
  {
-  "nombre": "Pulpo a la gallega",
-  "tipo": "Pescados"
- },
- {
   "nombre": "Pulpo a la plancha",
   "tipo": "Pescados"
  },
  {
   "nombre": "Chipirones a la plancha",
-  "tipo": "Pescados"
- },
- {
-  "nombre": "Chipirones en su tinta",
   "tipo": "Pescados"
  },
  {
@@ -1985,10 +1953,6 @@
  },
  {
   "nombre": "Abadejo con pisto",
-  "tipo": "Pescados"
- },
- {
-  "nombre": "Truchas a la navarra",
   "tipo": "Pescados"
  },
  {
@@ -2552,10 +2516,6 @@
   "tipo": "Verduras y guarniciones"
  },
  {
-  "nombre": "Champiñones rellenos",
-  "tipo": "Verduras y guarniciones"
- },
- {
   "nombre": "Ensalada mixta",
   "tipo": "Ensaladas"
  },
@@ -2721,10 +2681,6 @@
  },
  {
   "nombre": "Ensalada de pasta con pesto",
-  "tipo": "Ensaladas"
- },
- {
-  "nombre": "Ensalada de arroz y verduras",
   "tipo": "Ensaladas"
  },
  {
@@ -2900,19 +2856,11 @@
   "tipo": "Cenas rápidas y bocadillos"
  },
  {
-  "nombre": "Huevos revueltos con pan",
-  "tipo": "Cenas rápidas y bocadillos"
- },
- {
   "nombre": "Salteado de pollo y verduras",
   "tipo": "Cenas rápidas y bocadillos"
  },
  {
   "nombre": "Fajitas de verduras",
-  "tipo": "Cenas rápidas y bocadillos"
- },
- {
-  "nombre": "Pasta rápida con tomate",
   "tipo": "Cenas rápidas y bocadillos"
  },
  {
@@ -3384,23 +3332,7 @@
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Fabada con almejas",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Cachopo asturiano",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Sopa castellana",
-  "tipo": "Cocina de otras regiones"
- },
- {
   "nombre": "Cochinillo asado",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Lechazo asado",
   "tipo": "Cocina de otras regiones"
  },
  {
@@ -3416,23 +3348,7 @@
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Ajo blanco malagueño",
-  "tipo": "Cocina de otras regiones"
- },
- {
   "nombre": "Gazpachuelo",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Porra con huevo y jamón",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Papas a lo pobre andaluzas",
-  "tipo": "Cocina de otras regiones"
- },
- {
-  "nombre": "Pipirrana jaenera",
   "tipo": "Cocina de otras regiones"
  },
  {
@@ -3573,10 +3489,6 @@
  },
  {
   "nombre": "Salsa de yogur con pepino",
-  "tipo": "Tapas y entrantes"
- },
- {
-  "nombre": "Crema de berenjena",
   "tipo": "Tapas y entrantes"
  },
  {
