@@ -36,7 +36,7 @@ Crema de castañas; Crema de apio y manzana; Crema de remolacha; Crema de setas;
 Gazpacho andaluz; Ajoblanco; Gazpacho de sandía; Gazpacho de remolacha; Porra antequerana;
 Sopa de miso con tofu; Sopa de verduras con pasta; Sopa de arroz; Sopa de calabaza y coco;
 Sopa de lentejas rojas; Caldo de huesos; Sopa de pescado y fideos; Crema fría de pepino y yogur;
-Crema de lombarda; Sopa de tortilla; Sopa de cebolla y queso; Sopa de pollo y verduras
+Crema de lombarda; Sopa de tortilla; Sopa de pollo y verduras
 """,
   'Arroces': """
 Paella valenciana; Paella de marisco; Paella mixta; Arroz negro; Arroz a banda;
@@ -148,8 +148,7 @@ Berenjenas rellenas de verduras; Berenjenas fritas con miel; Berenjenas a la par
 Calabacín a la plancha; Champiñones al ajillo; Setas salteadas; Pimientos asados; Borraja con patatas;
 Pimientos rellenos de arroz; Pimientos de piquillo rellenos de bacalao; Tomates rellenos; Tomates asados; Puerros gratinados;
 Cebolla caramelizada; Zanahorias glaseadas; Calabaza asada; Boniato asado; Patatas asadas;
-Patatas panaderas; Patatas bravas; Patatas fritas caseras; Patatas al horno con romero; Puré de patatas;
-Patatas gratinadas; Patatas rellenas; Patatas a lo pobre; Patatas con alioli; Patatas cocidas con mojo;
+Patatas panaderas; Patatas bravas; Patatas fritas caseras; Patatas al horno con romero; Puré de patatas; Patatas rellenas; Patatas a lo pobre; Patatas con alioli; Patatas cocidas con mojo;
 Lombarda con manzana; Repollo rehogado; Coles de Bruselas al horno; Guisantes con jamón; Habas con jamón;
 Hamburguesas de verduras; Croquetas de verduras; Buñuelos de calabacín; Tempura de verduras; Pastel de verduras;
 Quiche de verduras; Flan de verduras; Pudin de calabacín; Calabacín relleno de verduras y queso
@@ -205,7 +204,7 @@ Caldereta extremeña; Caldero murciano; Michirones murcianos; Zarangollo; Pastel
 Fritura malagueña; Empedrat; Fricandó; Suquet de peix; Caparrones;
 Tumbet mallorquín; Sobrasada con miel; Frit mallorquí; Pulpo con cachelos; Lacón con grelos;
 Zorza con patatas; Caldereta de langosta;
-Cochinillo asado; Judiones con chorizo; Patatas revolconas; Pisto con huevo; Gazpachuelo
+Cochinillo asado; Judiones con chorizo; Patatas revolconas; Gazpachuelo
 """,
   'Tapas y entrantes': """
 Croquetas de jamón ibérico; Calamares fritos; Patatas con salsa brava y alioli; Champiñones a la plancha; Pimientos de padrón fritos;
@@ -237,7 +236,7 @@ Natillas de chocolate; Cuajada con miel; Yogur casero; Peras al vino; Manzanas a
 Macedonia de frutas; Fresas con nata; Sorbete de limón; Helado de vainilla casero; Helado de plátano;
 Polos de fruta caseros; Coulant de chocolate; Profiteroles; Bizcocho de limón; Rosquillas de anís;
 Galletas de chocolate; Trufas de chocolate; Turrón casero de chocolate; Mazapanes; Polvorones;
-Roscón de Reyes; Buñuelos de viento; Tarta de galletas; Tarta tres chocolates; Tarta de zanahoria;
+Roscón de Reyes; Buñuelos de viento; Tarta tres chocolates; Tarta de zanahoria;
 Pudin de pan; Tocino de cielo; Tejas de almendra; Bizcocho de calabaza; Compota de manzana;
 Crema pastelera; Hojaldre de crema; Palmeras de hojaldre; Tarta de limón y merengue; Bizcocho de plátano y chocolate;
 Galletas de jengibre; Crepes con chocolate; Gelatina de frutas; Semifrío de turrón; Tarta helada;

@@ -556,10 +556,6 @@
   "tipo": "Sopas y cremas"
  },
  {
-  "nombre": "Sopa de cebolla y queso",
-  "tipo": "Sopas y cremas"
- },
- {
   "nombre": "Sopa de pollo y verduras",
   "tipo": "Sopas y cremas"
  },
@@ -2440,10 +2436,6 @@
   "tipo": "Verduras y guarniciones"
  },
  {
-  "nombre": "Patatas gratinadas",
-  "tipo": "Verduras y guarniciones"
- },
- {
   "nombre": "Patatas rellenas",
   "tipo": "Verduras y guarniciones"
  },
@@ -3344,10 +3336,6 @@
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Pisto con huevo",
-  "tipo": "Cocina de otras regiones"
- },
- {
   "nombre": "Gazpachuelo",
   "tipo": "Cocina de otras regiones"
  },
@@ -3873,10 +3861,6 @@
  },
  {
   "nombre": "Buñuelos de viento",
-  "tipo": "Postres y dulces"
- },
- {
-  "nombre": "Tarta de galletas",
   "tipo": "Postres y dulces"
  },
  {

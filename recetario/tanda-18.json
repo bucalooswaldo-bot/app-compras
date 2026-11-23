@@ -1,0 +1,3010 @@
+[
+{
+"nombre": "Alubias verdes con jamón",
+"tipo": "Legumbres y cuchara",
+"raciones": 4,
+"tiempo_min": 30,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Sin gluten",
+"Ligera"
+],
+"ingredientes": [
+[
+"Judías verdes planas",
+700,
+"g"
+],
+[
+"Patatas",
+300,
+"g"
+],
+[
+"Jamón serrano",
+100,
+"g"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Pimentón",
+3,
+"g"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Corta las judías en trozos y las patatas en rodajas.",
+"Cuécelas en agua con sal 15 minutos. Escurre.",
+"Dora el ajo laminado y el jamón en tacos.",
+"Aparta, añade el pimentón y saltea las verduras en ese aceite."
+],
+"truco": "Un plato de verdura que hasta los niños se comen por el jamón."
+},
+{
+"nombre": "Sopa de tortilla",
+"tipo": "Sopas y cremas",
+"raciones": 4,
+"tiempo_min": 25,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Internacional",
+"Picante"
+],
+"ingredientes": [
+[
+"Caldo de pollo",
+1200,
+"ml"
+],
+[
+"Tomate",
+3,
+"ud"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Chile en polvo",
+2,
+"g"
+],
+[
+"Tortillas de trigo",
+3,
+"ud"
+],
+[
+"Aguacate",
+1,
+"ud"
+],
+[
+"Queso rallado",
+60,
+"g"
+],
+[
+"Aceite de girasol",
+100,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Tritura los tomates con la cebolla y el ajo y sofríe 10 minutos.",
+"Añade el caldo y el chile y cuece 10 minutos.",
+"Corta las tortillas en tiras y fríelas hasta que estén crujientes.",
+"Sirve la sopa con las tiras, el aguacate y el queso."
+],
+"truco": "Es una sopa mexicana muy aprovechona."
+},
+{
+"nombre": "Arroz basmati con pollo especiado",
+"tipo": "Arroces",
+"raciones": 4,
+"tiempo_min": 40,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Internacional",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Arroz",
+300,
+"g"
+],
+[
+"Muslos de pollo deshuesados",
+500,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Jengibre fresco",
+10,
+"g"
+],
+[
+"Comino",
+3,
+"g"
+],
+[
+"Cúrcuma",
+3,
+"g"
+],
+[
+"Canela",
+1,
+"g"
+],
+[
+"Pasas",
+40,
+"g"
+],
+[
+"Caldo de pollo",
+600,
+"ml"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Dora el pollo troceado con las especias.",
+"Añade la cebolla, el ajo y el jengibre y pocha.",
+"Echa el arroz lavado, las pasas y el caldo caliente.",
+"Tapa y cuece a fuego bajo 15 minutos. Reposa 5."
+],
+"truco": "Lavar el arroz basmati hasta que el agua salga clara lo deja suelto."
+},
+{
+"nombre": "Pasta con salmón ahumado",
+"tipo": "Pasta",
+"raciones": 4,
+"tiempo_min": 15,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Rápida"
+],
+"ingredientes": [
+[
+"Tallarines",
+400,
+"g"
+],
+[
+"Salmón ahumado",
+150,
+"g"
+],
+[
+"Nata para cocinar",
+200,
+"ml"
+],
+[
+"Cebolleta",
+1,
+"ud"
+],
+[
+"Eneldo",
+1,
+"g"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece la pasta.",
+"Pocha la cebolleta, añade la nata y la ralladura de limón.",
+"Fuera del fuego, añade el salmón en tiras y el eneldo.",
+"Mezcla con la pasta."
+],
+"truco": "El salmón ahumado no se cocina: solo se calienta con la salsa."
+},
+{
+"nombre": "Pollo desmenuzado para bocadillos",
+"tipo": "Pollo y pavo",
+"raciones": 6,
+"tiempo_min": 45,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Para congelar",
+"Básicos"
+],
+"ingredientes": [
+[
+"Pechuga de pollo",
+800,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Tomate triturado",
+200,
+"g"
+],
+[
+"Pimentón",
+5,
+"g"
+],
+[
+"Comino",
+2,
+"g"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Laurel",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece las pechugas en agua con laurel y sal 20 minutos. Desmenúzalas.",
+"Sofríe la cebolla y el ajo con las especias.",
+"Añade el tomate y el pollo con un poco del caldo.",
+"Cuece 10 minutos hasta que quede jugoso."
+],
+"truco": "Rellena bocadillos, arepas, tacos o empanadas toda la semana."
+},
+{
+"nombre": "Sepia a la plancha",
+"tipo": "Pescados",
+"raciones": 4,
+"tiempo_min": 15,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Sin gluten",
+"Rápida",
+"Ligera"
+],
+"ingredientes": [
+[
+"Sepia o calamar",
+700,
+"g"
+],
+[
+"Ajo",
+3,
+"ud"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+50,
+"ml"
+],
+[
+"Sal gruesa",
+null,
+"g"
+]
+],
+"pasos": [
+"Limpia la sepia y córtala en trozos grandes con cortes en rejilla.",
+"Hazla en la plancha muy caliente 3 minutos por lado.",
+"Riega con aceite, ajo y perejil picados y limón."
+],
+"truco": "Los cortes en rejilla hacen que no se enrosque."
+},
+{
+"nombre": "Patatas asadas",
+"tipo": "Verduras y guarniciones",
+"raciones": 4,
+"tiempo_min": 60,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegetariana",
+"Sin gluten",
+"Horno"
+],
+"ingredientes": [
+[
+"Patatas",
+1000,
+"g"
+],
+[
+"Mantequilla",
+40,
+"g"
+],
+[
+"Cebollino",
+1,
+"ud"
+],
+[
+"Yogur natural",
+1,
+"ud"
+],
+[
+"Sal gruesa",
+null,
+"g"
+]
+],
+"pasos": [
+"Lava las patatas y pínchalas con un tenedor.",
+"Envuélvelas en papel de aluminio y hornea a 200 °C 50 minutos.",
+"Ábrelas con un corte en cruz.",
+"Rellena con mantequilla, yogur, cebollino y sal gruesa."
+],
+"truco": "En el microondas, 8 minutos y luego 10 en el horno para la piel."
+},
+{
+"nombre": "Ensalada de alubias rojas",
+"tipo": "Ensaladas",
+"raciones": 4,
+"tiempo_min": 15,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegana",
+"Legumbres",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Alubias rojas cocidas",
+500,
+"g"
+],
+[
+"Maíz dulce",
+100,
+"g"
+],
+[
+"Pimiento rojo",
+1,
+"ud"
+],
+[
+"Cebolla morada",
+1,
+"ud"
+],
+[
+"Aguacate",
+1,
+"ud"
+],
+[
+"Cilantro",
+1,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Lava y escurre las alubias.",
+"Pica el pimiento, la cebolla y el aguacate.",
+"Mezcla todo con el maíz y el cilantro.",
+"Aliña con limón, aceite y sal."
+],
+"truco": "Aguanta bien en la nevera; sin aguacate hasta tres días."
+},
+{
+"nombre": "Hamburguesa vegetal",
+"tipo": "Cenas rápidas y bocadillos",
+"raciones": 4,
+"tiempo_min": 30,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegetariana"
+],
+"ingredientes": [
+[
+"Garbanzos cocidos",
+400,
+"g"
+],
+[
+"Zanahoria",
+1,
+"ud"
+],
+[
+"Calabacín",
+1,
+"ud"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Pan rallado",
+60,
+"g"
+],
+[
+"Huevos",
+1,
+"ud"
+],
+[
+"Comino",
+2,
+"g"
+],
+[
+"Panes de hamburguesa",
+4,
+"ud"
+],
+[
+"Lechuga",
+1,
+"ud"
+],
+[
+"Tomate",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Ralla la zanahoria y el calabacín y escúrrelos bien.",
+"Aplasta los garbanzos y mezcla con las verduras, la cebolla picada, el huevo, el pan rallado, el comino y sal.",
+"Forma 4 hamburguesas y dóralas 4 minutos por lado.",
+"Monta en pan con lechuga y tomate."
+],
+"truco": "Déjalas en la nevera 20 minutos antes de hacerlas para que no se rompan."
+},
+{
+"nombre": "Caldereta de langosta",
+"tipo": "Cocina de otras regiones",
+"raciones": 4,
+"tiempo_min": 60,
+"dificultad": "media",
+"coste": "alto",
+"etiquetas": [
+"Baleares",
+"Marisco",
+"Fiesta"
+],
+"ingredientes": [
+[
+"Langosta",
+2,
+"ud"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Pimiento verde",
+1,
+"ud"
+],
+[
+"Tomate",
+3,
+"ud"
+],
+[
+"Ajo",
+3,
+"ud"
+],
+[
+"Brandy",
+50,
+"ml"
+],
+[
+"Caldo de pescado",
+1000,
+"ml"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Pan",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Trocea la langosta (o pídelo en la pescadería) y dórala. Resérvala.",
+"Sofríe la cebolla, el pimiento, el ajo y el tomate 15 minutos.",
+"Flambea con el brandy y añade el caldo. Cuece 15 minutos.",
+"Vuelve a poner la langosta y cuece 10 minutos. Sirve con rebanadas de pan tostado."
+],
+"truco": "Es el plato estrella de Menorca; para fiestas muy especiales."
+},
+{
+"nombre": "Huevos de codorniz con jamón",
+"tipo": "Tapas y entrantes",
+"raciones": 4,
+"tiempo_min": 10,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Rápida",
+"Tapas"
+],
+"ingredientes": [
+[
+"Huevos de codorniz",
+12,
+"ud"
+],
+[
+"Pan",
+1,
+"ud"
+],
+[
+"Jamón serrano",
+80,
+"g"
+],
+[
+"Aceite de oliva",
+30,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Corta el pan en rebanadas pequeñas y tuéstalo.",
+"Pon una loncha de jamón en cada una.",
+"Fríe los huevos de codorniz y colócalos encima con una pizca de sal."
+],
+"truco": "Para abrirlos, usa la punta de un cuchillo de sierra."
+},
+{
+"nombre": "Bizcocho de zanahoria",
+"tipo": "Desayunos y meriendas",
+"raciones": 8,
+"tiempo_min": 60,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Repostería",
+"Merienda"
+],
+"ingredientes": [
+[
+"Zanahoria",
+3,
+"ud"
+],
+[
+"Harina de trigo",
+250,
+"g"
+],
+[
+"Azúcar moreno",
+180,
+"g"
+],
+[
+"Huevos",
+3,
+"ud"
+],
+[
+"Aceite de girasol",
+150,
+"ml"
+],
+[
+"Levadura química",
+10,
+"g"
+],
+[
+"Canela",
+3,
+"g"
+],
+[
+"Nueces",
+50,
+"g"
+]
+],
+"pasos": [
+"Ralla las zanahorias finas.",
+"Bate los huevos con el azúcar y el aceite.",
+"Añade la harina, la levadura y la canela, y después la zanahoria y las nueces.",
+"Hornea a 180 °C 45 minutos."
+],
+"truco": "Si le pones un frosting de queso crema, se convierte en tarta de zanahoria."
+},
+{
+"nombre": "Mazapanes",
+"tipo": "Postres y dulces",
+"raciones": 20,
+"tiempo_min": 40,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Navidad",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Almendra molida",
+250,
+"g"
+],
+[
+"Azúcar glas",
+200,
+"g"
+],
+[
+"Claras de huevo",
+1,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Huevos",
+1,
+"ud"
+]
+],
+"pasos": [
+"Mezcla la almendra con el azúcar glas y la ralladura de limón.",
+"Añade la clara y amasa hasta tener una pasta.",
+"Forma figuritas y pinta con yema batida.",
+"Gratina a 220 °C 5 minutos, solo para dorar."
+],
+"truco": "Los niños disfrutan haciendo las figuritas."
+},
+{
+"nombre": "Potaje de habichuelas",
+"tipo": "Legumbres y cuchara",
+"raciones": 4,
+"tiempo_min": 45,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Andalucía",
+"Legumbres",
+"Cuchara"
+],
+"ingredientes": [
+[
+"Alubias pintas cocidas",
+600,
+"g"
+],
+[
+"Patatas",
+300,
+"g"
+],
+[
+"Calabaza",
+200,
+"g"
+],
+[
+"Judías verdes",
+150,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Tomate",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Pimentón",
+5,
+"g"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Sofríe la cebolla, el ajo y el tomate con el pimentón.",
+"Añade las patatas, la calabaza y las judías verdes troceadas y cubre de agua.",
+"Cuece 20 minutos.",
+"Echa las habichuelas y cuece 10 minutos más."
+],
+"truco": "Un potaje de toda la vida, rápido con alubias de bote."
+},
+{
+"nombre": "Arroz meloso de gambas",
+"tipo": "Arroces",
+"raciones": 4,
+"tiempo_min": 40,
+"dificultad": "media",
+"coste": "medio",
+"etiquetas": [
+"Marisco",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Arroz",
+320,
+"g"
+],
+[
+"Gambas",
+500,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Pimiento rojo",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Tomate",
+2,
+"ud"
+],
+[
+"Brandy",
+30,
+"ml"
+],
+[
+"Caldo de pescado",
+1200,
+"ml"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Pela las gambas y dora las cabezas, aplastándolas para que suelten jugo. Retíralas.",
+"Sofríe la cebolla, el pimiento y el ajo. Añade el tomate rallado y el brandy.",
+"Echa el arroz y la mitad del caldo; ve añadiendo más durante 18 minutos removiendo de vez en cuando.",
+"Añade las colas de gamba los últimos 3 minutos."
+],
+"truco": "Tiene que quedar meloso, entre paella y risotto."
+},
+{
+"nombre": "Pasta con sardinas",
+"tipo": "Pasta",
+"raciones": 4,
+"tiempo_min": 20,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Pescado azul",
+"Rápida"
+],
+"ingredientes": [
+[
+"Espaguetis",
+400,
+"g"
+],
+[
+"Sardinas en lata",
+2,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Pasas",
+30,
+"g"
+],
+[
+"Piñones",
+20,
+"g"
+],
+[
+"Pan rallado",
+30,
+"g"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece la pasta.",
+"Tuesta el pan rallado en una sartén y resérvalo.",
+"Dora el ajo, añade las sardinas, las pasas y los piñones y deshaz con la cuchara.",
+"Mezcla con la pasta y sirve con el pan tostado y perejil."
+],
+"truco": "Es una receta siciliana: el pan tostado hace de queso rallado."
+},
+{
+"nombre": "Ensalada de pollo",
+"tipo": "Pollo y pavo",
+"raciones": 4,
+"tiempo_min": 20,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Ligera",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Pechuga de pollo",
+400,
+"g"
+],
+[
+"Lechuga romana",
+1,
+"ud"
+],
+[
+"Tomates cherry",
+150,
+"g"
+],
+[
+"Maíz dulce",
+80,
+"g"
+],
+[
+"Huevos",
+2,
+"ud"
+],
+[
+"Queso parmesano",
+30,
+"g"
+],
+[
+"Yogur natural",
+1,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+30,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Haz el pollo a la plancha y córtalo en tiras.",
+"Cuece los huevos y córtalos.",
+"Mezcla la lechuga, los tomates, el maíz, el pollo y el huevo.",
+"Aliña con el yogur, el limón, el aceite y el parmesano."
+],
+"truco": "Comida completa y ligera para el verano."
+},
+{
+"nombre": "Sepia con guisantes",
+"tipo": "Pescados",
+"raciones": 4,
+"tiempo_min": 45,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Cataluña",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Sepia o calamar",
+700,
+"g"
+],
+[
+"Guisantes",
+300,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Tomate",
+2,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Vino blanco",
+100,
+"ml"
+],
+[
+"Almendras crudas",
+20,
+"g"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Dora la sepia troceada.",
+"Añade la cebolla y el tomate y sofríe 15 minutos.",
+"Echa el vino y un vaso de agua y cuece 15 minutos.",
+"Añade los guisantes y una picada de ajo, almendras y perejil. Cuece 10 minutos."
+],
+"truco": "Guisantes congelados funcionan perfectamente."
+},
+{
+"nombre": "Patatas panaderas",
+"tipo": "Verduras y guarniciones",
+"raciones": 4,
+"tiempo_min": 50,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegana",
+"Sin gluten",
+"Horno"
+],
+"ingredientes": [
+[
+"Patatas",
+800,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Pimiento verde",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Aceite de oliva",
+80,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Corta las patatas en rodajas finas y la cebolla y el pimiento en juliana.",
+"Mezcla con el ajo picado, el aceite y la sal.",
+"Extiende en una fuente y tapa con papel de aluminio.",
+"Hornea a 190 °C 30 minutos tapadas y 15 destapadas."
+],
+"truco": "La guarnición perfecta para pescados al horno: ponlo encima los últimos minutos."
+},
+{
+"nombre": "Ensalada de lechuga y cebolla",
+"tipo": "Ensaladas",
+"raciones": 4,
+"tiempo_min": 5,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegana",
+"Sin gluten",
+"Rápida"
+],
+"ingredientes": [
+[
+"Lechuga",
+1,
+"ud"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Vinagre",
+15,
+"ml"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Lava y trocea la lechuga.",
+"Corta la cebolla en aros muy finos.",
+"Aliña con aceite, vinagre y sal justo antes de servir."
+],
+"truco": "Si la cebolla pica mucho, déjala 10 minutos en agua fría."
+},
+{
+"nombre": "Crepes salados de jamón y queso",
+"tipo": "Cenas rápidas y bocadillos",
+"raciones": 4,
+"tiempo_min": 30,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Niños"
+],
+"ingredientes": [
+[
+"Harina de trigo",
+125,
+"g"
+],
+[
+"Leche",
+250,
+"ml"
+],
+[
+"Huevos",
+2,
+"ud"
+],
+[
+"Mantequilla",
+20,
+"g"
+],
+[
+"Jamón cocido",
+150,
+"g"
+],
+[
+"Queso en lonchas",
+8,
+"ud"
+],
+[
+"Sal",
+2,
+"g"
+]
+],
+"pasos": [
+"Bate la harina, la leche, los huevos, la sal y la mantequilla derretida. Reposa 15 minutos.",
+"Haz crepes finos en una sartén untada de mantequilla.",
+"Rellena cada crepe con jamón y queso.",
+"Dóblalos y caliéntalos en la sartén hasta que se funda el queso."
+],
+"truco": "Los crepes sobrantes se guardan en la nevera separados con papel."
+},
+{
+"nombre": "Cochinillo asado",
+"tipo": "Cocina de otras regiones",
+"raciones": 6,
+"tiempo_min": 180,
+"dificultad": "media",
+"coste": "alto",
+"etiquetas": [
+"Castilla y León",
+"Fiesta",
+"Navidad"
+],
+"ingredientes": [
+[
+"Cochinillo",
+4000,
+"g"
+],
+[
+"Manteca de cerdo",
+50,
+"g"
+],
+[
+"Agua",
+500,
+"ml"
+],
+[
+"Laurel",
+2,
+"ud"
+],
+[
+"Ajo",
+4,
+"ud"
+],
+[
+"Sal",
+20,
+"g"
+]
+],
+"pasos": [
+"Abre el cochinillo por la mitad y sálalo por dentro.",
+"Ponlo con la piel hacia abajo en una fuente con el agua, el ajo y el laurel. Hornea a 180 °C 1 hora y media.",
+"Dale la vuelta, unta la piel con manteca y pínchala con un tenedor.",
+"Hornea 1 hora más a 200 °C hasta que la piel esté crujiente."
+],
+"truco": "Lo típico es cortarlo con el canto de un plato para demostrar lo tierno que está."
+},
+{
+"nombre": "Mini hamburguesas",
+"tipo": "Tapas y entrantes",
+"raciones": 6,
+"tiempo_min": 25,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Fiesta",
+"Niños"
+],
+"ingredientes": [
+[
+"Carne picada de ternera",
+500,
+"g"
+],
+[
+"Pan de molde",
+6,
+"ud"
+],
+[
+"Queso en lonchas",
+6,
+"ud"
+],
+[
+"Tomates cherry",
+100,
+"g"
+],
+[
+"Pepinillos",
+6,
+"ud"
+],
+[
+"Kétchup",
+40,
+"g"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Forma 12 hamburguesitas con la carne salada.",
+"Corta círculos de pan de molde y tuéstalos.",
+"Haz las hamburguesas a la plancha y pon un trocito de queso encima.",
+"Monta con pan, kétchup, rodaja de tomate y pepinillo, y pincha con un palillo."
+],
+"truco": "Para cumpleaños, siempre triunfan."
+},
+{
+"nombre": "Muffins salados de jamón y queso",
+"tipo": "Desayunos y meriendas",
+"raciones": 12,
+"tiempo_min": 35,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Para llevar",
+"Merienda"
+],
+"ingredientes": [
+[
+"Harina de trigo",
+250,
+"g"
+],
+[
+"Huevos",
+2,
+"ud"
+],
+[
+"Leche",
+200,
+"ml"
+],
+[
+"Aceite de oliva",
+80,
+"ml"
+],
+[
+"Levadura química",
+10,
+"g"
+],
+[
+"Jamón cocido",
+120,
+"g"
+],
+[
+"Queso rallado",
+100,
+"g"
+],
+[
+"Sal",
+3,
+"g"
+]
+],
+"pasos": [
+"Precalienta el horno a 190 °C.",
+"Mezcla los huevos, la leche y el aceite.",
+"Añade la harina, la levadura y la sal, y después el jamón picado y el queso.",
+"Reparte en moldes y hornea 22 minutos."
+],
+"truco": "Puedes añadir aceitunas o pimiento picado."
+},
+{
+"nombre": "Polvorones",
+"tipo": "Postres y dulces",
+"raciones": 20,
+"tiempo_min": 60,
+"dificultad": "media",
+"coste": "bajo",
+"etiquetas": [
+"Navidad",
+"Tradicional"
+],
+"ingredientes": [
+[
+"Harina de trigo",
+250,
+"g"
+],
+[
+"Manteca de cerdo",
+125,
+"g"
+],
+[
+"Azúcar glas",
+125,
+"g"
+],
+[
+"Almendra molida",
+80,
+"g"
+],
+[
+"Canela",
+3,
+"g"
+]
+],
+"pasos": [
+"Tuesta la harina en el horno a 150 °C 20 minutos, removiendo, hasta que tome color crema.",
+"Mezcla la harina fría con la manteca, el azúcar glas, la almendra y la canela.",
+"Estira la masa a 1,5 cm y corta con un cortapastas.",
+"Hornea a 180 °C 15 minutos. Déjalos enfriar antes de tocarlos."
+],
+"truco": "Recién hechos se rompen: espera a que estén fríos del todo."
+},
+{
+"nombre": "Fabes con bacalao",
+"tipo": "Legumbres y cuchara",
+"raciones": 4,
+"tiempo_min": 120,
+"dificultad": "media",
+"coste": "medio",
+"etiquetas": [
+"Asturias",
+"Legumbres",
+"Cuaresma"
+],
+"ingredientes": [
+[
+"Fabes",
+400,
+"g"
+],
+[
+"Bacalao desalado",
+300,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Pimiento verde",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Tomate",
+1,
+"ud"
+],
+[
+"Pimentón",
+3,
+"g"
+],
+[
+"Azafrán o colorante",
+null,
+"g"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Pon las fabes en remojo la noche anterior.",
+"Cuécelas con la cebolla, el pimiento y el tomate enteros 1 hora y media, asustándolas con agua fría.",
+"Tritura las verduras con un refrito de ajo y pimentón y devuélvelas a la olla con el azafrán.",
+"Añade el bacalao en trozos y cuece 5 minutos."
+],
+"truco": "Mueve la olla en vez de remover para no romper las fabes."
+},
+{
+"nombre": "Sopa de pollo y verduras",
+"tipo": "Sopas y cremas",
+"raciones": 4,
+"tiempo_min": 60,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Invierno",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Muslos de pollo",
+4,
+"ud"
+],
+[
+"Zanahoria",
+2,
+"ud"
+],
+[
+"Puerro",
+1,
+"ud"
+],
+[
+"Apio",
+1,
+"ud"
+],
+[
+"Patatas",
+200,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Agua",
+2000,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece el pollo con la cebolla y el puerro en el agua 40 minutos. Retira la espuma.",
+"Saca el pollo y desmenúzalo.",
+"Añade al caldo la zanahoria, el apio y la patata en dados. Cuece 15 minutos.",
+"Vuelve a poner el pollo y sirve con perejil."
+],
+"truco": "La sopa de la abuela para los días de catarro."
+},
+{
+"nombre": "Arroz con coliflor",
+"tipo": "Arroces",
+"raciones": 4,
+"tiempo_min": 40,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegana",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Arroz",
+300,
+"g"
+],
+[
+"Coliflor",
+1,
+"ud"
+],
+[
+"Ajo",
+3,
+"ud"
+],
+[
+"Tomate",
+1,
+"ud"
+],
+[
+"Pimentón",
+5,
+"g"
+],
+[
+"Caldo de verduras",
+900,
+"ml"
+],
+[
+"Azafrán o colorante",
+null,
+"g"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Dora la coliflor en ramilletes en el aceite.",
+"Añade el ajo y el tomate rallado y sofríe.",
+"Echa el pimentón, el arroz y el caldo con el azafrán.",
+"Cuece 18 minutos y deja reposar."
+],
+"truco": "Un arroz de invierno muy típico de Valencia."
+},
+{
+"nombre": "Espaguetis con calamares",
+"tipo": "Pasta",
+"raciones": 4,
+"tiempo_min": 25,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Marisco"
+],
+"ingredientes": [
+[
+"Espaguetis",
+400,
+"g"
+],
+[
+"Calamares",
+400,
+"g"
+],
+[
+"Ajo",
+3,
+"ud"
+],
+[
+"Tomates cherry",
+200,
+"g"
+],
+[
+"Vino blanco",
+50,
+"ml"
+],
+[
+"Guindilla",
+1,
+"ud"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece la pasta.",
+"Dora el ajo y la guindilla en el aceite.",
+"Saltea los calamares en anillas 2 minutos a fuego fuerte, añade los tomates y el vino.",
+"Mezcla con la pasta y el perejil."
+],
+"truco": "Calamar a fuego fuerte y poco tiempo: si no, se pone duro."
+},
+{
+"nombre": "Pollo al horno con boniato",
+"tipo": "Pollo y pavo",
+"raciones": 4,
+"tiempo_min": 55,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Horno",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Muslos de pollo",
+8,
+"ud"
+],
+[
+"Batata",
+600,
+"g"
+],
+[
+"Cebolla morada",
+1,
+"ud"
+],
+[
+"Pimentón",
+5,
+"g"
+],
+[
+"Romero",
+1,
+"g"
+],
+[
+"Miel",
+20,
+"g"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Precalienta el horno a 200 °C.",
+"Corta la batata en dados y la cebolla en gajos.",
+"Mezcla todo con el pollo, el aceite, el pimentón, el romero, la miel y la sal.",
+"Hornea 45 minutos, removiendo a mitad."
+],
+"truco": "La batata y la miel caramelizan con el jugo del pollo."
+},
+{
+"nombre": "Pulpo a la plancha",
+"tipo": "Pescados",
+"raciones": 4,
+"tiempo_min": 15,
+"dificultad": "fácil",
+"coste": "alto",
+"etiquetas": [
+"Sin gluten",
+"Marisco"
+],
+"ingredientes": [
+[
+"Pulpo cocido",
+600,
+"g"
+],
+[
+"Patatas",
+500,
+"g"
+],
+[
+"Pimentón",
+3,
+"g"
+],
+[
+"Aceite de oliva",
+50,
+"ml"
+],
+[
+"Sal gruesa",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece las patatas y aplástalas un poco.",
+"Corta las patas del pulpo enteras.",
+"Dóralas en la plancha muy caliente 3 minutos por lado.",
+"Sirve sobre las patatas con aceite, pimentón y sal gruesa."
+],
+"truco": "Un chorrito de aceite de pimentón lo deja de restaurante."
+},
+{
+"nombre": "Patatas bravas",
+"tipo": "Verduras y guarniciones",
+"raciones": 4,
+"tiempo_min": 35,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Tapas",
+"Picante",
+"Vegana"
+],
+"ingredientes": [
+[
+"Patatas",
+800,
+"g"
+],
+[
+"Aceite de oliva",
+400,
+"ml"
+],
+[
+"Harina de trigo",
+15,
+"g"
+],
+[
+"Pimentón",
+5,
+"g"
+],
+[
+"Pimentón picante",
+5,
+"g"
+],
+[
+"Caldo de pollo",
+250,
+"ml"
+],
+[
+"Vinagre",
+10,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Corta las patatas en dados y fríelas a fuego medio 10 minutos. Sube el fuego y dóralas.",
+"Para la salsa, calienta 30 ml de aceite, añade la harina y los pimentones.",
+"Echa el caldo y el vinagre y cuece hasta que espese.",
+"Sirve las patatas con la salsa por encima."
+],
+"truco": "Añade alioli para hacerlas mixtas."
+},
+{
+"nombre": "Ensalada de berenjena asada",
+"tipo": "Ensaladas",
+"raciones": 4,
+"tiempo_min": 45,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegana",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Berenjena",
+2,
+"ud"
+],
+[
+"Tomate",
+2,
+"ud"
+],
+[
+"Cebolla morada",
+1,
+"ud"
+],
+[
+"Ajo",
+1,
+"ud"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+40,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Asa las berenjenas enteras a 200 °C 35 minutos.",
+"Pélalas y corta la pulpa en tiras.",
+"Mezcla con el tomate y la cebolla picados.",
+"Aliña con ajo, perejil, limón, aceite y sal."
+],
+"truco": "Mejor templada o a temperatura ambiente."
+},
+{
+"nombre": "Revuelto de calabacín",
+"tipo": "Cenas rápidas y bocadillos",
+"raciones": 2,
+"tiempo_min": 15,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegetariana",
+"Rápida",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Huevos",
+4,
+"ud"
+],
+[
+"Calabacín",
+1,
+"ud"
+],
+[
+"Ajo",
+1,
+"ud"
+],
+[
+"Queso rallado",
+30,
+"g"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Corta el calabacín en dados pequeños y saltéalo con el ajo 5 minutos.",
+"Echa los huevos batidos con sal y el queso.",
+"Remueve a fuego bajo hasta que cuajen jugosos."
+],
+"truco": "Cena ligera en 15 minutos."
+},
+{
+"nombre": "Judiones con chorizo",
+"tipo": "Cocina de otras regiones",
+"raciones": 4,
+"tiempo_min": 150,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Castilla y León",
+"Legumbres",
+"Cuchara"
+],
+"ingredientes": [
+[
+"Judiones secos",
+400,
+"g"
+],
+[
+"Chorizo",
+150,
+"g"
+],
+[
+"Panceta",
+100,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Pimentón",
+5,
+"g"
+],
+[
+"Laurel",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Pon los judiones en remojo 24 horas.",
+"Cuécelos en agua fría con la cebolla, el chorizo, la panceta y el laurel.",
+"Cuece a fuego lento 2 horas, asustando con agua fría tres veces.",
+"Añade un refrito de ajo y pimentón al final."
+],
+"truco": "Los judiones son delicados: mueve la cazuela en vez de remover."
+},
+{
+"nombre": "Brochetas caprese",
+"tipo": "Tapas y entrantes",
+"raciones": 4,
+"tiempo_min": 10,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Vegetariana",
+"Sin gluten",
+"Sin cocinar"
+],
+"ingredientes": [
+[
+"Tomates cherry",
+200,
+"g"
+],
+[
+"Queso mozzarella",
+200,
+"g"
+],
+[
+"Albahaca fresca",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+20,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Ensarta en palillos un tomate, una hoja de albahaca y una bolita de mozzarella.",
+"Colócalos en una fuente.",
+"Riega con aceite y una pizca de sal."
+],
+"truco": "Con perlas de mozzarella van perfectas."
+},
+{
+"nombre": "Bollos de leche",
+"tipo": "Desayunos y meriendas",
+"raciones": 12,
+"tiempo_min": 180,
+"dificultad": "media",
+"coste": "bajo",
+"etiquetas": [
+"Repostería",
+"Desayuno"
+],
+"ingredientes": [
+[
+"Harina de trigo",
+500,
+"g"
+],
+[
+"Leche",
+250,
+"ml"
+],
+[
+"Azúcar",
+60,
+"g"
+],
+[
+"Mantequilla",
+60,
+"g"
+],
+[
+"Huevos",
+2,
+"ud"
+],
+[
+"Levadura de panadería",
+15,
+"g"
+],
+[
+"Sal",
+5,
+"g"
+]
+],
+"pasos": [
+"Mezcla la harina, la leche templada, el azúcar, un huevo y la levadura. Añade la sal y la mantequilla y amasa 10 minutos.",
+"Deja que doble su tamaño (1 hora y media).",
+"Forma 12 bollos y déjalos subir 45 minutos.",
+"Píntalos con el otro huevo y hornea a 180 °C 18 minutos."
+],
+"truco": "Para el desayuno o para bocadillos dulces del cole."
+},
+{
+"nombre": "Roscón de Reyes",
+"tipo": "Postres y dulces",
+"raciones": 10,
+"tiempo_min": 240,
+"dificultad": "difícil",
+"coste": "medio",
+"etiquetas": [
+"Navidad",
+"Repostería"
+],
+"ingredientes": [
+[
+"Harina de trigo",
+500,
+"g"
+],
+[
+"Leche",
+120,
+"ml"
+],
+[
+"Azúcar",
+100,
+"g"
+],
+[
+"Huevos",
+3,
+"ud"
+],
+[
+"Mantequilla",
+80,
+"g"
+],
+[
+"Levadura de panadería",
+20,
+"g"
+],
+[
+"Agua de azahar",
+30,
+"ml"
+],
+[
+"Naranjas",
+1,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Nata para montar",
+400,
+"ml"
+],
+[
+"Almendras crudas",
+30,
+"g"
+],
+[
+"Sal",
+3,
+"g"
+]
+],
+"pasos": [
+"Mezcla la harina, la leche templada, el azúcar, 2 huevos, la levadura, el azahar, las ralladuras y la sal. Añade la mantequilla y amasa 15 minutos.",
+"Deja levar 2 horas, forma una rosca y deja levar 1 hora más.",
+"Pinta con el otro huevo, decora con almendras y azúcar y hornea a 180 °C 20 minutos.",
+"Enfría, ábrelo y rellena con la nata montada."
+],
+"truco": "Esconde la sorpresa y el haba antes de hornear, envueltas en papel de aluminio."
+},
+{
+"nombre": "Cocido maragato",
+"tipo": "Legumbres y cuchara",
+"raciones": 6,
+"tiempo_min": 180,
+"dificultad": "media",
+"coste": "alto",
+"etiquetas": [
+"Castilla y León",
+"Cuchara",
+"Fin de semana"
+],
+"ingredientes": [
+[
+"Garbanzos secos",
+400,
+"g"
+],
+[
+"Morcillo de ternera",
+400,
+"g"
+],
+[
+"Gallina o pollo",
+500,
+"g"
+],
+[
+"Chorizo",
+200,
+"g"
+],
+[
+"Tocino",
+150,
+"g"
+],
+[
+"Oreja de cerdo",
+200,
+"g"
+],
+[
+"Col",
+1,
+"ud"
+],
+[
+"Patatas",
+400,
+"g"
+],
+[
+"Fideos finos",
+100,
+"g"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Pon los garbanzos en remojo la noche anterior.",
+"Cuece las carnes 1 hora y añade los garbanzos. Cuece 1 hora y media más.",
+"Cuece aparte la col y las patatas.",
+"Sirve al revés: primero las carnes, luego los garbanzos con verdura y al final la sopa con fideos."
+],
+"truco": "En Astorga se come al revés, empezando por las carnes."
+},
+{
+"nombre": "Arroz con rape",
+"tipo": "Arroces",
+"raciones": 4,
+"tiempo_min": 40,
+"dificultad": "media",
+"coste": "alto",
+"etiquetas": [
+"Pescado",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Arroz",
+320,
+"g"
+],
+[
+"Rape en rodajas",
+500,
+"g"
+],
+[
+"Gambas",
+200,
+"g"
+],
+[
+"Pimiento rojo",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Tomate",
+2,
+"ud"
+],
+[
+"Pimentón",
+3,
+"g"
+],
+[
+"Caldo de pescado",
+1000,
+"ml"
+],
+[
+"Azafrán o colorante",
+null,
+"g"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Dora el rape y las gambas y resérvalos.",
+"Sofríe el pimiento, el ajo y el tomate con el pimentón.",
+"Añade el arroz y el caldo con el azafrán y cuece 15 minutos.",
+"Coloca el rape y las gambas encima y cuece 3 minutos más."
+],
+"truco": "El rape no tiene espinas: perfecto para niños."
+},
+{
+"nombre": "Pasta con carne picada y verduras",
+"tipo": "Pasta",
+"raciones": 4,
+"tiempo_min": 30,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Niños"
+],
+"ingredientes": [
+[
+"Pasta corta",
+400,
+"g"
+],
+[
+"Carne picada",
+300,
+"g"
+],
+[
+"Calabacín",
+1,
+"ud"
+],
+[
+"Zanahoria",
+1,
+"ud"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Pimiento rojo",
+1,
+"ud"
+],
+[
+"Tomate triturado",
+400,
+"g"
+],
+[
+"Queso rallado",
+50,
+"g"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Pica las verduras muy pequeñas y sofríelas 10 minutos.",
+"Añade la carne y dórala.",
+"Echa el tomate y cuece 15 minutos.",
+"Mezcla con la pasta y sirve con queso."
+],
+"truco": "Picadas finas, los niños se comen las verduras sin darse cuenta."
+},
+{
+"nombre": "Pollo con garbanzos y especias",
+"tipo": "Pollo y pavo",
+"raciones": 4,
+"tiempo_min": 45,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Internacional",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Muslos de pollo",
+8,
+"ud"
+],
+[
+"Garbanzos cocidos",
+400,
+"g"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Ajo",
+2,
+"ud"
+],
+[
+"Comino",
+3,
+"g"
+],
+[
+"Cúrcuma",
+2,
+"g"
+],
+[
+"Canela",
+1,
+"g"
+],
+[
+"Jengibre fresco",
+10,
+"g"
+],
+[
+"Tomate triturado",
+300,
+"g"
+],
+[
+"Caldo de pollo",
+300,
+"ml"
+],
+[
+"Aceite de oliva",
+null,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Dora los muslos salpimentados y resérvalos.",
+"Pocha la cebolla, el ajo y el jengibre con las especias.",
+"Añade el tomate, el caldo y el pollo y cuece 25 minutos.",
+"Echa los garbanzos y cuece 5 minutos más."
+],
+"truco": "Es un guiso de inspiración marroquí; con cuscús queda perfecto."
+},
+{
+"nombre": "Chipirones a la plancha",
+"tipo": "Pescados",
+"raciones": 4,
+"tiempo_min": 15,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Sin gluten",
+"Rápida"
+],
+"ingredientes": [
+[
+"Chipirones",
+600,
+"g"
+],
+[
+"Ajo",
+3,
+"ud"
+],
+[
+"Perejil",
+1,
+"ud"
+],
+[
+"Cebolla",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+50,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Limpia los chipirones y separa los tentáculos.",
+"Pocha la cebolla en juliana y resérvala.",
+"Haz los chipirones a la plancha muy caliente 2 minutos.",
+"Sirve sobre la cebolla con un majado de ajo, perejil y aceite."
+],
+"truco": "Que no se amontonen en la plancha o se cocerán en vez de dorarse."
+},
+{
+"nombre": "Patatas fritas caseras",
+"tipo": "Verduras y guarniciones",
+"raciones": 4,
+"tiempo_min": 30,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegana",
+"Sin gluten",
+"Niños"
+],
+"ingredientes": [
+[
+"Patatas",
+1000,
+"g"
+],
+[
+"Aceite de oliva",
+700,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Corta las patatas en bastones, lávalas y sécalas muy bien.",
+"Fríelas a fuego medio 8 minutos sin que se doren. Sácalas.",
+"Sube el fuego y vuelve a freírlas 3 minutos hasta que estén doradas.",
+"Escurre y sala al momento."
+],
+"truco": "La doble fritura es el secreto: blandas por dentro y crujientes por fuera."
+},
+{
+"nombre": "Ensalada de patata y huevo",
+"tipo": "Ensaladas",
+"raciones": 4,
+"tiempo_min": 25,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Vegetariana",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Patatas",
+600,
+"g"
+],
+[
+"Huevos",
+4,
+"ud"
+],
+[
+"Cebolleta",
+1,
+"ud"
+],
+[
+"Pepinillos",
+4,
+"ud"
+],
+[
+"Mostaza",
+10,
+"g"
+],
+[
+"Mayonesa",
+80,
+"g"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece las patatas en dados y los huevos.",
+"Pica la cebolleta y los pepinillos.",
+"Mezcla la mayonesa con la mostaza.",
+"Une todo y enfría."
+],
+"truco": "Es la ensalada de patata alemana, más suave que la ensaladilla."
+},
+{
+"nombre": "Montaditos variados",
+"tipo": "Cenas rápidas y bocadillos",
+"raciones": 4,
+"tiempo_min": 20,
+"dificultad": "fácil",
+"coste": "medio",
+"etiquetas": [
+"Picoteo",
+"Fiesta"
+],
+"ingredientes": [
+[
+"Pan",
+1,
+"ud"
+],
+[
+"Jamón serrano",
+80,
+"g"
+],
+[
+"Queso semicurado",
+100,
+"g"
+],
+[
+"Lomo de cerdo en filetes",
+200,
+"g"
+],
+[
+"Pimientos de piquillo",
+4,
+"ud"
+],
+[
+"Anchoas",
+6,
+"ud"
+],
+[
+"Tomate",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+30,
+"ml"
+]
+],
+"pasos": [
+"Corta el pan en rebanadas y tuéstalo.",
+"Unta algunas con tomate y aceite.",
+"Haz el lomo a la plancha.",
+"Monta combinaciones: jamón y tomate, lomo y piquillo, queso y anchoa."
+],
+"truco": "Una cena de picoteo con lo que haya en la nevera."
+},
+{
+"nombre": "Patatas revolconas",
+"tipo": "Cocina de otras regiones",
+"raciones": 4,
+"tiempo_min": 35,
+"dificultad": "fácil",
+"coste": "bajo",
+"etiquetas": [
+"Castilla y León",
+"Sin gluten"
+],
+"ingredientes": [
+[
+"Patatas",
+1000,
+"g"
+],
+[
+"Panceta",
+200,
+"g"
+],
+[
+"Ajo",
+3,
+"ud"
+],
+[
+"Pimentón",
+8,
+"g"
+],
+[
+"Laurel",
+1,
+"ud"
+],
+[
+"Aceite de oliva",
+60,
+"ml"
+],
+[
+"Sal",
+null,
+"g"
+]
+],
+"pasos": [
+"Cuece las patatas en trozos con el laurel y sal 20 minutos. Escurre y guarda un poco del agua.",
+"Fríe la panceta en tiras hasta que esté crujiente y resérvala.",
+"En esa grasa dora los ajos, aparta y añade el pimentón.",
+"Machaca las patatas con ese aceite y un poco del agua, y sirve con los torreznos encima."
+],
+"truco": "Es el plato típico de Ávila y Salamanca."
+},
+{
+"nombre": "Rollitos de primavera caseros",
+"tipo": "Tapas y entrantes",
+"raciones": 4,
+"tiempo_min": 40,
+"dificultad": "media",
+"coste": "bajo",
+"etiquetas": [
+"Internacional"
+],
+"ingredientes": [
+[
+"Obleas de rollitos de primavera",
+12,
+"ud"
+],
+[
+"Col",
+1,
+"ud"
+],
+[
+"Zanahoria",
+2,
+"ud"
+],
+[
+"Brotes de soja",
+100,
+"g"
+],
+[
+"Carne picada",
+200,
+"g"
+],
+[
+"Salsa de soja",
+30,
+"ml"
+],
+[
+"Jengibre fresco",
+5,
+"g"
+],
+[
+"Aceite de girasol",
+500,
+"ml"
+]
+],
+"pasos": [
+"Saltea la carne con el jengibre. Añade la col y la zanahoria en tiras finas y los brotes.",
+"Echa la soja y deja enfriar.",
+"Pon relleno en cada oblea, dobla los lados y enrolla.",
+"Fríelos en aceite caliente hasta que estén dorados."
+],
+"truco": "Al horno, pintados con aceite, también salen crujientes."
+},
+{
+"nombre": "Buñuelos de viento",
+"tipo": "Postres y dulces",
+"raciones": 30,
+"tiempo_min": 45,
+"dificultad": "media",
+"coste": "bajo",
+"etiquetas": [
+"Todos los Santos",
+"Repostería"
+],
+"ingredientes": [
+[
+"Agua",
+250,
+"ml"
+],
+[
+"Mantequilla",
+50,
+"g"
+],
+[
+"Harina de trigo",
+150,
+"g"
+],
+[
+"Huevos",
+4,
+"ud"
+],
+[
+"Limón",
+1,
+"ud"
+],
+[
+"Aceite de girasol",
+600,
+"ml"
+],
+[
+"Azúcar",
+50,
+"g"
+],
+[
+"Crema pastelera",
+300,
+"g"
+],
+[
+"Sal",
+1,
+"g"
+]
+],
+"pasos": [
+"Hierve el agua con la mantequilla, la sal y la piel de limón. Retira la piel y echa la harina de golpe.",
+"Remueve hasta que la masa se despegue, deja templar y añade los huevos de uno en uno.",
+"Fríe cucharaditas de masa en aceite no muy caliente: se inflan y se dan la vuelta solos.",
+"Pásalos por azúcar y rellénalos de crema pastelera con una manga."
+],
+"truco": "El aceite templado es la clave para que se inflen bien."
+}
+]
