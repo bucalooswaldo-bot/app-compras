@@ -104,7 +104,7 @@ Chili con carne; Ternera salteada con verduras; Ternera al curry; Tacos de terne
 Solomillo de ternera; Ropa vieja; Pimientos rellenos de carne; Calabacines rellenos de carne; Berenjenas rellenas de carne;
 Picadillo de carne; Ternera a la cerveza; Ternera con salsa de almendras; Goulash; Lengua en salsa;
 Cordero asado; Caldereta de cordero; Chuletas de cordero a la plancha; Paletilla de cordero al horno; Cordero al chilindrón;
-Conejo al ajillo; Conejo guisado; Conejo al salmorejo; Conejo con tomate; Codornices estofadas
+Conejo al ajillo; Conejo guisado; Ternasco asado; Conejo con tomate; Codornices estofadas
 """,
   'Pescados': """
 Merluza a la romana; Merluza en salsa verde; Merluza al horno; Merluza a la gallega; Merluza con almejas;
@@ -115,7 +115,7 @@ Lubina a la sal; Lubina al horno; Dorada al horno; Dorada a la espalda; Sardinas
 Sardinas al horno; Boquerones fritos; Boquerones en vinagre; Caballa al horno; Caballa en escabeche;
 Atún encebollado; Atún con tomate; Atún a la plancha; Bonito con tomate; Emperador a la plancha;
 Pez espada en salsa; Gallo empanado; Lenguado a la meunière; Rodaballo al horno; Besugo al horno;
-Cherne en salsa; Sama al horno; Vieja sancochada; Pescado frito variado; Pescado en adobo;
+Cherne en salsa; Sama al horno; Vieja sancochada; Merluza a la koskera; Dorada a la sal;
 Pescado al horno con verduras; Albóndigas de pescado; Hamburguesas de salmón; Pastel de pescado; Pastel de cabracho;
 Calamares a la romana; Calamares en su tinta; Calamares encebollados; Sepia a la plancha; Sepia con guisantes;
 Pulpo a la gallega; Pulpo a la plancha; Chipirones a la plancha; Chipirones en su tinta; Choco con patatas;
@@ -146,7 +146,7 @@ Judías verdes salteadas con jamón; Coliflor gratinada; Coliflor rebozada; Coli
 Brócoli gratinado; Espinacas a la crema; Espinacas con garbanzos; Espinacas salteadas con pasas y piñones; Acelgas rehogadas;
 Acelgas con patatas; Alcachofas con jamón; Alcachofas al horno; Alcachofas rebozadas; Espárragos trigueros a la plancha;
 Berenjenas rellenas de verduras; Berenjenas fritas con miel; Berenjenas a la parmesana; Calabacín relleno de atún; Calabacín gratinado;
-Calabacín a la plancha; Champiñones al ajillo; Setas salteadas; Pimientos asados; Pimientos del padrón;
+Calabacín a la plancha; Champiñones al ajillo; Setas salteadas; Pimientos asados; Borraja con patatas;
 Pimientos rellenos de arroz; Pimientos de piquillo rellenos de bacalao; Tomates rellenos; Tomates asados; Puerros gratinados;
 Cebolla caramelizada; Zanahorias glaseadas; Calabaza asada; Boniato asado; Patatas asadas;
 Patatas panaderas; Patatas bravas; Patatas fritas caseras; Patatas al horno con romero; Puré de patatas;
@@ -203,7 +203,7 @@ Migas extremeñas; Migas de pastor; Gachas manchegas; Duelos y quebrantos; Morte
 Pollo al chilindrón aragonés; Ternasco al horno; Trucha a la navarra; Callos a la madrileña; Soldaditos de Pavía;
 Pescaíto frito; Cazón en adobo; Rabo de toro cordobés; Flamenquín cordobés; Espinacas con garbanzos sevillanas;
 Caldereta extremeña; Caldero murciano; Michirones murcianos; Zarangollo; Pastel de carne murciano;
-Escalivada con anchoas; Escudella i carn d'olla; Fricandó; Suquet de peix; Pa amb tomàquet;
+Fritura malagueña; Empedrat; Fricandó; Suquet de peix; Caparrones;
 Tumbet mallorquín; Sobrasada con miel; Frit mallorquí; Pulpo con cachelos; Lacón con grelos;
 Zorza con patatas; Caldereta de langosta; Fabada con almejas; Cachopo asturiano; Sopa castellana;
 Cochinillo asado; Lechazo asado; Judiones con chorizo; Patatas revolconas; Pisto con huevo;
@@ -215,7 +215,7 @@ Gildas; Banderillas; Ensaladilla con gambas; Boquerones con ajo y perejil; Pinch
 Chorizo al vino; Morcilla frita; Queso frito; Berenjenas con miel de caña; Croquetas de espinacas;
 Huevos rotos con pimientos; Tabla de quesos; Pan con tomate y jamón; Aceitunas aliñadas; Patatas aliñadas;
 Mejillones rellenos; Pulpo a feira; Sepia con alioli; Montaditos de lomo; Rollitos de jamón y queso;
-Montaditos de anchoa; Tostas de sardina; Dátiles con bacon; Pinchos de pollo; Alcachofas fritas;
+Montaditos de anchoa; Tostas de sardina; Dátiles con bacon; Pinchos de pollo; Tosta de escalivada;
 Paté casero de higaditos; Paté de atún; Paté de aceitunas; Guacamole; Salsa de yogur con pepino;
 Crema de berenjena; Champiñones rellenos de jamón; Huevos de codorniz con jamón; Mini hamburguesas; Brochetas caprese;
 Rollitos de primavera caseros; Empanadillas de pisto; Buñuelos de queso; Palitos de queso; Tostadas de hummus;

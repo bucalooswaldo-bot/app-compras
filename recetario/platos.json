@@ -1724,7 +1724,7 @@
   "tipo": "Ternera y otras carnes"
  },
  {
-  "nombre": "Conejo al salmorejo",
+  "nombre": "Ternasco asado",
   "tipo": "Ternera y otras carnes"
  },
  {
@@ -1908,11 +1908,11 @@
   "tipo": "Pescados"
  },
  {
-  "nombre": "Pescado frito variado",
+  "nombre": "Merluza a la koskera",
   "tipo": "Pescados"
  },
  {
-  "nombre": "Pescado en adobo",
+  "nombre": "Dorada a la sal",
   "tipo": "Pescados"
  },
  {
@@ -2412,7 +2412,7 @@
   "tipo": "Verduras y guarniciones"
  },
  {
-  "nombre": "Pimientos del padrón",
+  "nombre": "Borraja con patatas",
   "tipo": "Verduras y guarniciones"
  },
  {
@@ -3336,11 +3336,11 @@
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Escalivada con anchoas",
+  "nombre": "Fritura malagueña",
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Escudella i carn d'olla",
+  "nombre": "Empedrat",
   "tipo": "Cocina de otras regiones"
  },
  {
@@ -3352,7 +3352,7 @@
   "tipo": "Cocina de otras regiones"
  },
  {
-  "nombre": "Pa amb tomàquet",
+  "nombre": "Caparrones",
   "tipo": "Cocina de otras regiones"
  },
  {
@@ -3552,7 +3552,7 @@
   "tipo": "Tapas y entrantes"
  },
  {
-  "nombre": "Alcachofas fritas",
+  "nombre": "Tosta de escalivada",
   "tipo": "Tapas y entrantes"
  },
  {
