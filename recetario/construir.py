@@ -45,6 +45,14 @@ def main():
             vistos[rid] = os.path.basename(ruta)
             recetas.append({'id': rid, **{k: r[k] for k in ('nombre', 'tipo', 'raciones', 'tiempo_min', 'dificultad', 'coste',
                                                             'etiquetas', 'ingredientes', 'pasos', 'truco') if k in r}})
+    # Un mismo ingrediente, siempre en la misma unidad (si no, la lista de la compra no puede sumarlo)
+    unidades = {}
+    for r in recetas:
+        for n, _, u in r['ingredientes']:
+            unidades.setdefault(n, {}).setdefault(u, r['nombre'])
+    for n, us in unidades.items():
+        if len(us) > 1:
+            fallos.append(f'«{n}» en varias unidades: ' + ', '.join(f'{u} ({r})' for u, r in us.items()))
     if fallos:
         print('\n'.join(fallos))
         sys.exit(1)
