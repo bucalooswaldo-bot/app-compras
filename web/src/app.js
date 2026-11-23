@@ -30,14 +30,14 @@ import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionD
 import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
 import { RecetarioApp, useRecetario, delRecetario } from './recetario-vista.js';
-import { esDeLaCasa, guardarDelRecetario } from './recetario.js';
+import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './recetario.js';
 
 // ---------------------------------------------------------------------------
 // Utilidades de pantalla
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 45;
+const VERSION_APP = 46;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -594,7 +594,7 @@ export async function compartir({ titulo, texto, foto }) {
 }
 
 /** Descarga la foto de portada en cuanto se ve la receta, para que "Enviar" salga al momento con ella. */
-function useFotoParaEnviar(url, nombre) {
+export function useFotoParaEnviar(url, nombre) {
   const [foto, setFoto] = useState(null);
   useEffect(() => {
     setFoto(null);
@@ -3845,6 +3845,7 @@ async function arrancarSupabase(raiz) {
     if (error) { pintar(html`<p class="vacio">No se pudo conectar: ${error.message}</p>`); return; }
     const entrar = async (hogarId) => {
       const motor = motorSupabase(cliente, hogarId);
+      ponerClienteRecetario(cliente);
       const almacen = crearAlmacen(motor);
       almacen.onError = (e) => mostrarAviso(`No se pudo guardar: ${e.message ?? e}`);
       pintar(html`<${App} almacen=${almacen} sesion=${{ cliente, hogarId, email: session.user.email }} />`);

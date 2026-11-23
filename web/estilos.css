@@ -687,3 +687,10 @@ body.arrastrando { -webkit-user-select: none; user-select: none; }
 li.tal-cual span:first-child { flex: 1; }
 .ing-cab > small:first-child { flex: 1; min-width: 0; }
 li.tal-cual small.entendido { display: block; color: var(--suave, #777); font-size: 0.8em; margin-top: 2px; }
+
+/* Corregir el recetario de la app (Mary) */
+.acciones.revisar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.ing-app { display: grid; grid-template-columns: 1fr 64px 92px auto; gap: 6px; align-items: center; padding: 4px 0; }
+.ing-app input, .ing-app select { margin: 0; min-width: 0; }
+label.casilla { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+label.casilla input { width: auto; margin: 0; }

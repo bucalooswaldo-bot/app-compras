@@ -225,7 +225,10 @@ export function motorSupabase(cliente, hogarId) {
       return ruta;
     },
     /** Direcciones temporales (1 día) para ver las fotos. Solo funcionan para la propia casa. */
-    async urlsFotos(rutas) {
+    async urlsFotos(rutasTodas) {
+      // Las fotos del recetario de la app ya vienen con su dirección pública
+      const directas = rutasTodas.filter((r) => /^(https?:|data:)/.test(r));
+      const rutas = rutasTodas.filter((r) => !directas.includes(r));
       const ahora = Date.now();
       const faltan = rutas.filter((r) => !(cacheFotos.get(r)?.caduca > ahora));
       if (faltan.length) {
@@ -233,10 +236,10 @@ export function motorSupabase(cliente, hogarId) {
         if (error) throw error;
         for (const d of data) if (d.signedUrl) cacheFotos.set(d.path, { url: d.signedUrl, caduca: ahora + 23 * 3600e3 });
       }
-      return Object.fromEntries(rutas.map((r) => [r, cacheFotos.get(r)?.url ?? null]));
+      return Object.fromEntries([...rutas.map((r) => [r, cacheFotos.get(r)?.url ?? null]), ...directas.map((r) => [r, r])]);
     },
     async borrarFoto(ruta) {
-      if (ruta && !ruta.startsWith('data:')) await cliente.storage.from('fotos').remove([ruta]);
+      if (ruta && !/^(https?:|data:)/.test(ruta)) await cliente.storage.from('fotos').remove([ruta]);
     },
     /** Guarda un vídeo ya comprimido en el cajón "videos" de la casa y devuelve su ruta. */
     async subirVideo(blob) {
@@ -265,7 +268,7 @@ export function motorSupabase(cliente, hogarId) {
      * para que no dependan de la otra casa. Devuelve cuántas recetas se han cambiado.
      */
     async adoptarArchivos(recetas) {
-      const ajena = (r) => r && !r.startsWith('data:') && !r.startsWith(`${hogarId}/`);
+      const ajena = (r) => r && !/^(https?:|data:)/.test(r) && !r.startsWith(`${hogarId}/`);
       let n = 0;
       for (const rec of recetas) {
         const cambios = {};
