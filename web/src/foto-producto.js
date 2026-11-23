@@ -126,3 +126,34 @@ export function nombreDeEtiqueta(texto) {
   const buenas = lineas.filter((l) => (l.match(/\p{L}/gu) ?? []).length / l.length > 0.6);
   return buenas.slice(0, 3).join(' ').slice(0, 60).trim();
 }
+
+/** Tamaño de un envase escrito ("500 g", "1,5 kg", "33 cl", "1 l") en g o ml. null si no se entiende. */
+export function tamanoDeFormato(texto) {
+  const m = String(texto ?? '').toLowerCase().match(/(\d+(?:[.,]\d+)?)\s*(kg|g|gr|grs|mg|l|lt|litros?|cl|ml)\b/);
+  if (!m) return null;
+  const n = Number(m[1].replace(',', '.'));
+  const u = m[2];
+  if (u === 'kg') return { cantidad: n * 1000, unidad: 'g' };
+  if (u === 'mg') return { cantidad: n / 1000, unidad: 'g' };
+  if (u.startsWith('g')) return { cantidad: n, unidad: 'g' };
+  if (u === 'cl') return { cantidad: n * 10, unidad: 'ml' };
+  if (u === 'ml') return { cantidad: n, unidad: 'ml' };
+  return { cantidad: n * 1000, unidad: 'ml' };
+}
+
+/** Ficha de un producto de Open Food Facts (base de datos abierta de alimentos). */
+export function fichaDeOpenFoodFacts(p) {
+  if (!p) return null;
+  const nombre = String(p.product_name_es || p.product_name || p.generic_name_es || '').trim() || null;
+  const marca = String(p.brands ?? '').split(',')[0].trim() || null;
+  if (!nombre && !marca) return null;
+  const formato = String(p.quantity ?? '').trim() || null;
+  const tam = tamanoDeFormato(formato);
+  return {
+    nombre, marca, formato,
+    cantidad: tam?.cantidad ?? null,
+    unidad: tam?.unidad ?? null,
+    imagen_url: p.image_front_small_url ?? p.image_small_url ?? null,
+    categorias: Array.isArray(p.categories_tags) ? p.categories_tags.slice(0, 12) : [],
+  };
+}

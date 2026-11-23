@@ -84,7 +84,7 @@ export function ofertasDe(frecuentes, equivalencias, productos, historial = new 
  * Para la gráfica: los últimos `n` periodos (de gastosPorPeriodo), con cada súper como un trozo de la barra.
  * @returns {{inicio, total, trozos:{s:string, valor:number, ancho:number}[]}[]}  ancho en % del mayor total
  */
-export function barrasPorSuper(grupos, n = 6, orden = ['mercadona', 'hiperdino', 'lidl']) {
+export function barrasPorSuper(grupos, n = 6, orden = []) {
   const ultimos = grupos.slice(0, n);
   const max = Math.max(0, ...ultimos.map((g) => g.total));
   const pos = (s) => { const i = orden.indexOf(s); return i < 0 ? orden.length : i; };

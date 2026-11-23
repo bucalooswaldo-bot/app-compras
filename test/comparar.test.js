@@ -97,7 +97,7 @@ test('cesta: el más barato, el reparto y cuándo merece la pena ir a dos', () =
       candidatos: { hiperdino: [p('Gofio La Piña', 'La Piña', 1000, 'g', 2.1)] } },
     { clave: 'nada', nombre: 'Algo raro', cantidad: null, unidad: 'ud', candidatos: {} },
   ];
-  const c = calcularCesta(items);
+  const c = calcularCesta(items, ['mercadona', 'hiperdino', 'lidl']);
   assert.equal(c.comunes, 2);
   assert.deepEqual(c.totales, { mercadona: 6.96, hiperdino: 7.24 });
   assert.equal(c.masBarato, 'mercadona');
@@ -129,7 +129,7 @@ test('cesta sin cantidad y envases distintos: compara lo mismo (por kg)', () => 
   const malla = BUSQUEDAS['mercadona|patatas'][1];   // 3 kg, 4,90 €
   const kilo = BUSQUEDAS['hiperdino|papas'][4];       // 1 kg, 1,77 €
   const c = calcularCesta([{ clave: 'papas', nombre: 'Papas', cantidad: null, unidad: 'g',
-    candidatos: { mercadona: [malla], hiperdino: [kilo] } }]);
+    candidatos: { mercadona: [malla], hiperdino: [kilo] } }], ['mercadona', 'hiperdino']);
   const l = c.lineas[0];
   assert.equal(l.porSuper.mercadona.total, 1.63);     // 4,90 € / 3 kg
   assert.equal(l.porSuper.mercadona.aprox, true);

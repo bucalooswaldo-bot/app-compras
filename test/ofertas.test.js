@@ -64,7 +64,7 @@ test('barrasPorSuper: trozos por súper en orden fijo y anchos relativos al mayo
     { fecha: '2026-11-03', total: 50, supermercado_id: 'mercadona' },
     { fecha: '2026-10-03', total: 25, supermercado_id: 'hiperdino' },
   ];
-  const b = barrasPorSuper(gastosPorPeriodo(tiques, 'mes'));
+  const b = barrasPorSuper(gastosPorPeriodo(tiques, 'mes'), 6, ['mercadona', 'hiperdino', 'lidl']);
   assert.equal(b.length, 2);
   assert.deepEqual(b[0].trozos.map((t) => [t.s, t.ancho]), [['mercadona', 50], ['lidl', 50]]);
   assert.deepEqual(b[1].trozos.map((t) => [t.s, t.ancho]), [['hiperdino', 25]]);

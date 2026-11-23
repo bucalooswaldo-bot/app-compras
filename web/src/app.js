@@ -10,12 +10,13 @@ import {
   encaja, palabrasClave, precioUnidad, etiquetaUnidad, euros, AHORRO_MINIMO_PARA_REPARTIR,
 } from './comparar.js';
 import { crearCatalogo } from './catalogo.js';
+import { CADENAS, ponerSupers, claveDeNombre } from './supers.js';
 import {
   leerTique, leerImporte, pagado, emparejarArticulo, inicioPeriodo, gastosPorPeriodo, ahorroPosible, gastoPorCategoria, textoCSV,
   tiqueRepetido, lineasQueSobran, cotejarTique,
 } from './tiques.js';
 import { proponerMenu } from './menu.js';
-import { compradoAMenudo, ofertasDe, barrasPorSuper, comparaConAnterior } from './ofertas.js';
+import { barrasPorSuper, comparaConAnterior } from './ofertas.js';
 import { reducirFoto, dibujoReceta, fotoDeVideo, fotoDeFotograma, portadaDeCaptura } from './fotos.js';
 import { entenderIngredientes, adivinarCategoria } from './ingredientes.js';
 import { entenderReceta, textoPorColumnas, juntarLecturas, tituloPorTamano, numerarPasos } from './receta-texto.js';
@@ -25,7 +26,7 @@ import { PantallaPlan } from './planificador.js';
 import { Apariencia, aplicarApariencia, AjustesAvisos } from './apariencia.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
 import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe, encabezadoPaso } from './cocina.js';
-import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta } from './foto-producto.js';
+import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta, fichaDeOpenFoodFacts } from './foto-producto.js';
 import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
 
@@ -34,7 +35,7 @@ import { iniciarAtras, useAtras } from './atras.js';
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 43;
+const VERSION_APP = 44;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -1143,7 +1144,7 @@ function PantallaDespensa({ almacen, datos, sesion }) {
   const [, setCatalogoListo] = useState(0);
   useEffect(() => {
     if (!catalogo) return;
-    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarLidl()])
+    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarDeTiques()])
       .then(() => setCatalogoListo((n) => n + 1)).catch((e) => console.error(e));
   }, [datos.equivalencias.length]);
   const fotosCasa = useFotos(almacen, datos.equivalencias.map((e) => e.foto_path));
@@ -1251,13 +1252,15 @@ async function leerCodigoDeBarras(fichero) {
   }
 }
 
-async function preguntarPorCodigo(sesion, ean, texto = '') {
-  const { data, error } = await sesion.cliente.functions.invoke('precios', { body: { accion: 'codigo', ean, texto } });
-  if (error) throw error;
-  return data;
+/** Qué producto es un código de barras, según Open Food Facts (base de datos abierta y gratuita). */
+async function fichaPorCodigo(ean) {
+  const campos = 'product_name,product_name_es,generic_name_es,brands,quantity,image_front_small_url,image_small_url,categories_tags';
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${ean}.json?fields=${campos}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Open Food Facts respondió ${res.status}`);
+  const r = await res.json();
+  return r.status === 1 ? fichaDeOpenFoodFacts(r.product) : null;
 }
-
-const SUPERS_FOTO = [...SUPERS, ['otro', 'Otro']];
 
 /** Hoja: qué producto es la foto, en qué súper se compró y a qué artículo de la despensa se suma. Nada se guarda sin confirmar. */
 function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
@@ -1282,9 +1285,9 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
     (async () => {
       const ean = await leerCodigoDeBarras(foto);
       let r = { ean, ficha: null, conocidos: [], parecidos: {}, exacto: null, texto: '' };
-      if (ean && sesion) {
-        setPaso('Buscando qué es y su precio en Mercadona e HiperDino…');
-        try { r = { ...r, ...(await preguntarPorCodigo(sesion, ean)) }; } catch (e) { console.error(e); }
+      if (ean) {
+        setPaso('Buscando qué es por su código…');
+        try { r.ficha = await fichaPorCodigo(ean); } catch (e) { console.error(e); }
       }
       const sabido = r.ficha?.nombre || r.conocidos?.[0]?.nombre;
       if (!sabido) {
@@ -1293,16 +1296,14 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
         try {
           r.texto = nombreDeEtiqueta(await leerTextoDeImagen(foto, (n) => vivo && setPaso(`Leyendo la etiqueta… ${n}%`)));
         } catch (e) { console.error(e); }
-        if (r.texto && sesion) {
-          setPaso('Buscando en Mercadona e HiperDino…');
-          try {
-            if (ean) r = { ...r, ...(await preguntarPorCodigo(sesion, ean, r.texto)), texto: r.texto };
-            else {
-              const [x] = await catalogo.buscar([{ texto: r.texto, supers: SUPERS_WEB }]);
-              r.parecidos = { mercadona: x?.mercadona, hiperdino: x?.hiperdino };
-            }
-          } catch (e) { console.error(e); }
-        }
+      }
+      // Lo que ya habéis comprado con ese nombre, en cada súper (sale de los tiques)
+      const buscarPor = r.ficha?.nombre || r.texto;
+      if (buscarPor && catalogo) {
+        try {
+          const [x] = await catalogo.buscar([{ texto: buscarPor, supers: SUPERS_WEB }]);
+          r.parecidos = Object.fromEntries(SUPERS_WEB.map((s) => [s, x?.[s] ?? []]));
+        } catch (e) { console.error(e); }
       }
       if (!vivo) return;
       // Lo que se sabe del producto
@@ -1363,9 +1364,6 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
           await almacen.insertar('equivalencias', { articulo_id: a.id, producto_id: elegido.id, auto: false });
         }
         if (!a.foto_producto_id && elegido.imagen_url) await almacen.actualizar('articulos', a.id, { foto_producto_id: elegido.id });
-        if (leido.ean && !elegido.ean && sesion) {
-          sesion.cliente.functions.invoke('precios', { body: { accion: 'recordar', ean: leido.ean, producto_id: elegido.id } }).catch(() => {});
-        }
       }
       mostrarAviso(`Añadido a la despensa: ${a.nombre} (+${formatoCantidad(cantidad, a.unidad)})`);
       onCerrar();
@@ -1421,7 +1419,7 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
 
         <label>¿Dónde lo comprasteis?</label>
         <div class="acciones">
-          ${SUPERS_FOTO.map(([id, nombre]) => html`<button class="chip ${supermercado === id ? 'activo' : ''}" onClick=${() => elegirSuper(id)}>${nombre}</button>`)}
+          ${[...SUPERS, ['otro', 'Otro']].map(([id, nombre]) => html`<button class="chip ${supermercado === id ? 'activo' : ''}" onClick=${() => elegirSuper(id)}>${nombre}</button>`)}
         </div>
         ${motivo && supermercado && html`<p class="texto-suave">${nombreSuper(supermercado)}: ${motivo}. Si no es, toca otro.</p>`}
         ${!supermercado && html`<p class="texto-suave">Toca el súper (no es obligatorio).</p>`}
@@ -1447,7 +1445,7 @@ function AnadirPorFoto({ almacen, datos, sesion, foto, onOtra, onCerrar }) {
 
 /**
  * Al buscar en la despensa: botón «Ver otras …» que, solo si se toca, despliega lo que la casa conoce
- * y lo que venden Mercadona e HiperDino. Se marcan las que hay, con cantidad y aviso, y se añaden de una vez.
+ * y lo que ha salido en sus tiques. Se marcan las que hay, con cantidad y aviso, y se añaden de una vez.
  */
 function OtrasOpciones({ texto, almacen, datos, catalogo, onEscribir }) {
   const [abierto, setAbierto] = useState(false);
@@ -1556,8 +1554,8 @@ function OtrasOpciones({ texto, almacen, datos, catalogo, onEscribir }) {
     </button>
     ${abierto && html`
       ${conocidas.length > 0 && html`<h3 class="categoria">Que ya conocéis</h3><ul class="opciones">${conocidas.map(fila)}</ul>`}
-      ${catalogo && html`<h3 class="categoria">En Mercadona e HiperDino</h3>
-        ${buscandoSuper && html`<p class="cargando">Buscando en Mercadona e HiperDino…</p>`}
+      ${catalogo && html`<h3 class="categoria">De vuestros tiques</h3>
+        ${buscandoSuper && html`<p class="cargando">Buscando en vuestros tiques…</p>`}
         ${deSuper && !delSuper.length && html`<p class="texto-suave">No he encontrado nada más con ese nombre.</p>`}
         ${delSuper.length > 0 && html`<ul class="opciones">${delSuper.map(fila)}</ul>`}`}
       <button class="enlace escribir-mano" onClick=${onEscribir}>✏️ Ninguna de estas: escribir «${texto}» a mano</button>`}
@@ -2040,7 +2038,7 @@ function PantallaLista({ almacen, datos, sesion }) {
         items=${itemsComparar(datos, comparar)} />`}
       ${ficha && html`<${FichaLista} almacen=${almacen} datos=${datos} sesion=${sesion} catalogo=${catalogo} fila=${ficha}
         compra=${comprando ? compra : null} onCerrar=${() => setFicha(null)} onCarro=${alCarro} onHoy=${(f) => aHoy([f])} />`}
-      ${elegirSuper && html`<${ElegirSuper} datos=${datos} catalogo=${catalogo} items=${itemsComparar(datos, filasHoy)} actual=${compra?.super}
+      ${elegirSuper && html`<${ElegirSuper} almacen=${almacen} datos=${datos} catalogo=${catalogo} items=${itemsComparar(datos, filasHoy)} actual=${compra?.super}
         onCerrar=${() => setElegirSuper(false)} onElegir=${(su) => { setCompra({ super: su, desde: new Date().toISOString() }); setElegirSuper(false); }} />`}
       ${coger && html`<${CogerOtraCosa} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setCoger(false)}
         onListo=${(f) => { setCoger(false); setFicha(f); }} />`}
@@ -2052,11 +2050,11 @@ function PantallaLista({ almacen, datos, sesion }) {
 }
 
 /**
- * Cuánto sale lo de "Para hoy" en Mercadona y en HiperDino, con los productos ya enlazados
- * (no busca en las webs: eso lo hace "Ver detalle"). Respeta lo que no os gusta.
+ * Cuánto sale lo de "Para hoy" en cada súper de la casa, con los precios de vuestros tiques.
+ * Respeta lo que no os gusta.
  */
-let lidlCargado = false;
-/** Catálogo de precios con los productos enlazados a estos artículos (y los de Lidl) ya cargados. */
+let deTiquesCargado = false;
+/** Catálogo de precios con los productos enlazados a estos artículos (y los de los tiques) ya cargados. */
 function useCatalogo(datos, sesion, articuloIds) {
   const [, setCargado] = useState(0);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
@@ -2068,13 +2066,13 @@ function useCatalogo(datos, sesion, articuloIds) {
     catalogo.cargar(clave.split(',')).then(() => vivo && setCargado((n) => n + 1)).catch((e) => console.error(e));
     return () => { vivo = false; };
   }, [clave]);
-  // Lidl: sus precios salen de vuestros tiques (no vende comida en su web).
+  // Los precios salen de vuestros tiques.
   useEffect(() => {
     if (!catalogo) return;
     let vivo = true;
     const listo = () => vivo && setCargado((n) => n + 1);
-    if (lidlCargado) listo();
-    else catalogo.cargarLidl().then(() => { lidlCargado = true; listo(); }).catch((e) => console.error(e));
+    if (deTiquesCargado) listo();
+    else catalogo.cargarDeTiques().then(() => { deTiquesCargado = true; listo(); }).catch((e) => console.error(e));
     return () => { vivo = false; };
   }, []);
   return catalogo;
@@ -2102,33 +2100,23 @@ function PrecioHoy({ datos, sesion, items, onDetalle }) {
     ...item,
     candidatos: Object.fromEntries(SUPERS.map(([s]) => [s, candidatosDe(datos, catalogo, item, s)])),
   }));
-  // Lidl entra en la cuenta solo si tiene precio de todo lo que se compara; si no, se compararía menos cosas.
-  const sinLidl = calcularCesta(conCandidatos, SUPERS_WEB);
-  const conLidl = calcularCesta(conCandidatos, SUPERS.map(([s]) => s));
-  const cesta = conLidl.activos.includes('lidl') && conLidl.comunes >= sinLidl.comunes ? conLidl : sinLidl;
-  const nLidl = conLidl.lineas.filter((l) => l.porSuper.lidl).length;
-  const cajaLidl = !cesta.activos.includes('lidl') && html`<span class="ph-futuro">
-    <small>Lidl</small><b>${nLidl ? `${nLidl} de ${items.length}` : '–'}</b>
-    <small>${nLidl ? 'precios de tiques' : 'con vuestros tiques'}</small></span>`;
+  const cesta = calcularCesta(conCandidatos, SUPERS.map(([s]) => s));
   const r = cesta.recomendacion;
-  if (r.tipo === 'sin_datos') {
-    return html`<button class="precio-hoy vacio-precio" onClick=${onDetalle}>
-      <span>💶 ¿Cuánto sale lo de hoy?</span><small>Aún no hay precios para esto. Toca para buscarlos.</small></button>`;
-  }
+  // Sin precios todavía: no se enseña nada (los precios llegan con los tiques).
+  if (r.tipo === 'sin_datos') return null;
   const orden = [...cesta.activos].sort((a, b) => cesta.totales[a] - cesta.totales[b]);
   return html`<button class="precio-hoy" onClick=${onDetalle}>
     <span class="ph-titulo">Lo de hoy, aproximado</span>
     <span class="ph-supers">
       ${orden.map((s, i) => html`<span class=${i === 0 && orden.length > 1 && cesta.totales[s] < cesta.totales[orden[1]] ? 'ph-mejor' : ''}>
         <small>${nombreSuper(s)}</small><b>${euros(cesta.totales[s])}</b></span>`)}
-      ${cajaLidl}
     </span>
     <span class="ph-veredicto">${r.tipo === 'repartir'
-      ? `Repartiendo entre los dos ahorras ${euros(cesta.ahorro)}`
-      : orden.length > 1 && cesta.totales[orden[0]] === cesta.totales[orden[1]] ? 'Sale igual en los dos'
+      ? `Repartiendo la compra ahorras ${euros(cesta.ahorro)}`
+      : orden.length > 1 && cesta.totales[orden[0]] === cesta.totales[orden[1]] ? 'Sale igual'
       : orden.length > 1 ? `Más barato en ${nombreSuper(r.supermercado)}${r.diferencia > 0 ? `: ${euros(r.diferencia)} menos` : ''}`
         : `Solo hay precios de ${nombreSuper(r.supermercado)}`}</span>
-    <small>Con precio ${cesta.comunes} de ${items.length} cosas · Ver detalle ›</small>
+    <small>Con lo que pagasteis la última vez · ${cesta.comunes} de ${items.length} cosas · Ver detalle ›</small>
   </button>`;
 }
 
@@ -2226,7 +2214,7 @@ const leerCompra = () => { try { return JSON.parse(localStorage.getItem('compra-
 const guardarCompra = (c) => { try { if (c) localStorage.setItem('compra-en-curso', JSON.stringify(c)); else localStorage.removeItem('compra-en-curso'); } catch { /* nada */ } };
 
 /** "¿En qué súper estáis?": con lo que costaría lo de hoy en cada uno. */
-function ElegirSuper({ datos, catalogo, items, actual, onElegir, onCerrar }) {
+function ElegirSuper({ almacen, datos, catalogo, items, actual, onElegir, onCerrar }) {
   const total = (s) => {
     let suma = 0, n = 0;
     for (const item of items) {
@@ -2244,9 +2232,11 @@ function ElegirSuper({ datos, catalogo, items, actual, onElegir, onCerrar }) {
       ${filas.map((f) => html`<button class="super-boton ${actual === f.s ? 'activo' : ''}" onClick=${() => onElegir(f.s)}>
         <b>${f.nombre}</b>
         <span>${f.n ? `${f.n < items.length ? '≈ ' : ''}${euros(f.suma)}` : 'Sin precios aún'}</span>
-        <small>${f.n === items.length ? `Todo lo de hoy${mejor === f.s ? ' · el más barato' : ''}` : f.n ? `Precio de ${f.n} de ${items.length} cosas` : f.s === 'lidl' ? 'Los precios salen de vuestros tiques' : 'Se apuntan al coger cada cosa'}</small>
+        <small>${f.n === items.length ? `Todo lo de hoy${mejor === f.s ? ' · el más barato' : ''}` : f.n ? `Precio de ${f.n} de ${items.length} cosas` : 'Los precios salen de vuestros tiques'}</small>
       </button>`)}
     </div>
+    ${!filas.length && html`<p class="vacio">Todavía no tenéis súper apuntados. Escribe dónde estáis comprando:</p>`}
+    <${NuevoSuper} almacen=${almacen} datos=${datos} texto=${filas.length ? 'Otro súper' : 'Empezar aquí'} onAnadido=${onElegir} />
   </${Hoja}>`;
 }
 
@@ -2285,36 +2275,6 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
 
   const alCarro = () => onCarro(fila, { producto, envases, precioEnvase: Number.isFinite(precioNum) ? precioNum : null });
 
-  /** Foto del código de barras: busca ese producto en este súper y lo deja elegido para la próxima vez. */
-  const [leyendo, setLeyendo] = useState(false);
-  const porFoto = async (fichero) => {
-    if (!sesion || sesion.hogarId === 'demo') { mostrarAviso('En la versión de prueba la cámara no busca productos.'); return; }
-    setLeyendo(true);
-    try {
-      const ean = await leerCodigoDeBarras(fichero);
-      if (!ean) { mostrarAviso('No veo el código de barras. Probad otra foto o elegidlo de la lista.'); return; }
-      const r = await preguntarPorCodigo(sesion, ean);
-      const deEste = [...(r.conocidos ?? []), ...(Array.isArray(r.parecidos?.[s]) && r.exacto === s ? r.parecidos[s] : [])]
-        .find((p) => p.supermercado_id === s);
-      if (!deEste) {
-        mostrarAviso(`No encuentro ese código en ${nombreSuper(s)}. Elegidlo de la lista.`);
-        setCambiar(s);
-        return;
-      }
-      const enlaces = datos.equivalencias.filter((e) => e.articulo_id === item.articulo_id
-        && catalogo.productos.get(e.producto_id)?.supermercado_id === s);
-      if (enlaces.length) await almacen.borrar('equivalencias', enlaces.map((e) => e.id));
-      await almacen.insertar('equivalencias', { articulo_id: item.articulo_id, producto_id: deEste.id, auto: false });
-      await catalogo.cargar([deEste.id]);
-      mostrarAviso(`Guardado: ${item.nombre} en ${nombreSuper(s)} es ${deEste.nombre}`);
-    } catch (e) {
-      console.error(e);
-      mostrarAviso(`No se pudo leer: ${e.message ?? e}`);
-    } finally {
-      setLeyendo(false);
-    }
-  };
-
   return html`<${Hoja} titulo=${a?.nombre ?? ''} onCerrar=${onCerrar}>
     ${compra && html`
       <div class="en-este">
@@ -2323,11 +2283,9 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
             <${FotoProducto} url=${producto.imagen_url} clase="grande" />
             <div><b>${producto.nombre}</b><small>${[formatoDe(producto), Number.isFinite(precioUnidad(producto)) && `${precioUnidad(producto).toFixed(2).replace('.', ',')} ${etiquetaUnidad(producto.unidad)}`].filter(Boolean).join(' · ')}</small></div>
           </div>`
-          : html`<p class="nota">Aún no sabemos qué producto es en ${nombreSuper(s)}. Elegidlo o hacedle una foto y quedará guardado.</p>`}
+          : html`<p class="nota">Aún no hay precio de esto en ${nombreSuper(s)}. Poned el de la etiqueta, o se guardará con el tique.</p>`}
         <div class="acciones">
-          <button class="chip" onClick=${() => setCambiar(s)}>${producto ? '¿Es otro? Elegir' : 'Elegir el producto'}</button>
-          <label class="chip foto-chip">${leyendo ? 'Leyendo…' : '📷 Hacerle una foto'}
-            <input type="file" accept="image/*" capture="environment" hidden onChange=${(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) porFoto(f); }} /></label>
+          <button class="chip" onClick=${() => setCambiar(s)}>${producto ? '¿Es otro? Elegir' : 'Elegir de lo comprado aquí'}</button>
         </div>
         <div class="dos">
           <label>Cuántos cogéis<${Contador} valor=${envases} onCambio=${setEnvases} /></label>
@@ -2341,12 +2299,12 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
 
     <h3>Precio en cada súper</h3>
     ${!catalogo && html`<p class="meta">En la versión de prueba no hay precios.</p>`}
-    ${catalogo && conPrecio.length === 0 && html`<p class="meta">Todavía no hay precios para esto. Elegid el producto en un súper para guardarlo.</p>`}
+    ${catalogo && conPrecio.length === 0 && html`<p class="meta">Todavía no hay precios para esto. Llegan solos al guardar los tiques.</p>`}
     ${conPrecio.length > 0 && html`<ul class="filas comparar-ficha">
       ${otros.map(({ id, nombre, o }) => html`<li class=${masBarato?.id === id && conPrecio.length > 1 ? 'mejor' : ''}>
         <${FotoProducto} url=${o?.producto.imagen_url} clase="mini" />
         <button class="enlace nombre" onClick=${() => setCambiar(id)}>${nombre}
-          <small>${o ? `${o.envases > 1 ? `${o.envases} × ` : ''}${o.producto.nombre}` : id === 'lidl' ? 'Sin precio: sale de vuestros tiques' : 'Sin producto: toca para elegirlo'}</small></button>
+          <small>${o ? `${o.envases > 1 ? `${o.envases} × ` : ''}${o.producto.nombre}` : 'Sin precio todavía'}</small></button>
         <span class="cant">${o ? html`<b>${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>${masBarato && masBarato.id !== id
           ? html`<small>+${euros(redondear(o.total - masBarato.o.total))}</small>` : conPrecio.length > 1 ? html`<small>el más barato</small>` : ''}` : '–'}</span>
       </li>`)}
@@ -2429,15 +2387,13 @@ function Pagar({ almacen, datos, sesion, catalogo, compra, carro, onCerrar, onLi
           p_hogar: sesion.hogarId, p_super: compra.super, p_fecha: ahora, p_total: t, p_lineas: lineas,
         });
         if (error) throw error;
-        // Precios nuevos de Mercadona e HiperDino (los de Lidl ya van con el tique).
-        const nuevos = llevados.filter((l) => l.producto_id && compra.super !== 'lidl')
-          .map((l) => ({ p: catalogo?.productos.get(l.producto_id), precio: precioEnvase(l) }))
-          .filter(({ p, precio }) => p && precio != null && Math.abs(p.precio - precio) > 0.004);
-        if (nuevos.length) {
-          await sesion.cliente.from('precios').insert(nuevos.map(({ p, precio }) => ({
-            producto_id: p.id, precio, origen: compra.super && tique ? 'tique' : 'manual', visto_en: ahora, hogar_id: sesion.hogarId })));
-          for (const { p, precio } of nuevos) catalogo.productos.set(p.id, { ...p, precio, visto_en: ahora });
+        // Los precios de cada línea los guarda guardar_tique; aquí solo se refresca lo que se ve.
+        for (const l of llevados) {
+          const p = l.producto_id && catalogo?.productos.get(l.producto_id);
+          const precio = precioEnvase(l);
+          if (p && precio != null) catalogo.productos.set(p.id, { ...p, precio, visto_en: ahora });
         }
+        catalogo?.cargarDeTiques().catch(() => {});
       } else {
         const [nuevo] = await almacen.insertar('tiques', { supermercado_id: compra.super, fecha: ahora, total: t, estado: 'revisado' });
         await almacen.insertar('tique_lineas', lineas.map((f) => ({ ...f, tique_id: nuevo.id })));
@@ -2662,8 +2618,8 @@ function BotonDictar({ onTexto }) {
     onClick=${pulsar}>${oyendo ? '⏹' : '🎤'}</button>`;
 }
 
-// HiperDino ya pone el tamaño en el nombre ("leche entera 1 l"); Mercadona lo da aparte ("Brik 1 l").
-const formatoDe = (p) => (p.supermercado_id === 'hiperdino' ? null : p.formato);
+// Tamaño del envase, si se sabe (los productos de tiques casi nunca lo traen aparte).
+const formatoDe = (p) => p.formato ?? null;
 
 let catalogoGlobal = null;
 const obtenerCatalogo = (sesion) => (catalogoGlobal ??= crearCatalogo(sesion.cliente));
@@ -2706,12 +2662,12 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
   const [elegir, setElegir] = useState(null);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
 
-  /** Carga los productos enlazados y busca en las webs lo que aún no tenga producto. */
+  /** Carga los productos enlazados y busca entre lo comprado (tiques) lo que aún no tenga producto. */
   const completar = async () => {
     try {
       setEstado('cargando');
       await catalogo.cargar(almacen.datos.equivalencias.map((e) => e.producto_id));
-      await catalogo.cargarLidl();
+      await catalogo.cargarDeTiques();
       const tareas = [];
       for (const item of items) {
         for (const s of SUPERS_WEB) {
@@ -2743,7 +2699,7 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
       const consultas = [...porTexto.values()];
       for (let i = 0; i < consultas.length; i += 4) {
         setEstado('buscando');
-        setMensaje(`Buscando en Mercadona e HiperDino… ${i} de ${consultas.length}`);
+        setMensaje(`Buscando en vuestros tiques… ${i} de ${consultas.length}`);
         const tanda = consultas.slice(i, i + 4);
         await catalogo.buscar(tanda.map(({ texto, supers }) => ({ texto, supers })));
         await enlazar(tanda.flatMap((c) => c.tareas));
@@ -2759,7 +2715,7 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
 
   if (!sesion) {
     return html`<${Hoja} titulo="Comparar precios" onCerrar=${onCerrar}>
-      <p>Comparar precios solo funciona en la versión compartida (con cuenta), porque hay que consultar las webs de los súper.</p>
+      <p>Comparar precios solo funciona con cuenta: los precios salen de los tiques guardados.</p>
     </${Hoja}>`;
   }
 
@@ -2767,8 +2723,8 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
     ...item,
     candidatos: Object.fromEntries(SUPERS.map(([s]) => [s, candidatosDe(datos, catalogo, item, s)])),
   })));
-  // Columnas: Mercadona e HiperDino siempre; Lidl cuando hay precios de sus tiques.
-  const columnas = SUPERS.filter(([s]) => SUPERS_WEB.includes(s) || cesta.lineas.some((l) => l.porSuper[s]));
+  // Columnas: los súper con algún precio de vuestros tiques.
+  const columnas = SUPERS.filter(([s]) => cesta.lineas.some((l) => l.porSuper[s]));
   const sueltos = columnas.filter(([s]) => !cesta.activos.includes(s) && cesta.lineas.some((l) => l.porSuper[s]));
   const rejilla = `grid-template-columns: minmax(0, 1.1fr) repeat(${columnas.length}, minmax(0, 1fr))`;
   const elegidos = cesta.lineas.flatMap((l) => Object.values(l.porSuper).map((o) => o.producto));
@@ -2793,12 +2749,12 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
                 <span>${SUPERS.filter(([s]) => s !== r.supermercado && cesta.activos.includes(s)).map(([s, n]) => `${n}: ${euros(cesta.totales[s])}`).join(' · ')}
                   ${r.diferencia > 0 && ` (${euros(r.diferencia)} más)`}</span>
                 <span>${cesta.ahorro > 0
-                  ? `Repartiendo entre los dos ahorrarías ${euros(cesta.ahorro)}: no compensa ir a dos (menos de ${AHORRO_MINIMO_PARA_REPARTIR} €).`
+                  ? `Repartiendo ahorrarías ${euros(cesta.ahorro)}: no compensa ir a dos sitios (menos de ${AHORRO_MINIMO_PARA_REPARTIR} €).`
                   : 'Repartiendo no se ahorra nada.'}</span>`}
           <small>Comparando ${cesta.comunes} de ${items.length} cosas, las que tienen precio en ${cesta.activos.map(nombreSuper).join(' y ')}.</small>
           ${sueltos.map(([s, n]) => html`<small>${n}: solo ${cesta.lineas.filter((l) => l.porSuper[s]).length} precios de vuestros tiques; cuenta en "Si repartes".</small>`)}
         </div>`}
-      ${r.tipo === 'sin_datos' && !ocupado && html`<p class="vacio">Aún no hay precios para comparar. Toca una cosa para elegir su producto.</p>`}
+      ${r.tipo === 'sin_datos' && !ocupado && html`<p class="vacio">Aún no hay precios para comparar. Llegan solos al guardar tiques en Gastos.</p>`}
 
       <div class="chips">
         <button class="chip ${vista === 'productos' ? 'activo' : ''}" onClick=${() => setVista('productos')}>Por producto</button>
@@ -2836,8 +2792,8 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
       `}
 
       ${cesta.sinPrecio.length > 0 && !ocupado && html`<p class="nota">Sin producto todavía: ${cesta.sinPrecio.map((l) => l.item.nombre).join(', ')}. Tócalo para buscarlo con otras palabras.</p>`}
-      <p class="meta">Precios de las webs de Mercadona e HiperDino para Gran Canaria${dias != null ? (dias < 1 ? ', de hoy' : `, de hace ${dias} día${dias === 1 ? '' : 's'} como mucho`) : ''}.
-        Se actualizan solos cada semana. Lidl llegará con los tiques.</p>
+      <p class="meta">Precios de vuestros tiques${dias != null ? (dias < 1 ? ', de hoy' : `, el más antiguo de hace ${dias} día${dias === 1 ? '' : 's'}`) : ''}.
+        Cada tique nuevo los pone al día.</p>
 
       ${elegir && html`<${ElegirProducto} almacen=${almacen} datos=${datos} catalogo=${catalogo} item=${elegir}
         linea=${lineaDe(elegir)} onCerrar=${() => setElegir(null)}
@@ -2846,35 +2802,16 @@ function Comparar({ almacen, datos, sesion, items, onCerrar }) {
 }
 
 function ElegirProducto({ almacen, datos, catalogo, item, linea, onCerrar, onCambio }) {
-  const [s, setS] = useState(linea?.mejor ?? SUPERS[0][0]);
+  const [s, setS] = useState(linea?.mejor ?? SUPERS[0]?.[0] ?? null);
   const [texto, setTexto] = useState(() => textoBusqueda(item.nombre, item.detalle, s));
-  const [buscado, setBuscado] = useState(null);
-  const [ocupado, setOcupado] = useState(false);
-  useEffect(() => { setTexto(textoBusqueda(item.nombre, item.detalle, s)); setBuscado(null); }, [s]);
+  useEffect(() => { setTexto(textoBusqueda(item.nombre, item.detalle, s)); }, [s]);
 
   const vale = filtroGustos(datos);
   const enlaces = datos.equivalencias.filter((e) => e.articulo_id === item.articulo_id)
     .filter((e) => catalogo.productos.get(e.producto_id)?.supermercado_id === s);
   const elegidoAMano = enlaces.some((e) => !e.auto);
   const actual = linea?.porSuper[s]?.producto;
-  const esLidl = s === 'lidl';
-  const resultados = (esLidl
-    ? catalogo.deLidl(texto)
-    : buscado ?? catalogo.buscado(s, texto) ?? enlaces.map((e) => catalogo.productos.get(e.producto_id)))
-    .filter(Boolean);
-
-  const buscar = async (e) => {
-    e?.preventDefault();
-    if (!texto.trim()) return;
-    setOcupado(true);
-    try {
-      await catalogo.buscar([{ texto: texto.trim(), supers: [s] }]);
-      setBuscado(catalogo.buscado(s, texto.trim()) ?? []);
-    } catch (err) {
-      mostrarAviso(`No se pudo buscar: ${err.message}`);
-    }
-    setOcupado(false);
-  };
+  const resultados = (s ? catalogo.deTiques(s, texto) : []).filter(Boolean);
   const elegir = async (p) => {
     await almacen.borrar('equivalencias', enlaces.map((e) => e.id));
     await almacen.insertar('equivalencias', { articulo_id: item.articulo_id, producto_id: p.id, auto: false });
@@ -2904,10 +2841,9 @@ function ElegirProducto({ almacen, datos, catalogo, item, linea, onCerrar, onCam
             <br /><small>${elegidoAMano ? 'Elegido por ti.' : 'Elegido por la app: el más barato de los que encajan.'}</small>`
         : 'Todavía no hay producto en este súper.'}</p>
       ${elegidoAMano && html`<p><button class="enlace" onClick=${queElijaLaApp}>Que elija la app (el más barato)</button></p>`}
-      ${esLidl && html`<p><small>Lidl no vende en su web: aquí salen los productos de vuestros tiques de Lidl.</small></p>`}
-      <form class="fila-campo" onSubmit=${esLidl ? (e) => e.preventDefault() : buscar}>
-        <input type="search" value=${texto} onInput=${(e) => { setTexto(e.target.value); setBuscado(null); }} />
-        ${!esLidl && html`<button class="boton" disabled=${ocupado}>${ocupado ? '…' : 'Buscar'}</button>`}
+      <p><small>Aquí salen los productos de vuestros tiques de ${s ? nombreSuper(s) : 'cada súper'}.</small></p>
+      <form class="fila-campo" onSubmit=${(e) => e.preventDefault()}>
+        <input type="search" value=${texto} onInput=${(e) => setTexto(e.target.value)} />
       </form>
       <ul class="productos">
         ${resultados.map((p) => {
@@ -2929,7 +2865,7 @@ function ElegirProducto({ almacen, datos, catalogo, item, linea, onCerrar, onCam
             </div>
           </li>`;
         })}
-        ${resultados.length === 0 && html`<li class="vacio">Busca con otras palabras (por ejemplo, la marca).</li>`}
+        ${resultados.length === 0 && html`<li class="vacio">Nada con ese nombre en vuestros tiques. Prueba con otras palabras, como sale en el tique.</li>`}
       </ul>
       ${disgustos.length > 0 && html`
         <h3>No le gusta</h3>
@@ -2937,6 +2873,70 @@ function ElegirProducto({ almacen, datos, catalogo, item, linea, onCerrar, onCam
           ${x.marca ?? catalogo.productos.get(x.producto_id)?.nombre ?? 'producto'} ✕</button>`)}</div>
         <p><small>Toca una para volver a permitirla.</small></p>`}
     </${Hoja}>`;
+}
+
+// ---------------------------------------------------------------------------
+// Supermercados de la casa: los conocidos de España y los que se escriben a mano
+// ---------------------------------------------------------------------------
+
+/** Añade un súper a los de la casa si no está (por su nombre) y devuelve su clave. */
+async function anadirSuper(almacen, datos, nombre) {
+  const limpio = mayusculaInicial(nombre.trim());
+  if (!limpio) return null;
+  const clave = claveDeNombre(limpio);
+  if (!(datos.supers ?? []).some((s) => s.clave === clave)) {
+    const cadena = CADENAS.find((c) => c[0] === clave);
+    await almacen.insertar('supers', { clave, nombre: cadena ? cadena[1] : limpio, orden: (datos.supers ?? []).length });
+  }
+  return clave;
+}
+
+/** Campo para escribir un súper (con sugerencias de cadenas conocidas) y añadirlo. */
+function NuevoSuper({ almacen, datos, onAnadido, texto = 'Añadir' }) {
+  const [nombre, setNombre] = useState('');
+  const ya = new Set(SUPERS.map((s) => s[0]));
+  const sugeridas = CADENAS.filter(([id]) => !ya.has(id));
+  const anadir = async (e) => {
+    e?.preventDefault();
+    const clave = await anadirSuper(almacen, datos, nombre);
+    if (clave) { setNombre(''); onAnadido?.(clave); }
+  };
+  return html`<form class="fila-campo nuevo-super" onSubmit=${anadir}>
+    <input list="cadenas-super" value=${nombre} placeholder="Nombre del súper o tienda" aria-label="Nombre del súper"
+      onInput=${(e) => setNombre(e.target.value)} />
+    <datalist id="cadenas-super">${sugeridas.map(([, n]) => html`<option value=${n} />`)}</datalist>
+    <button class="boton" disabled=${!nombre.trim()}>${texto}</button>
+  </form>`;
+}
+
+/** Chips para elegir el súper (de los de la casa) y, si no está, escribirlo. */
+function ChipsSuper({ almacen, datos, valor, onCambio, conNinguno = false }) {
+  const [escribir, setEscribir] = useState(false);
+  const lista = valor && !SUPERS.some((s) => s[0] === valor) ? [...SUPERS, [valor, nombreSuper(valor)]] : SUPERS;
+  return html`<div class="chips chips-super">
+      ${lista.map(([id, n]) => html`<button type="button" class="chip ${valor === id ? 'activo' : ''}" onClick=${() => onCambio(id)}>${n}</button>`)}
+      ${conNinguno && html`<button type="button" class="chip ${!valor ? 'activo' : ''}" onClick=${() => onCambio('')}>No lo sé</button>`}
+      <button type="button" class="chip" onClick=${() => setEscribir(!escribir)}>+ Otro súper</button>
+    </div>
+    ${escribir && html`<${NuevoSuper} almacen=${almacen} datos=${datos} texto="Usar"
+      onAnadido=${(clave) => { setEscribir(false); onCambio(clave); }} />`}`;
+}
+
+/** Ajustes → Mis supermercados. */
+function MisSupers({ almacen, datos }) {
+  const propios = [...(datos.supers ?? [])].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+  const deTiques = SUPERS.filter(([id]) => !propios.some((s) => s.clave === id));
+  return html`
+    <h3>Mis supermercados</h3>
+    <p class="texto-suave">Salen al revisar un tique y al ir a comprar. Los que aparecen en vuestros tiques se añaden solos.</p>
+    <ul class="filas">
+      ${propios.map((s) => html`<li><span class="nombre">${s.nombre}</span>
+        <${BotonSeguro} texto="Quitar" pregunta=${`¿Quitar ${s.nombre} de tus súper? Sus tiques no se borran.`} si="Sí, quitar"
+          onClick=${() => almacen.borrar('supers', [s.id])} /></li>`)}
+      ${deTiques.map(([id, n]) => html`<li><span class="nombre">${n}<small> · de vuestros tiques</small></span></li>`)}
+    </ul>
+    ${!propios.length && !deTiques.length && html`<p class="vacio">Aún no hay ninguno. Añade donde soléis comprar.</p>`}
+    <${NuevoSuper} almacen=${almacen} datos=${datos} />`;
 }
 
 // ---------------------------------------------------------------------------
@@ -2969,6 +2969,7 @@ function PantallaAjustes({ almacen, datos, sesion, onCerrar }) {
         <p>Los datos se guardan solo en este dispositivo y no se comparten. Sirve para probar la app.</p>
         <${BotonSeguro} texto="Borrar datos de prueba" pregunta="¿Quieres borrar todos los datos de prueba de este móvil?" onClick=${borrarPrueba} />
       `}
+      <${MisSupers} almacen=${almacen} datos=${datos} />
       <${Apariencia} />
       <${AjustesAvisos} datos=${datos} sesion=${sesion} />
       <h3>Instalar en el móvil</h3>
@@ -3016,7 +3017,7 @@ function FotoProducto({ url, clase = '', emoji = '🛒' }) {
 
 const emojiDe = (a) => iconoPasillo(a?.categoria);
 
-/** Hoja con las marcas de un artículo: sus fotos, precio, veces compradas; buscar más y foto propia (Lidl). */
+/** Hoja con las marcas de un artículo: sus fotos, precio, veces compradas; buscar entre lo comprado y foto propia. */
 function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
   const a = articulo(datos, articuloId);
   const catalogo = sesion ? obtenerCatalogo(sesion) : null;
@@ -3046,7 +3047,7 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
 
   useEffect(() => {
     if (!catalogo) return;
-    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarLidl()])
+    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarDeTiques()])
       .then(() => setListo((n) => n + 1)).catch((e) => console.error(e));
   }, [datos.equivalencias.length]);
 
@@ -3096,8 +3097,8 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
   return html`
     <${Hoja} titulo=${a.nombre} onCerrar=${onCerrar}>
       ${!sesion && html`<p class="texto-suave">Las fotos y marcas de los súper se ven con la cuenta de la casa (no en el modo de prueba).</p>`}
-      ${sesion && !marcas.length && html`<p class="texto-suave">Todavía no hay marcas de ${a.nombre}. Búscala abajo, o se irán añadiendo
-        al comparar precios y al guardar tiques de Lidl.</p>`}
+      ${sesion && !marcas.length && html`<p class="texto-suave">Todavía no hay marcas de ${a.nombre}. Se irán añadiendo al guardar tiques,
+        o búscala abajo entre lo que habéis comprado.</p>`}
       <ul class="marcas">
         ${marcas.map((m) => {
           const url = urlDeMarca(m, fotosCasa);
@@ -3111,7 +3112,6 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
               ${ver && html`<div class="ficha-marca">
                 ${Number.isFinite(m.p.precio_por_unidad) && m.p.cantidad && html`<small>${euros(m.p.precio_por_unidad).replace(' €', '')} ${etiquetaUnidad(m.p.unidad)}</small>`}
                 ${m.p.visto_en && html`<small>Precio visto el ${fechaCorta(m.p.visto_en)}</small>`}
-                ${m.p.url && html`<a class="enlace" href=${m.p.url} target="_blank" rel="noopener noreferrer">Ver en la web de ${nombreSuper(m.p.supermercado_id)} ↗</a>`}
               </div>`}
               <small>${nombreSuper(m.p.supermercado_id)}${m.p.marca ? ` · ${m.p.marca}` : ''}${formatoDe(m.p) ? ` · ${formatoDe(m.p)}` : ''}</small>
               <span>${Number.isFinite(m.p.precio) ? euros(m.p.precio) : ''}${m.veces ? html` <small>· comprado ${m.veces} ${m.veces === 1 ? 'vez' : 'veces'}</small>` : !m.e.auto ? html` <small>· elegido</small>` : html` <small>· para comparar</small>`}</span>
@@ -3134,10 +3134,10 @@ function MarcasArticulo({ almacen, datos, sesion, articuloId, onCerrar }) {
       ${sesion && html`
         <h3 class="categoria">Añadir una marca</h3>
         <form class="fila-campo" onSubmit=${(e) => { e.preventDefault(); buscar(); }}>
-          <input value=${texto} onInput=${(e) => setTexto(e.target.value)} aria-label="Buscar en Mercadona e HiperDino" />
+          <input value=${texto} onInput=${(e) => setTexto(e.target.value)} aria-label="Buscar en vuestros tiques" />
           <button class="boton" disabled=${buscando}>${buscando ? 'Buscando…' : 'Buscar'}</button>
         </form>
-        <p class="texto-suave">Busca en Mercadona e HiperDino. Las de Lidl salen de vuestros tiques; su foto la hacéis con el móvil.</p>
+        <p class="texto-suave">Busca entre lo que ha salido en vuestros tiques. La foto la hacéis con el móvil.</p>
         ${resultados && !resultados.length && html`<p class="vacio">No he encontrado nada más con ese nombre.</p>`}
         ${resultados?.length > 0 && html`<ul class="marcas">
           ${resultados.map((p) => html`<li>
@@ -3260,7 +3260,7 @@ function tituloPeriodo(inicio, periodo) {
 const nombreDe = (s) => (s && s !== 'otro' ? nombreSuper(s) : 'Otro');
 const fechaCorta = (iso) => { const [a, m, d] = iso.slice(0, 10).split('-'); return `${d}/${m}/${a}`; };
 
-/** Precio de hoy de un envase de ese artículo en un súper (el más barato de los enlazados). */
+/** Último precio pagado por un envase de ese artículo en un súper (el más barato de los enlazados). */
 function precioEnSuper(datos, catalogo) {
   return (articulo_id, s) => {
     if (!catalogo) return null;
@@ -3269,95 +3269,24 @@ function precioEnSuper(datos, catalogo) {
   };
 }
 
-/**
- * Ofertas de lo que la casa compra a menudo (Mercadona e HiperDino, con los precios que la tarea diaria
- * va mirando). Se calcula en la app al abrir y cada vez que cambian los tiques, la lista o los enlaces.
- */
-function useOfertas(datos, sesion) {
-  const [estado, setEstado] = useState({ lista: [], frecuentes: 0, mirados: 0, listo: false });
-  const frecuentes = useMemo(() => compradoAMenudo(datos), [datos.tiques, datos.tique_lineas, datos.lista]);
-  const clave = `${[...frecuentes.keys()].sort().join(',')}|${datos.equivalencias.length}|${datos.preferencias.length}`;
-  useEffect(() => {
-    if (!sesion) { setEstado({ lista: [], frecuentes: frecuentes.size, mirados: 0, listo: true }); return; }
-    const enlaces = datos.equivalencias.filter((e) => frecuentes.has(e.articulo_id));
-    if (!enlaces.length) { setEstado({ lista: [], frecuentes: frecuentes.size, mirados: 0, listo: true }); return; }
-    const catalogo = obtenerCatalogo(sesion);
-    const ids = enlaces.map((e) => e.producto_id);
-    let vivo = true;
-    Promise.all([catalogo.cargar(ids), catalogo.historial(ids, sumarDias(fechaISO(), -84))])
-      .then(([, historial]) => {
-        if (!vivo) return;
-        const lista = ofertasDe(frecuentes, enlaces, catalogo.productos, historial, { vale: filtroGustos(datos) })
-          .filter((o) => o.producto.supermercado_id !== 'lidl'); // Lidl: sus precios salen de los tiques, no de ofertas
-        setEstado({ lista, frecuentes: frecuentes.size, mirados: new Set(ids).size, listo: true });
-      })
-      .catch((e) => console.error(e));
-    return () => { vivo = false; };
-  }, [clave, !!sesion]);
-  return estado;
-}
-
-/** Tarjeta «De oferta en lo que soléis comprar», arriba de Gastos. */
-function TarjetaOfertas({ almacen, datos, ofertas }) {
-  const [abierta, setAbierta] = useState(false);
-  if (!ofertas?.listo) return null;
-  const enLista = new Set(datos.lista.filter((l) => !l.comprado).map((l) => l.articulo_id));
-  const apuntar = async (o) => {
-    await almacen.insertar('lista', { articulo_id: o.articulo_id, cantidad: null, marca: o.producto.marca ?? null,
-      origen: 'manual', comprado: false });
-    mostrarAviso(`${nombreArticulo(datos, o.articulo_id)} apuntado en la Lista.`);
-  };
-  const lidl = html`<a class="enlace" href="https://www.lidl.es/" target="_blank" rel="noopener">Ver las ofertas de Lidl en su web ↗</a>`;
-  if (!ofertas.lista.length) {
-    return html`<div class="tarjeta-ofertas tranquila">
-      <b>🏷 Ofertas</b>
-      <p class="meta">${ofertas.frecuentes === 0
-        ? 'Cuando haya unos cuantos tiques, aquí os avisaré si algo que compráis a menudo está de oferta.'
-        : ofertas.mirados === 0
-          ? 'Lo que compráis a menudo aún no está enlazado con Mercadona o HiperDino: enlazadlo desde la Lista para ver sus ofertas.'
-          : `Hoy no hay ofertas en lo que compráis a menudo (miro ${ofertas.mirados} ${ofertas.mirados === 1 ? 'producto' : 'productos'} de Mercadona e HiperDino).`}</p>
-      <p class="meta">${lidl}</p>
-    </div>`;
-  }
-  const visibles = abierta ? ofertas.lista : ofertas.lista.slice(0, 4);
-  return html`<div class="tarjeta-ofertas">
-    <b>🏷 De oferta en lo que soléis comprar</b>
-    <div class="filas-oferta">
-      ${visibles.map((o) => html`<div class="fila-oferta">
-        <${FotoProducto} url=${o.producto.imagen_url} />
-        <div class="que">
-          <span>${nombreArticulo(datos, o.articulo_id)}</span>
-          <span class="meta">${nombreSuper(o.producto.supermercado_id)} · ${o.producto.nombre}</span>
-          <span class="meta">${o.motivo === 'rebajado' ? 'Rebajado en su web' : 'Más barato de lo normal'}</span>
-        </div>
-        <div class="precio">
-          <b>${euros(o.precio)}</b><s>${euros(o.antes)}</s>
-          <span class="descuento">−${o.pct}%</span>
-          ${enLista.has(o.articulo_id)
-            ? html`<span class="meta">En la lista</span>`
-            : html`<button class="boton peq" onClick=${() => apuntar(o)}>+ Lista</button>`}
-        </div>
-      </div>`)}
-    </div>
-    ${ofertas.lista.length > 4 && html`<button class="enlace" onClick=${() => setAbierta(!abierta)}>
-      ${abierta ? 'Ver menos' : `Ver las ${ofertas.lista.length}`}</button>`}
-    <p class="meta">${lidl}</p>
-  </div>`;
-}
-
-const COLOR_SUPER = { mercadona: 'var(--c-mercadona)', hiperdino: 'var(--c-hiperdino)', lidl: 'var(--c-lidl)' };
+// Un color por súper, en el orden de los de la casa.
+const COLORES_SUPER = ['var(--c-super1)', 'var(--c-super2)', 'var(--c-super3)', 'var(--c-super4)', 'var(--c-super5)', 'var(--c-super6)'];
+const colorSuper = (s) => {
+  const i = SUPERS.findIndex((x) => x[0] === s);
+  return i >= 0 && i < COLORES_SUPER.length ? COLORES_SUPER[i] : 'var(--c-otro)';
+};
 
 /** Barras de los últimos periodos, cada súper con su color. */
 function GraficaGasto({ grupos, periodo }) {
-  const barras = barrasPorSuper(grupos, 6);
+  const barras = barrasPorSuper(grupos, 6, SUPERS.map((x) => x[0]));
   if (barras.length < 2) return null;
   const supers = [...new Set(barras.flatMap((b) => b.trozos.map((t) => t.s)))];
   return html`<div class="grafica-gasto">
-    <div class="leyenda">${supers.map((s) => html`<span><i style=${`background:${COLOR_SUPER[s] ?? 'var(--c-otro)'}`}></i>${nombreDe(s)}</span>`)}</div>
+    <div class="leyenda">${supers.map((s) => html`<span><i style=${`background:${colorSuper(s)}`}></i>${nombreDe(s)}</span>`)}</div>
     ${barras.map((b) => html`<div class="barra-gasto">
       <div class="rotulo"><span>${tituloPeriodo(b.inicio, periodo)}</span><b>${euros(b.total)}</b></div>
       <div class="barra" role="img" aria-label=${b.trozos.map((t) => `${nombreDe(t.s)} ${euros(t.valor)}`).join(', ')}>
-        ${b.trozos.map((t) => html`<span style=${`width:${t.ancho}%;background:${COLOR_SUPER[t.s] ?? 'var(--c-otro)'}`}
+        ${b.trozos.map((t) => html`<span style=${`width:${t.ancho}%;background:${colorSuper(t.s)}`}
           title=${`${nombreDe(t.s)}: ${euros(t.valor)}`}></span>`)}
       </div>
     </div>`)}
@@ -3366,7 +3295,7 @@ function GraficaGasto({ grupos, periodo }) {
 
 const ANTERIOR = { semana: 'la semana pasada', mes: 'el mes pasado', anio: 'el año pasado' };
 
-function PantallaGastos({ almacen, datos, sesion, ofertas }) {
+function PantallaGastos({ almacen, datos, sesion }) {
   // Siempre abre en «Mes»: si cada móvil recordara su periodo, uno vería la semana y otro el mes,
   // y parecería que los gastos no coinciden.
   const [periodo, setPeriodo] = useState('mes');
@@ -3387,7 +3316,7 @@ function PantallaGastos({ almacen, datos, sesion, ofertas }) {
 
   useEffect(() => {
     if (!catalogo) return;
-    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarLidl()])
+    Promise.all([catalogo.cargar(datos.equivalencias.map((e) => e.producto_id)), catalogo.cargarDeTiques()])
       .then(() => setPreciosListos(true)).catch((e) => console.error(e));
   }, [datos.equivalencias.length, datos.tiques.length]);
 
@@ -3445,9 +3374,8 @@ function PantallaGastos({ almacen, datos, sesion, ofertas }) {
         <input ref=${fichero} type="file" accept="image/*" hidden onChange=${elegirFoto} />
         <button class="enlace" onClick=${() => setRevisar({ supermercado: null, fecha: null, total: null, lineas: [] })}>o escribirlo a mano</button>
       </div>
-      <${TarjetaOfertas} almacen=${almacen} datos=${datos} ofertas=${ofertas} />
-      <p class="texto-suave">Vale para Mercadona, HiperDino y Lidl: haz una foto al tique de papel, o elige de la galería una foto o una captura
-        del tique de la app (Lidl Plus…). El texto se lee en el móvil; la foto no se guarda.</p>
+      <p class="texto-suave">Vale para cualquier súper: haz una foto al tique de papel, o elige de la galería una foto o una captura
+        del tique de la app del súper. El texto se lee en el móvil; la foto no se guarda.</p>
 
       <div class="chips periodos">
         ${Object.entries(NOMBRE_PERIODO).map(([p, n]) => html`
@@ -3468,11 +3396,11 @@ function PantallaGastos({ almacen, datos, sesion, ofertas }) {
               <div><span>${nombreDe(s)}</span><b>${euros(v)}</b></div>`)}
           </div>
           ${ahorro && (ahorro.ahorro >= 0.5
-            ? html`<p class="ahorro">Comprando cada cosa donde hoy está más barata, habríais pagado <b>${euros(ahorro.ahorro)}</b> menos.</p>
+            ? html`<p class="ahorro">Con lo que os costó en otros súper, comprando cada cosa donde salió más barata habríais pagado <b>${euros(ahorro.ahorro)}</b> menos.</p>
                 <ul class="lista-simple ahorro-detalle">
                   ${ahorro.detalle.slice(0, 5).map((x) => html`<li>${x.texto}: ${euros(x.pagado)} → ${euros(x.precio)} en ${nombreSuper(x.en)}</li>`)}
                 </ul>`
-            : ahorro.pagado > 0 && html`<p class="ahorro bien">Buena compra: con los precios de hoy no habríais ahorrado casi nada en otro súper.</p>`)}
+            : ahorro.pagado > 0 && SUPERS.length > 1 && html`<p class="ahorro bien">Buena compra: por lo que os costó en otros súper, no habríais ahorrado casi nada.</p>`)}
         </div>`}
       ${categorias.length > 0 && html`
         <h3 class="categoria">En qué se va</h3>
@@ -3582,11 +3510,9 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
 
   return html`
     <${Hoja} titulo="Revisar el tique" onCerrar=${onCerrar}>
+      <label class="meta">¿De qué súper es?</label>
+      <${ChipsSuper} almacen=${almacen} datos=${datos} valor=${superId} onCambio=${setSuper} conNinguno=${true} />
       <div class="fila-campo">
-        <select value=${superId} onChange=${(e) => setSuper(e.target.value)} aria-label="Supermercado">
-          ${SUPERS.map(([s, n]) => html`<option value=${s}>${n}</option>`)}
-          <option value="">Otro</option>
-        </select>
         <input type="date" value=${fecha} onInput=${(e) => setFecha(e.target.value)} aria-label="Fecha" />
         <input type="time" class="hora" value=${hora} onInput=${(e) => setHora(e.target.value)} aria-label="Hora" />
       </div>
@@ -3617,7 +3543,7 @@ function RevisarTique({ almacen, datos, sesion, leido, onCerrar }) {
       </div>
       <label class="casilla"><input type="checkbox" checked=${marcar} onChange=${(e) => setMarcar(e.target.checked)} />
         Tachar de la lista lo que ya está comprado</label>
-      ${superId === 'lidl' && html`<p class="nota">Los precios de este tique se usarán para comparar Lidl con los otros súper.</p>`}
+      ${superId && html`<p class="nota">Los precios de este tique se guardan para saber lo que os cuesta cada cosa en ${nombreSuper(superId)}.</p>`}
       <div class="pie">
         ${repetido && html`<div class="repetido">
           <b>⚠ Este tique parece que ya está guardado</b>
@@ -3747,11 +3673,11 @@ function App({ almacen, sesion }) {
   const nLista = useMemo(() => faltas(datos, hoy, sumarDias(hoy, leerPlazo() - 1)).length
     + datos.lista.filter(pendienteManual).length, [datos, pestana]);
 
-  const ofertas = useOfertas(datos, sesion);
-  const nOfertas = ofertas.lista.filter((o) => !datos.lista.some((l) => !l.comprado && l.articulo_id === o.articulo_id)).length;
+  // Súper de la casa (los elegidos y los de sus tiques), antes de pintar nada.
+  ponerSupers(datos);
 
   const props = {
-    almacen, datos, sesion, ofertas,
+    almacen, datos, sesion,
     abrirReceta: (id, raciones) => setReceta({ id, raciones }),
     irA: setPestana,
     editarReceta: (id, fotos = null) => { setCapturas(fotos); setEditando(id); },
@@ -3774,7 +3700,7 @@ function App({ almacen, sesion }) {
     <nav class="pestanas">
       ${PESTANAS.map(([id, nombre, ico]) => html`
         <button class=${pestana === id ? 'activa' : ''} aria-current=${pestana === id ? 'page' : null} onClick=${() => setPestana(id)}>
-          <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}${id === 'gastos' && nOfertas > 0 && html`<b class="globo oferta" aria-label=${`${nOfertas} ofertas`}>${nOfertas}</b>`}</span>${nombre}
+          <span class="ico">${ico}${id === 'lista' && nLista > 0 && html`<b class="globo">${nLista}</b>`}</span>${nombre}
         </button>`)}
     </nav>
     ${receta && html`<${VerReceta} ...${props} id=${receta.id} racionesIniciales=${receta.raciones}

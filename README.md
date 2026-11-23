@@ -31,20 +31,17 @@ App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
   - `0002_fase1.sql`: código de invitación, despensa, recetas, plan, lista y, ya preparadas para más adelante, las tablas de **tiques** (foto del tique, líneas con precio, enlace al producto del súper y al artículo) para el resumen de gastos y ahorro.
 - `test/`: pruebas (`npm test`) y pruebas de permisos de la base de datos (`sql-pruebas.sql`).
 
-## Comparar precios (fase 2)
+## Precios y supermercados (desde la versión 44)
 
-- **Dictar la lista**: en Lista se puede escribir o dictar una frase entera ("necesito aceite, sal, leche puleva y 2 kilos de papas").
-  La app la separa en cosas sueltas, con cantidad y marca o tipo (`web/src/comparar.js`, `entenderDictado`).
-- **¿Dónde sale más barato?**: para cada cosa busca su producto en Mercadona (precios de Gran Canaria) e HiperDino,
-  elige el más barato de los que encajan (o el que ella elija a mano, que se recuerda) y calcula el total en cada súper
-  y cuánto se ahorra repartiendo. Solo recomienda ir a dos súper si se ahorran 3 € o más.
-- **"No me gusta"**: una marca marcada así no se vuelve a proponer.
-- **De dónde salen los precios**: la función `precios` de Supabase (`supabase/functions/precios/`) es la única que habla
-  con las webs de los súper. Solo busca cuando hay una cosa nueva sin producto, y cada día a las 04:00 (UTC) refresca los
-  productos enlazados cuyo precio tiene más de 6 días: cada producto se consulta como mucho una vez por semana.
-  Si un súper cambia su web, se arregla su bloque en `lectores.ts`.
-- **Lidl** no tiene web de precios: sus precios salen de los tiques que se guardan (ver abajo). En la comparación
-  aparece cuando hay precios de Lidl para al menos la mitad de la lista; si no, cuenta solo en "Si repartes".
+- **La app no lee ninguna web de supermercados** (decidido el 23/11/2026, para poder venderla). Se quitó la función
+  `precios` y su tarea diaria; los precios que se leyeron de las webs ya no cuentan (`precio_actual` solo ve los de tiques
+  o puestos a mano). Migración `0014_sin_webs_super_libres.sql`.
+- **Todos los precios salen de los tiques** de cada casa, y lo aprendido de los tiques de una casa solo lo ve esa casa.
+- **Supermercados libres** (`web/src/supers.js`): cadenas de toda España reconocidas en el tique y súper escritos a mano.
+  Ajustes → Mis supermercados, al revisar un tique o al ir a comprar.
+- **¿Dónde sale más barato?** compara con lo que la casa pagó en cada súper. **Dictar la lista** y **"No me gusta"** siguen igual.
+- El código de barras se consulta en Open Food Facts (base de datos abierta), desde el móvil.
+- **Recetario de la app** (en preparación, `recetario/`): índice de platos y recetas escritas para la app.
 
 ## Tiques y gastos (fase 3)
 
@@ -53,9 +50,9 @@ App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
   la foto no se sube a ningún sitio. `web/src/tiques.js` saca súper, fecha, total y líneas (cantidades, peso, descuentos).
 - Antes de guardar se revisa: cada línea se puede corregir y enlazar a un artículo de la casa (se propone solo).
   Al guardar se puede tachar de la lista lo comprado.
-- La función `guardar_tique` (`supabase/migrations/0004_tiques.sql`) guarda el tique y, si es de Lidl, crea el producto
-  de Lidl con su precio y lo enlaza con el artículo: así Lidl entra en la comparación.
-- Vale para tiques de Mercadona, HiperDino y Lidl (papel o captura de la app).
+- La función `guardar_tique` (versión de la migración `0014`) guarda el tique y convierte cada línea en un producto de ese
+  súper para esa casa, con su precio, enlazado al artículo.
+- Vale para tiques de cualquier súper (papel o captura de la app del súper).
 - Resumen por semana, mes y año, por súper y por sección, y cuánto se habría ahorrado comprando cada cosa donde hoy está más barata.
 - "Descargar todos los gastos" baja un CSV (se abre en Excel) con una fila por cosa comprada, para hacer informes.
 
