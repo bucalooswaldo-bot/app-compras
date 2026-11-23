@@ -7,13 +7,84 @@ import { normalizar } from './logica.js';
 import { emparejarIngrediente, adivinarCategoria } from './ingredientes.js';
 
 let promesa = null;
-/** Carga el recetario una vez (se guarda en el móvil con el resto de la app). */
-export function cargarRecetario() {
-  promesa ??= fetch(new URL('../recetario.json', import.meta.url))
-    .then((r) => { if (!r.ok) throw new Error(`recetario ${r.status}`); return r.json(); })
-    .then((d) => d.recetas)
+let clienteRecetario = null;
+const oyentes = new Set();
+
+/** Cambios hechos al recetario (Supabase, tabla recetario_cambios) puestos encima de web/recetario.json. */
+export function conCambios(base, cambios, urlFoto = (ruta) => ruta) {
+  const porId = new Map(cambios.map((c) => [c.id, c]));
+  return base.map((r) => {
+    const c = porId.get(r.id);
+    if (!c) return r;
+    return {
+      ...r, ...(c.receta ?? {}), id: r.id, foto: c.foto ? urlFoto(c.foto) : null, revisada: !!c.revisada, oculta: !!c.oculta,
+      _corregida: c.receta ?? null, _fotoRuta: c.foto ?? null,
+    };
+  });
+}
+
+const urlFotoRecetario = (ruta) => (clienteRecetario && !/^(https?:|data:)/.test(ruta)
+  ? clienteRecetario.storage.from('recetario').getPublicUrl(ruta).data.publicUrl : ruta);
+
+/**
+ * Carga el recetario una vez (se guarda en el móvil con el resto de la app) con las correcciones y fotos
+ * que se le han hecho. Sin conexión con Supabase (modo prueba o sin red) sale el recetario tal cual.
+ */
+export function cargarRecetario(cliente = clienteRecetario) {
+  if (cliente && cliente !== clienteRecetario) { clienteRecetario = cliente; promesa = null; }
+  promesa ??= Promise.all([
+    fetch(new URL('../recetario.json', import.meta.url))
+      .then((r) => { if (!r.ok) throw new Error(`recetario ${r.status}`); return r.json(); }),
+    clienteRecetario
+      ? clienteRecetario.from('recetario_cambios').select('*').then(({ data, error }) => {
+        if (error) { console.error(error); return []; }
+        return data;
+      }, (e) => { console.error(e); return []; })
+      : [],
+  ])
+    .then(([d, cambios]) => { for (const r of d.recetas) bases.set(r.id, r); return conCambios(d.recetas, cambios, urlFotoRecetario); })
     .catch((e) => { promesa = null; throw e; });
   return promesa;
+}
+
+/** La conexión con Supabase para leer las correcciones del recetario (se pone al entrar en la casa). */
+export function ponerClienteRecetario(cliente) {
+  if (cliente !== clienteRecetario) { clienteRecetario = cliente; promesa = null; }
+}
+
+/** Avisa cuando el recetario cambia (al guardar una corrección). Devuelve cómo dejar de escuchar. */
+export function escucharRecetario(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
+
+/** ¿Esta cuenta puede corregir el recetario? */
+export async function esEditorRecetario(cliente) {
+  if (!cliente) return false;
+  const { data, error } = await cliente.from('recetario_editores').select('user_id').limit(1);
+  return !error && data.length > 0;
+}
+
+/** Sube la foto de una receta del recetario (ya reducida) y devuelve su ruta. */
+export async function subirFotoRecetario(cliente, id, blob) {
+  const ruta = `${id}/${crypto.randomUUID()}.jpg`;
+  const { error } = await cliente.storage.from('recetario').upload(ruta, blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+  if (error) throw error;
+  return ruta;
+}
+
+/** La receta como estaba en web/recetario.json (para volver a aplicarle una corrección nueva). */
+const bases = new Map();
+const original = (r) => bases.get(r.id) ?? r;
+
+/** Guarda la corrección de una receta del recetario y la pone ya en el recetario cargado. */
+export async function guardarCambioRecetario(cliente, cambio) {
+  const fila = { ...cambio, actualizado: new Date().toISOString() };
+  const { error } = await cliente.from('recetario_cambios').upsert(fila);
+  if (error) throw error;
+  if (promesa) {
+    const lista = await promesa;
+    const nuevas = conCambios(lista.map((r) => (r.id === fila.id ? original(r) : r)), [fila], urlFotoRecetario);
+    promesa = Promise.resolve(nuevas);
+    for (const fn of oyentes) fn(nuevas);
+  }
 }
 
 /** Los mismos alimentos con otro nombre (en Canarias "papas" y "millo"). */
@@ -66,6 +137,7 @@ export function prepararGuardado(articulos, receta, id = crypto.randomUUID()) {
   const fila = {
     id, nombre: receta.nombre, raciones: receta.raciones, tiempo_min: receta.tiempo_min ?? null,
     pasos: pasosDeTexto(receta), etiquetas: receta.etiquetas ?? [], favorita: false, origen: 'app', catalogo_id: receta.id,
+    foto_path: receta.foto ?? null,
   };
   return { articulos: nuevos, receta: fila, ingredientes };
 }
@@ -85,8 +157,25 @@ export async function guardarDelRecetario(almacen, receta, cambios = {}) {
   return fila;
 }
 
+/**
+ * Si la casa ya tiene copiada una receta del recetario que se acaba de corregir, la copia se pone igual
+ * (nombre, raciones, pasos, foto e ingredientes); lo de la casa (favorita, plan) no se toca.
+ */
+export async function actualizarCopiaDeCasa(almacen, receta) {
+  const ya = recetaGuardada(almacen.datos, receta.id);
+  if (!ya) return false;
+  const g = prepararGuardado(almacen.datos.articulos, receta, ya.id);
+  const { id, favorita, origen, catalogo_id, ...cambios } = g.receta;
+  await almacen.actualizar('recetas', ya.id, cambios);
+  const viejos = almacen.datos.ingredientes.filter((i) => i.receta_id === ya.id).map((i) => i.id);
+  if (viejos.length) await almacen.borrar('ingredientes', viejos);
+  if (g.articulos.length) await almacen.insertar('articulos', g.articulos);
+  if (g.ingredientes.length) await almacen.insertar('ingredientes', g.ingredientes);
+  return true;
+}
+
 /** Busca en el recetario por nombre, ingrediente o etiqueta; los que empiezan por lo buscado, primero. */
-export function buscarEnRecetario(recetas, texto, tipo = null) {
+export function buscarEnRecetario(recetas, texto, tipo = null, verOcultas = false) {
   const q = normalizar(texto ?? '').trim();
   const puntos = (r) => {
     if (!q) return 1;
@@ -98,7 +187,7 @@ export function buscarEnRecetario(recetas, texto, tipo = null) {
     return 0;
   };
   return recetas
-    .filter((r) => !tipo || r.tipo === tipo)
+    .filter((r) => (!tipo || r.tipo === tipo) && (verOcultas || !r.oculta))
     .map((r) => [r, puntos(r)]).filter(([, p]) => p > 0)
     .sort((a, b) => (b[1] - a[1]) || a[0].nombre.localeCompare(b[0].nombre, 'es'))
     .map(([r]) => r);
