@@ -17,7 +17,7 @@ Ensalada de garbanzos; Ensalada de alubias blancas; Lentejas con arroz integral;
 Cocido montañés; Pote asturiano; Potaje de garbanzos con bacalao y espinacas; Lentejas a la riojana; Garbanzos fritos con jamón;
 Falafel al horno; Hamburguesas de lentejas; Albóndigas de garbanzos; Chili de alubias; Alubias con oreja;
 Guiso de soja texturizada; Garbanzos tostados con especias; Crema de lentejas; Lentejas con setas; Garbanzos con tomate y huevo;
-Alubias verdes con jamón; Potaje de habichuelas; Michirones; Fabes con bacalao; Cocido maragato;
+Alubias verdes con jamón; Potaje de habichuelas; Fabes con bacalao; Cocido maragato;
 Gazpacho manchego; Patatas a la riojana; Patatas con costillas; Patatas guisadas con sepia; Marmitako;
 Patatas con bacalao; Patatas con carne; Patatas a la importancia; Guiso de patatas con calamares; Patatas con chorizo y huevo;
 Caldereta de patatas y conejo; Ajoarriero; Patatas en salsa verde; Patatas viudas; Guiso de patatas con pollo;
@@ -34,9 +34,9 @@ Crema de espinacas; Crema de verduras; Crema de tomate asado; Crema de pimientos
 Crema de boniato; Crema de berenjena asada; Crema de garbanzos; Crema de marisco; Crema de pollo;
 Crema de castañas; Crema de apio y manzana; Crema de remolacha; Crema de setas; Salmorejo;
 Gazpacho andaluz; Ajoblanco; Gazpacho de sandía; Gazpacho de remolacha; Porra antequerana;
-Sopa de miso con tofu; Sopa de verduras con pasta; Sopa de arroz; Sopa de calabaza y coco; Sopa castellana con huevo;
-Sopa de lentejas rojas; Caldo de huesos; Sopa de pescado y fideos; Crema de calabacín y queso; Crema fría de pepino y yogur;
-Crema de lombarda; Crema de puerro y patata; Sopa de tortilla; Sopa de cebolla y queso; Sopa de pollo y verduras
+Sopa de miso con tofu; Sopa de verduras con pasta; Sopa de arroz; Sopa de calabaza y coco;
+Sopa de lentejas rojas; Caldo de huesos; Sopa de pescado y fideos; Crema fría de pepino y yogur;
+Crema de lombarda; Sopa de tortilla; Sopa de cebolla y queso; Sopa de pollo y verduras
 """,
   'Arroces': """
 Paella valenciana; Paella de marisco; Paella mixta; Arroz negro; Arroz a banda;
@@ -49,7 +49,7 @@ Arroz con pollo al curry; Arroz con costra; Arroz con sepia y alcachofa; Arroz c
 Arroz caldoso de verduras; Arroz con conejo y caracoles; Arroz con pato; Arroz con chorizo; Arroz con mejillones;
 Arroz meloso de carrillera; Arroz con pulpo; Arroz con secreto ibérico; Arroz con huevo frito; Ensalada de arroz;
 Arroz con calabaza y garbanzos; Arroz con boletus; Fideuá; Fideuá negra; Arroz integral salteado con verduras;
-Arroz pilaf; Arroz con pimientos y bacalao; Arroz con almejas; Arroz con pollo y verduras al horno; Arroz con salmón;
+Arroz pilaf; Arroz con pimientos y bacalao; Arroz con almejas; Arroz con salmón;
 Arroz basmati con pollo especiado; Arroz meloso de gambas; Arroz con coliflor; Arroz con rape; Arroz con habas
 """,
   'Pasta': """
@@ -79,7 +79,7 @@ Pollo tikka masala; Pollo con cacahuete; Brochetas de pollo; Fajitas de pollo; B
 Pollo al pimentón; Pollo al romero; Pollo con ciruelas; Pollo en salsa de almendras; Pollo agridulce;
 Pollo con arroz y verduras al horno; Pollo con calabaza; Pollo con aceitunas; Pollo con salsa de queso; Pollo al horno con limón y hierbas;
 Pollo en papillote; Pollo al chocolate; Pollo con setas y nata; Pollo a la cazadora; Pollo con alcachofas;
-Pollo con salsa barbacoa; Albóndigas de pollo; Hamburguesas de pollo; Croquetas de pollo; Pollo desmenuzado para bocadillos;
+Pollo con salsa barbacoa; Albóndigas de pollo; Hamburguesas de pollo; Pollo desmenuzado para bocadillos;
 Ensalada de pollo; Pollo al horno con boniato; Pollo con garbanzos y especias; Pollo frito crujiente; Pollo al pil pil;
 Pavo al horno; Pavo guisado con verduras; Filetes de pavo con salsa de champiñones; Pavo al curry; Albóndigas de pavo;
 Rollitos de pavo con espárragos; Pavo a la plancha con salsa de yogur; Pavo con pimientos; Hamburguesas de pavo; Pavo salteado con verduras
@@ -117,9 +117,8 @@ Atún encebollado; Atún con tomate; Atún a la plancha; Bonito con tomate; Empe
 Pez espada en salsa; Gallo empanado; Lenguado a la meunière; Rodaballo al horno; Besugo al horno;
 Cherne en salsa; Sama al horno; Vieja sancochada; Merluza a la koskera; Dorada a la sal;
 Pescado al horno con verduras; Albóndigas de pescado; Hamburguesas de salmón; Pastel de pescado; Pastel de cabracho;
-Calamares a la romana; Calamares en su tinta; Calamares encebollados; Sepia a la plancha; Sepia con guisantes;
-Pulpo a la gallega; Pulpo a la plancha; Chipirones a la plancha; Chipirones en su tinta; Choco con patatas;
-Rosada al horno; Panga con verduras; Abadejo con pisto; Truchas a la navarra; Fletán al horno;
+Calamares a la romana; Calamares en su tinta; Calamares encebollados; Sepia a la plancha; Sepia con guisantes; Pulpo a la plancha; Chipirones a la plancha; Choco con patatas;
+Rosada al horno; Panga con verduras; Abadejo con pisto; Fletán al horno;
 Merluza con pimientos; Salmón con verduras al horno; Bacalao con garbanzos; Pescado en salsa de tomate; Ventresca con pimientos
 """,
   'Marisco': """
@@ -153,7 +152,7 @@ Patatas panaderas; Patatas bravas; Patatas fritas caseras; Patatas al horno con 
 Patatas gratinadas; Patatas rellenas; Patatas a lo pobre; Patatas con alioli; Patatas cocidas con mojo;
 Lombarda con manzana; Repollo rehogado; Coles de Bruselas al horno; Guisantes con jamón; Habas con jamón;
 Hamburguesas de verduras; Croquetas de verduras; Buñuelos de calabacín; Tempura de verduras; Pastel de verduras;
-Quiche de verduras; Flan de verduras; Pudin de calabacín; Calabacín relleno de verduras y queso; Champiñones rellenos
+Quiche de verduras; Flan de verduras; Pudin de calabacín; Calabacín relleno de verduras y queso
 """,
   'Ensaladas': """
 Ensalada mixta; Ensalada de tomate; Ensalada de tomate y ventresca; Ensalada campera; Ensaladilla rusa;
@@ -164,7 +163,7 @@ Ensalada de canónigos; Ensalada de aguacate y tomate; Ensalada de pepino y yogu
 Ensalada de remolacha; Ensalada de naranja y bacalao; Remojón granadino; Pipirrana; Ensalada murciana;
 Esqueixada; Xató; Ensalada de pimientos asados; Ensalada de salmón ahumado; Ensalada de marisco;
 Ensalada de pollo al curry; Ensalada de frutas y queso fresco; Ensalada de manzana y nueces; Ensalada tibia de setas; Ensalada de mango y gambas;
-Ensalada de tomate y queso fresco; Ensalada de pasta con pesto; Ensalada de arroz y verduras; Ensalada de alubias rojas; Ensalada de lechuga y cebolla;
+Ensalada de tomate y queso fresco; Ensalada de pasta con pesto; Ensalada de alubias rojas; Ensalada de lechuga y cebolla;
 Ensalada de berenjena asada; Ensalada de patata y huevo; Ensalada de brócoli; Ensalada de calabacín crudo; Ensalada de tomate y aguacate con mango
 """,
   'Cenas rápidas y bocadillos': """
@@ -175,7 +174,7 @@ Wrap de pollo; Wrap vegetal; Quesadillas; Tacos de pollo; Nachos con queso;
 Perritos calientes caseros; Hamburguesa completa; Pita de pollo; Pita de falafel; Kebab casero;
 Pizza margarita casera; Pizza de jamón y champiñones; Pizza barbacoa; Pizza de verduras; Pizza de atún;
 Pan pizza; Cena de tortilla y ensalada; Croquetas de jamón; Empanadillas de atún; Empanadillas de carne;
-Sopa rápida de verduras; Huevos revueltos con pan; Salteado de pollo y verduras; Fajitas de verduras; Pasta rápida con tomate;
+Sopa rápida de verduras; Salteado de pollo y verduras; Fajitas de verduras;
 Tosta de queso de cabra y cebolla; Molletes con tomate; Sándwich de atún; Bocadillo de pechuga; Hamburguesa vegetal;
 Crepes salados de jamón y queso; Revuelto de calabacín; Montaditos variados; Sándwich de salmón y queso crema; Tostas de pisto
 """,
@@ -205,9 +204,8 @@ Pescaíto frito; Cazón en adobo; Rabo de toro cordobés; Flamenquín cordobés;
 Caldereta extremeña; Caldero murciano; Michirones murcianos; Zarangollo; Pastel de carne murciano;
 Fritura malagueña; Empedrat; Fricandó; Suquet de peix; Caparrones;
 Tumbet mallorquín; Sobrasada con miel; Frit mallorquí; Pulpo con cachelos; Lacón con grelos;
-Zorza con patatas; Caldereta de langosta; Fabada con almejas; Cachopo asturiano; Sopa castellana;
-Cochinillo asado; Lechazo asado; Judiones con chorizo; Patatas revolconas; Pisto con huevo;
-Ajo blanco malagueño; Gazpachuelo; Porra con huevo y jamón; Papas a lo pobre andaluzas; Pipirrana jaenera
+Zorza con patatas; Caldereta de langosta;
+Cochinillo asado; Judiones con chorizo; Patatas revolconas; Pisto con huevo; Gazpachuelo
 """,
   'Tapas y entrantes': """
 Croquetas de jamón ibérico; Calamares fritos; Patatas con salsa brava y alioli; Champiñones a la plancha; Pimientos de padrón fritos;
@@ -216,8 +214,7 @@ Chorizo al vino; Morcilla frita; Queso frito; Berenjenas con miel de caña; Croq
 Huevos rotos con pimientos; Tabla de quesos; Pan con tomate y jamón; Aceitunas aliñadas; Patatas aliñadas;
 Mejillones rellenos; Pulpo a feira; Sepia con alioli; Montaditos de lomo; Rollitos de jamón y queso;
 Montaditos de anchoa; Tostas de sardina; Dátiles con bacon; Pinchos de pollo; Tosta de escalivada;
-Paté casero de higaditos; Paté de atún; Paté de aceitunas; Guacamole; Salsa de yogur con pepino;
-Crema de berenjena; Champiñones rellenos de jamón; Huevos de codorniz con jamón; Mini hamburguesas; Brochetas caprese;
+Paté casero de higaditos; Paté de atún; Paté de aceitunas; Guacamole; Salsa de yogur con pepino; Champiñones rellenos de jamón; Huevos de codorniz con jamón; Mini hamburguesas; Brochetas caprese;
 Rollitos de primavera caseros; Empanadillas de pisto; Buñuelos de queso; Palitos de queso; Tostadas de hummus;
 Ensaladilla de pulpo; Salpicón de pulpo; Hojaldritos de salchicha; Volovanes de marisco; Tartaletas de atún
 """,
