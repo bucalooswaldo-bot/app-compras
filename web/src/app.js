@@ -38,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 48;
+const VERSION_APP = 50;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -2360,6 +2360,8 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
         <button class="boton grande" onClick=${alCarro}>${fila.comprado ? 'Guardar' : 'Al carro'}${total != null ? ` · ${euros(total)}` : ''}</button>
       </div>`}
 
+    ${!compra && (fila.tipo === 'manual' || fila.tipo === 'auto') && html`<${CamposLista} almacen=${almacen} datos=${datos} fila=${fila} onCerrar=${onCerrar} />`}
+
     <h3>Precio en cada súper</h3>
     ${!catalogo && html`<p class="meta">En la versión de prueba no hay precios.</p>`}
     ${catalogo && conPrecio.length === 0 && html`<p class="meta">Todavía no hay precios para esto. Llegan solos al guardar los tiques.</p>`}
@@ -2374,7 +2376,6 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
     </ul>`}
 
     ${!compra && fila.tipo === 'auto' && html`<button class="boton grande" onClick=${() => { onHoy(fila); onCerrar(); }}>Pasar a la compra de hoy</button>`}
-    ${!compra && fila.tipo === 'manual' && html`<${CamposLista} almacen=${almacen} datos=${datos} fila=${fila} onCerrar=${onCerrar} />`}
 
     ${cambiar && catalogo && html`<${ElegirProducto} almacen=${almacen} datos=${datos} catalogo=${catalogo} item=${item}
       linea=${{ mejor: cambiar, porSuper: Object.fromEntries(otros.filter((x) => x.o).map((x) => [x.id, x.o])) }}
@@ -2618,14 +2619,19 @@ function CamposLista({ almacen, datos, fila, onCerrar }) {
   const [cantidad, setCantidad] = useState(fila.cantidad);
   const [marca, setMarca] = useState(fila.marca ?? '');
   const guardar = async () => {
-    await almacen.actualizar('lista', fila.id, { cantidad, marca: marca.trim() || null });
+    const cambios = { cantidad, marca: marca.trim() || null };
+    // Lo que sale de las recetas no está guardado: al cambiarlo se apunta (con lo elegido) y deja de calcularse solo.
+    if (fila.tipo === 'auto') await almacen.insertar('lista', { articulo_id: fila.articulo_id, ...cambios, origen: 'manual', comprado: false, para_hoy: false });
+    else await almacen.actualizar('lista', fila.id, cambios);
     onCerrar();
   };
-  return html`<h3>En la lista</h3>
+  return html`<h3>Cantidad y nota</h3>
     <label>Cantidad</label>
     <${CampoCantidad} unidad=${a?.unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Sin indicar" />
-    <label>Marca o tipo (opcional)
-      <input placeholder="Por ejemplo: Puleva, sin lactosa…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
+    ${fila.tipo === 'auto' && fila.cantidad != null && html`<p class="meta">Las recetas piden ${formatoCantidad(fila.cantidad, a?.unidad)}.</p>`}
+    <label>Marca o nota (opcional)
+      <input placeholder="Por ejemplo: Puleva, sin lactosa, la grande…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
+    <p class="meta">Sale así en la lista, en WhatsApp y en el enlace.</p>
     <button class="boton grande" onClick=${guardar}>Guardar</button>`;
 }
 
@@ -3715,6 +3721,29 @@ export function ProponerSemana({ almacen, datos, sesion, desde, onCerrar }) {
 // ---------------------------------------------------------------------------
 const PESTANAS = [['inicio', 'Inicio', '🏠'], ['plan', 'Plan', '📅'], ['recetas', 'Recetas', '📖'], ['despensa', 'Despensa', '🧺'], ['lista', 'Lista', '🛒'], ['gastos', 'Gastos', '💶']];
 
+/**
+ * Aviso cuando quien compra con el enlace de WhatsApp pulsa «He terminado».
+ * Se queda hasta que alguien de la casa toca «Vale» (o «Ver la lista»).
+ */
+function CompraTerminada({ almacen, datos, irA }) {
+  const terminadas = (datos.compartidas ?? []).filter((e) => e.terminada_en && !e.visto)
+    .sort((a, b) => b.terminada_en.localeCompare(a.terminada_en));
+  if (!terminadas.length) return null;
+  const e = terminadas[0];
+  const hora = new Date(e.terminada_en).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const visto = () => Promise.all(terminadas.map((x) => almacen.actualizar('compartidas', x.id, { visto: true }))).catch(console.error);
+  const faltan = (e.total ?? 0) - (e.cogidas ?? 0);
+  return html`<div class="compra-terminada" role="status">
+    <p><b>✅ Compra terminada</b> · ${e.titulo}, a las ${hora}</p>
+    <p class="meta">Han cogido ${e.cogidas} de ${e.total}.${faltan > 0
+      ? ` ${faltan === 1 ? 'Lo que falta sigue' : `Las ${faltan} que faltan siguen`} en la lista.` : ' ¡Todo!'}</p>
+    <div class="acciones">
+      <button class="boton" onClick=${() => { visto(); irA('lista'); }}>Ver la lista</button>
+      <button class="boton secundario" onClick=${visto}>Vale</button>
+    </div>
+  </div>`;
+}
+
 function App({ almacen, sesion }) {
   const [datos, setDatos] = useState(almacen.datos);
   // Al abrir la app se empieza en Inicio (o en la pestaña que pida un aviso del móvil).
@@ -3770,6 +3799,7 @@ function App({ almacen, sesion }) {
       onCerrar=${() => setReceta(null)} onEditar=${(id) => { setReceta(null); setEditando(id); }} />`}
     ${editando !== undefined && html`<${EditarReceta} ...${props} id=${editando} capturas=${capturas}
       onCerrar=${(id) => { setEditando(undefined); setCapturas(null); if (id) setReceta({ id }); }} />`}
+    ${almacen.cargado && html`<${CompraTerminada} almacen=${almacen} datos=${datos} irA=${setPestana} />`}
     ${ajustes && html`<${PantallaAjustes} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setAjustes(false)} />`}
     <${Aviso} />`;
 }
