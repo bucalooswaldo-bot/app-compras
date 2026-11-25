@@ -38,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 48;
+const VERSION_APP = 49;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -3715,6 +3715,29 @@ export function ProponerSemana({ almacen, datos, sesion, desde, onCerrar }) {
 // ---------------------------------------------------------------------------
 const PESTANAS = [['inicio', 'Inicio', '🏠'], ['plan', 'Plan', '📅'], ['recetas', 'Recetas', '📖'], ['despensa', 'Despensa', '🧺'], ['lista', 'Lista', '🛒'], ['gastos', 'Gastos', '💶']];
 
+/**
+ * Aviso cuando quien compra con el enlace de WhatsApp pulsa «He terminado».
+ * Se queda hasta que alguien de la casa toca «Vale» (o «Ver la lista»).
+ */
+function CompraTerminada({ almacen, datos, irA }) {
+  const terminadas = (datos.compartidas ?? []).filter((e) => e.terminada_en && !e.visto)
+    .sort((a, b) => b.terminada_en.localeCompare(a.terminada_en));
+  if (!terminadas.length) return null;
+  const e = terminadas[0];
+  const hora = new Date(e.terminada_en).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  const visto = () => Promise.all(terminadas.map((x) => almacen.actualizar('compartidas', x.id, { visto: true }))).catch(console.error);
+  const faltan = (e.total ?? 0) - (e.cogidas ?? 0);
+  return html`<div class="compra-terminada" role="status">
+    <p><b>✅ Compra terminada</b> · ${e.titulo}, a las ${hora}</p>
+    <p class="meta">Han cogido ${e.cogidas} de ${e.total}.${faltan > 0
+      ? ` ${faltan === 1 ? 'Lo que falta sigue' : `Las ${faltan} que faltan siguen`} en la lista.` : ' ¡Todo!'}</p>
+    <div class="acciones">
+      <button class="boton" onClick=${() => { visto(); irA('lista'); }}>Ver la lista</button>
+      <button class="boton secundario" onClick=${visto}>Vale</button>
+    </div>
+  </div>`;
+}
+
 function App({ almacen, sesion }) {
   const [datos, setDatos] = useState(almacen.datos);
   // Al abrir la app se empieza en Inicio (o en la pestaña que pida un aviso del móvil).
@@ -3770,6 +3793,7 @@ function App({ almacen, sesion }) {
       onCerrar=${() => setReceta(null)} onEditar=${(id) => { setReceta(null); setEditando(id); }} />`}
     ${editando !== undefined && html`<${EditarReceta} ...${props} id=${editando} capturas=${capturas}
       onCerrar=${(id) => { setEditando(undefined); setCapturas(null); if (id) setReceta({ id }); }} />`}
+    ${almacen.cargado && html`<${CompraTerminada} almacen=${almacen} datos=${datos} irA=${setPestana} />`}
     ${ajustes && html`<${PantallaAjustes} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setAjustes(false)} />`}
     <${Aviso} />`;
 }

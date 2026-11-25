@@ -17,6 +17,7 @@ export const TABLAS = {
   tiques: 'tiques',
   tique_lineas: 'tique_lineas',
   supers: 'supermercados_casa',
+  compartidas: 'listas_compartidas',   // enlaces de la lista mandados por WhatsApp
 };
 
 export const nuevoId = () =>

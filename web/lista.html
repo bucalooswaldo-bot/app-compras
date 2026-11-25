@@ -29,8 +29,14 @@
     .compartida .que { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .compartida .que small { color: var(--suave); font-size: 0.85rem; }
     .compartida .cogido .que span { text-decoration: line-through; color: var(--suave); }
-    .compartida .aviso { background: var(--panel); border-radius: 12px; box-shadow: var(--sombra); padding: 24px 16px; text-align: center; margin-top: 24px; }
+    .compartida .tarjeta-fin { background: var(--panel); border-radius: 12px; box-shadow: var(--sombra); padding: 24px 16px; text-align: center; margin-top: 24px; }
     .compartida .error { color: var(--peligro); font-size: 0.9rem; min-height: 1.2em; margin: 8px 0 0; }
+    .compartida .tarjeta-fin h1 { color: var(--texto); margin-top: 8px; }
+    .compartida .terminar-compra { display: block; width: 100%; margin: 20px 0 6px; min-height: 52px; border: 0; border-radius: 12px;
+      background: var(--verde); color: #fff; font-weight: 600; font-size: 1.05rem; cursor: pointer; }
+    .compartida .terminar-compra.confirmar { background: var(--marca); }
+    .compartida .centro { text-align: center; }
+    .compartida .enlace-suave { margin-top: 16px; background: none; border: 0; color: var(--marca); text-decoration: underline; font-size: 0.95rem; cursor: pointer; }
     .compartida .fin { text-align: center; font-weight: 600; color: var(--verde); margin: 16px 0 0; }
   </style>
   <script src="vendor/supabase.js"></script>
