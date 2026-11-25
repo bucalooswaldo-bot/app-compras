@@ -64,18 +64,39 @@ export function textoReceta(receta, ingredientes, articulos, raciones = receta.r
   return lineas.join('\n');
 }
 
-/** Texto de una lista de la compra ({articulo_id, cantidad, marca}), por secciones del súper. */
-export function textoLista(titulo, filas, articulos) {
+/**
+ * Las cosas de una lista de la compra ({articulo_id, cantidad, marca}), por secciones del súper,
+ * listas para el texto de WhatsApp y para el enlace de marcar.
+ * @returns {Array<{ articulo_id, lista_id, cantidad, nombre, detalle, categoria }>}
+ */
+export function cosasLista(filas, articulos) {
   const art = new Map(articulos.map((a) => [a.id, a]));
-  const lineas = [`🛒 *${titulo}*`];
+  const cosas = [];
   for (const [cat, grupo] of agruparPorCategoria(filas, articulos)) {
-    lineas.push('', `*${cat}*`);
     for (const f of grupo) {
       const a = art.get(f.articulo_id);
-      const extra = [f.marca, cantidadTexto(f.cantidad, a?.unidad)].filter(Boolean).join(', ');
-      lineas.push(`▢ ${a?.nombre ?? '¿?'}${extra ? ` (${extra})` : ''}`);
+      cosas.push({
+        articulo_id: f.articulo_id,
+        lista_id: f.tipo === 'auto' ? null : f.id ?? null,
+        cantidad: f.cantidad ?? null,
+        nombre: a?.nombre ?? '¿?',
+        detalle: [f.marca, cantidadTexto(f.cantidad, a?.unidad)].filter(Boolean).join(', ') || null,
+        categoria: cat,
+      });
     }
   }
+  return cosas;
+}
+
+/** Texto de una lista de la compra, por secciones del súper. Con enlace, añade cómo ir marcando. */
+export function textoLista(titulo, filas, articulos, enlace = null) {
+  const lineas = [`🛒 *${titulo}*`];
+  let cat = null;
+  for (const c of cosasLista(filas, articulos)) {
+    if (c.categoria !== cat) { cat = c.categoria; lineas.push('', `*${cat}*`); }
+    lineas.push(`▢ ${c.nombre}${c.detalle ? ` (${c.detalle})` : ''}`);
+  }
+  if (enlace) lineas.push('', '✅ *Para ir marcando lo que cogéis:*', enlace, '_Solo se ve esta lista. El enlace vale hasta mañana por la noche._');
   return lineas.join('\n');
 }
 
