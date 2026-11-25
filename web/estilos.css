@@ -5,6 +5,7 @@
   --suave: #6b726d;
   --linea: #e3e1da;
   --marca: #b8492b;
+  --letras: #1f5132;
   --marca-claro: #f8e6dd;
   --verde: #2c6a45;
   --verde-claro: #e2efe5;
@@ -23,6 +24,7 @@
     --suave: #9aa29c;
     --linea: #2e342f;
     --marca: #d4694b;
+    --letras: #9fd3b0;
     --marca-claro: #3b231b;
     --verde: #5dbb83;
     --verde-claro: #1f3427;
@@ -34,7 +36,7 @@
 }
 :root[data-theme="dark"] {
   --fondo: #141715; --panel: #1d211e; --texto: #e9ece9; --suave: #9aa29c; --linea: #2e342f;
-  --marca: #d4694b; --marca-claro: #3b231b; --verde: #5dbb83; --verde-claro: #1f3427; --aviso: #f0a06b; --aviso-claro: #3a2a1f; --peligro: #f2867e;
+  --letras: #9fd3b0; --marca: #d4694b; --marca-claro: #3b231b; --verde: #5dbb83; --verde-claro: #1f3427; --aviso: #f0a06b; --aviso-claro: #3a2a1f; --peligro: #f2867e;
   color-scheme: dark;
 }
 
@@ -205,7 +207,8 @@ li.hecho .nombre { text-decoration: line-through; color: var(--suave); }
 .portada h1 { margin-bottom: 16px; }
 .portada .marca { text-align: center; margin-bottom: 8px; }
 .portada .marca img { display: block; margin: 0 auto 12px; border-radius: 22px; box-shadow: var(--sombra); }
-.portada .marca h1 { font-size: 2.2rem; color: var(--marca); margin-bottom: 4px; letter-spacing: -0.01em; }
+.portada .marca h1 { margin-bottom: 4px; }
+.portada .marca .letras-menuda { display: block; height: 96px; width: auto; margin: 0 auto; }
 .portada .marca p { margin: 0 0 8px; color: var(--suave); }
 .mensaje { background: var(--aviso-claro); color: var(--aviso); padding: 10px 12px; border-radius: 10px; }
 .codigo { font-size: 2rem; letter-spacing: 0.2em; font-weight: 700; text-align: center; background: var(--panel); padding: 12px; border-radius: 12px; }
@@ -709,3 +712,4 @@ label.casilla input { width: auto; margin: 0; }
 .cocina-olla { flex: none; }
 @keyframes vapor { 0%, 100% { opacity: .35; transform: translateY(3px); } 50% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: no-preference) { .cargando img { animation: vapor 1.6s ease-in-out infinite; } }
+.cabecera .letras-menuda { display: block; height: 42px; width: auto; margin: -6px 0 -4px; }

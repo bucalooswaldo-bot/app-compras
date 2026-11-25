@@ -7,7 +7,7 @@ const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webm
   'src/comparar.js', 'src/catalogo.js', 'src/tiques.js', 'src/menu.js', 'src/fotos.js', 'src/ingredientes.js', 'src/consumo.js', 'src/foto-producto.js',
   'src/receta-texto.js', 'src/video.js', 'src/cocina.js', 'src/ofertas.js', 'src/inicio.js', 'src/planificador.js',
   'src/avisos.js', 'src/apariencia.js', 'src/notificaciones.js', 'src/atras.js',
-  'src/recetario.js', 'src/recetario-vista.js', 'recetario.json'];
+  'src/recetario.js', 'src/marca.js', 'src/recetario-vista.js', 'recetario.json'];
 // El lector de tiques (vendor/ocr, unos 10 MB) y el compresor de vídeo (vendor/mediabunny) no se guardan al
 // instalar: se guardan la primera vez que se usan.
 

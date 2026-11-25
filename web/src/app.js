@@ -30,6 +30,7 @@ import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionD
 import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
 import { RecetarioApp, useRecetario, delRecetario } from './recetario-vista.js';
+import { Letras } from './marca.js';
 import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './recetario.js';
 
 // ---------------------------------------------------------------------------
@@ -3735,7 +3736,7 @@ function App({ almacen, sesion }) {
   };
   return html`
     <header class="cabecera">
-      <h1>${PESTANAS.find((p) => p[0] === pestana)[1]}</h1>
+      <h1>${pestana === 'inicio' ? html`<${Letras} />` : PESTANAS.find((p) => p[0] === pestana)[1]}</h1>
       ${!sesion && html`<span class="modo-prueba">Prueba</span>`}
       <button class="icono" aria-label="Ajustes" onClick=${() => setAjustes(true)}>⚙</button>
     </header>
@@ -3783,7 +3784,7 @@ function Entrar({ cliente }) {
   };
   return html`
     <div class="portada">
-      <div class="marca"><img src="icono.svg" alt="" width="88" height="88" /><h1>Menuda</h1><p>Menú, compra y despensa en un solo sitio</p></div>
+      <div class="marca"><img src="icono.svg" alt="" width="88" height="88" /><h1><${Letras} /></h1><p>Menú, compra y despensa en un solo sitio</p></div>
       <form onSubmit=${enviar}>
         <label>Correo<input type="email" autocomplete="email" required value=${email} onInput=${(e) => setEmail(e.target.value)} /></label>
         <label>Contraseña<input type="password" autocomplete=${modo === 'entrar' ? 'current-password' : 'new-password'}
