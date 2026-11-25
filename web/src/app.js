@@ -6,7 +6,7 @@ import {
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
-  SUPERS, SUPERS_WEB, nombreSuper, entenderDictado, pareceFrase, cantidadParaArticulo, unidadNueva, textoBusqueda, sugerir, calcularCesta,
+  SUPERS, SUPERS_WEB, nombreSuper, entenderDictado, pareceFrase, cantidadParaArticulo, unidadNueva, textoCantidadDicha, ENVASES, envaseSegun, textoBusqueda, sugerir, calcularCesta,
   encaja, palabrasClave, precioUnidad, etiquetaUnidad, euros, AHORRO_MINIMO_PARA_REPARTIR,
 } from './comparar.js';
 import { crearCatalogo } from './catalogo.js';
@@ -38,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 50;
+const VERSION_APP = 52;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -1829,6 +1829,7 @@ function PantallaLista({ almacen, datos, sesion }) {
   const [comparar, setComparar] = useState(null); // filas que se comparan
   const [tengo, setTengo] = useState(false);
   const [ficha, setFicha] = useState(null);
+  const [cantidadDe, setCantidadDe] = useState(null); // fila a la que se pone cantidad
   const [compra, setCompraEstado] = useState(leerCompra);
   const setCompra = (c) => { setCompraEstado(c); guardarCompra(c); };
   const [elegirSuper, setElegirSuper] = useState(false);
@@ -1848,10 +1849,18 @@ function PantallaLista({ almacen, datos, sesion }) {
   const motivos = useMemo(() => new Map(faltas({ ...datos, lista: datos.lista.filter((l) => !l.para_hoy) }, hoy, hasta)
     .map((f) => [f.articulo_id, f])), [datos, hoy, hasta]);
 
-  const filasHoy = manual.filter((l) => l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id }));
+  // Lo apuntado sin cantidad que también piden las recetas: se ve (y se manda) con lo que piden.
+  const necesidad = useMemo(() => new Map(faltas({ ...datos,
+    lista: datos.lista.filter((l) => l.comprado || l.cantidad != null || esDescarte(l)) }, hoy, hasta)
+    .map((f) => [f.articulo_id, f.cantidad])), [datos, hoy, hasta]);
+  const conCantidad = (l) => {
+    const n = l.cantidad == null && !l.cantidad_texto ? necesidad.get(l.articulo_id) : null;
+    return n > 0 ? { ...l, cantidad: n } : l;
+  };
+  const filasHoy = manual.filter((l) => l.para_hoy).map((l) => ({ ...conCantidad(l), tipo: 'manual', clave: l.id }));
   const filasLuego = [
     ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
-    ...manual.filter((l) => !l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
+    ...manual.filter((l) => !l.para_hoy).map((l) => ({ ...conCantidad(l), tipo: 'manual', clave: l.id })),
   ];
   const [vista, setVista] = useState(() => leerVista() ?? (filasHoy.length ? 'hoy' : 'luego'));
   const elegirVista = (v) => { setVista(v); try { localStorage.setItem('vista-lista', v); } catch { /* nada */ } };
@@ -1906,7 +1915,10 @@ function PantallaLista({ almacen, datos, sesion }) {
     const nombres = [];
     for (const c of cosas) {
       const a = c.articulo ?? await obtenerArticulo(almacen, c.nombre, unidadNueva(c), 'Otros');
-      await almacen.insertar('lista', { articulo_id: a.id, cantidad: cantidadParaArticulo(c, a.unidad),
+      // "3 lonchas", "2 paquetes" o "2 kg" de algo que va por unidades: se guarda tal cual se pidió.
+      const cantidad = c.envase ? null : cantidadParaArticulo(c, a.unidad);
+      const cantidad_texto = cantidad == null && c.cantidad != null ? textoCantidadDicha(c) : null;
+      await almacen.insertar('lista', { articulo_id: a.id, cantidad, ...(cantidad_texto ? { cantidad_texto } : {}),
         marca: c.detalle, origen: 'manual', comprado: false, para_hoy: paraHoy });
       nombres.push(c.detalle ? `${a.nombre} (${c.detalle})` : a.nombre);
     }
@@ -1996,7 +2008,7 @@ function PantallaLista({ almacen, datos, sesion }) {
           <span class="tachar">${a?.nombre}</span>${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${f.por_pagar
             ? `en el carro${f.envases > 1 ? ` · ${f.envases} ×` : ''}` : 'en el carro · toca ✓ para desmarcar'}</small>
         </button>
-        <span class="cant">${f.por_pagar && f.precio != null ? euros(f.precio) : f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}</span>
+        <span class="cant">${f.por_pagar && f.precio != null ? euros(f.precio) : cantidadDeFila(f, a)}</span>
       </li>`;
     }
     const o = precioEn(f);
@@ -2005,7 +2017,10 @@ function PantallaLista({ almacen, datos, sesion }) {
       <button class="enlace nombre" onClick=${() => setFicha(f)}>
         ${a?.nombre}${f.marca && html` <span class="detalle">${f.marca}</span>`}<small>${comprando ? (o ? o.producto.nombre : 'toca para elegir el producto') : motivoDe(f)}</small>
       </button>
-      <span class="cant">${f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : ''}${o && html`<b class="precio-fila">${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>`}</span>
+      ${comprando
+        ? html`<span class="cant">${cantidadDeFila(f, a)}${o && html`<b class="precio-fila">${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>`}</span>`
+        : html`<button class="cant poner-cantidad ${cantidadDeFila(f, a) ? '' : 'vacia'}" aria-label=${`Cantidad de ${a?.nombre}`}
+            onClick=${() => setCantidadDe(f)}>${cantidadDeFila(f, a) || '+ cant.'}</button>`}
       ${comprando ? null : enHoy
         ? html`<button class="mover" aria-label=${`Dejar para otro día: ${a?.nombre}`} onClick=${() => aLuego(f)}>Otro día</button>`
         : html`<button class="mover hoy" aria-label=${`Pasar a hoy: ${a?.nombre}`} onClick=${() => aHoy([f])}>Hoy</button>
@@ -2096,6 +2111,9 @@ function PantallaLista({ almacen, datos, sesion }) {
           <p class="texto-suave">${comprado.length === 1 ? 'Hay 1 cosa marcada' : `Hay ${comprado.length} cosas marcadas`} como ${comprado.length === 1 ? 'comprada' : 'compradas'}. Se quedan tachadas hasta que terminéis la compra.</p>
           <${BotonSeguro} texto="Terminar la compra (quitar lo tachado)" pregunta="¿Terminar la compra? Se quita de la lista todo lo tachado." si="Sí, terminar" onClick=${vaciarComprado} />
         </div>`}
+      ${cantidadDe && html`<${Hoja} titulo=${nombreArticulo(datos, cantidadDe.articulo_id)} onCerrar=${() => setCantidadDe(null)}>
+        <${CamposLista} almacen=${almacen} datos=${datos} fila=${cantidadDe} onCerrar=${() => setCantidadDe(null)} />
+      </${Hoja}>`}
       ${editar && html`<${CantidadLista} almacen=${almacen} datos=${datos} fila=${editar} onCerrar=${() => setEditar(null)} />`}
       ${comparar && html`<${Comparar} almacen=${almacen} datos=${datos} sesion=${sesion} onCerrar=${() => setComparar(null)}
         items=${itemsComparar(datos, comparar)} />`}
@@ -2614,21 +2632,66 @@ function CogerOtraCosa({ almacen, datos, sesion, onCerrar, onListo }) {
 }
 
 /** Cantidad y marca de una cosa apuntada a mano (dentro de la ficha). */
+/** Cantidad de una fila de la lista tal cual se ve: "3 lonchas", "500 g", "2 ud". */
+export function cantidadDeFila(f, a) {
+  if (f.cantidad_texto) return f.cantidad_texto;
+  return f.cantidad != null ? formatoCantidad(f.cantidad, a?.unidad) : '';
+}
+
+/**
+ * Cantidad (en su unidad o como se quiera: lonchas, paquetes…) y nota de una cosa de la lista.
+ * En su unidad (g/kg, ml/l, ud) va a "cantidad" y cuenta para la despensa; lo demás va como texto.
+ */
 function CamposLista({ almacen, datos, fila, onCerrar }) {
   const a = articulo(datos, fila.articulo_id);
-  const [cantidad, setCantidad] = useState(fila.cantidad);
+  const propias = (UNIDADES_ENTRADA[a?.unidad] ?? UNIDADES_ENTRADA.ud).map(([u]) => u);
+  const inicial = (() => {
+    const m = String(fila.cantidad_texto ?? '').match(/^\s*(\d+(?:[.,]\d+)?)\s*(.*)$/);
+    if (m) {
+      const n = m[1].replace('.', ',');
+      const u = m[2].trim();
+      const env = ENVASES.find((e) => e === u || envaseSegun(e, 1) === u);
+      return { num: n, unidad: env ?? (u ? 'otra' : propias[0]), otra: env ? '' : u };
+    }
+    if (fila.cantidad_texto) return { num: '', unidad: 'otra', otra: fila.cantidad_texto };
+    const [t, u] = aEntrada(fila.cantidad, a?.unidad ?? 'ud');
+    return { num: t, unidad: u, otra: '' };
+  })();
+  const [num, setNum] = useState(inicial.num);
+  const [unidad, setUnidad] = useState(inicial.unidad);
+  const [otra, setOtra] = useState(inicial.otra);
   const [marca, setMarca] = useState(fila.marca ?? '');
+  const n = deEntrada(num, 'ud');
+  const sumar = (d) => setNum(String(Math.max(0, redondear((n ?? 0) + d, 3))).replace('.', ','));
+  const paso = unidad === 'g' ? 100 : unidad === 'ml' ? 250 : unidad === 'kg' || unidad === 'l' ? 0.5 : 1;
+
   const guardar = async () => {
-    const cambios = { cantidad, marca: marca.trim() || null };
+    let cantidad = null;
+    let cantidad_texto = null;
+    if (propias.includes(unidad)) cantidad = deEntrada(num, unidad);
+    else if (unidad === 'otra') {
+      const t = [n != null ? num.trim() : '', otra.trim()].filter(Boolean).join(' ');
+      cantidad_texto = t ? t.slice(0, 60) : null;
+    } else if (n != null) cantidad_texto = `${num.trim()} ${envaseSegun(unidad, n)}`;
+    const cambios = { cantidad, cantidad_texto, marca: marca.trim() || null };
     // Lo que sale de las recetas no está guardado: al cambiarlo se apunta (con lo elegido) y deja de calcularse solo.
     if (fila.tipo === 'auto') await almacen.insertar('lista', { articulo_id: fila.articulo_id, ...cambios, origen: 'manual', comprado: false, para_hoy: false });
     else await almacen.actualizar('lista', fila.id, cambios);
     onCerrar();
   };
   return html`<h3>Cantidad y nota</h3>
-    <label>Cantidad</label>
-    <${CampoCantidad} unidad=${a?.unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Sin indicar" />
+    <div class="poner-cant">
+      <button type="button" class="boton secundario" aria-label="Menos" onClick=${() => sumar(-paso)}>−</button>
+      <input inputmode="decimal" placeholder="—" value=${num} onInput=${(e) => setNum(e.target.value)} aria-label="Cantidad" />
+      <button type="button" class="boton secundario" aria-label="Más" onClick=${() => sumar(paso)}>+</button>
+    </div>
+    <div class="chips unidades-cant" role="group" aria-label="Unidad">
+      ${[...propias, ...ENVASES, 'otra'].map((u) => html`<button type="button" class="chip ${unidad === u ? 'activo' : ''}"
+        onClick=${() => setUnidad(u)}>${u === 'otra' ? 'otra…' : u === 'ud' ? 'unidades' : u}</button>`)}
+    </div>
+    ${unidad === 'otra' && html`<input placeholder="Por ejemplo: tarrinas, la grande, para 4…" value=${otra} onInput=${(e) => setOtra(e.target.value)} />`}
     ${fila.tipo === 'auto' && fila.cantidad != null && html`<p class="meta">Las recetas piden ${formatoCantidad(fila.cantidad, a?.unidad)}.</p>`}
+    ${!propias.includes(unidad) && html`<p class="meta">Así sale en la lista. A la despensa no se suma sola; al comprarlo podéis poner cuánto es.</p>`}
     <label>Marca o nota (opcional)
       <input placeholder="Por ejemplo: Puleva, sin lactosa, la grande…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
     <p class="meta">Sale así en la lista, en WhatsApp y en el enlace.</p>

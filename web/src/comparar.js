@@ -66,7 +66,33 @@ const UNIDADES_DICHAS = {
   paquete: null, paquetes: null, bote: null, botes: null, lata: null, latas: null, botella: null, botellas: null,
   bolsa: null, bolsas: null, brik: null, briks: null, brick: null, bricks: null, carton: null, cartones: null,
   caja: null, cajas: null, tarro: null, tarros: null, pack: null, malla: null, barra: null, barras: null,
+  loncha: null, lonchas: null, rodaja: null, rodajas: null, filete: null, filetes: null, pieza: null, piezas: null,
+  sobre: null, sobres: null, bandeja: null, bandejas: null, tarrina: null, tarrinas: null, rebanada: null, rebanadas: null,
+  botellin: null, botellines: null, garrafa: null, garrafas: null, manojo: null, manojos: null, racimo: null, racimos: null,
+  tableta: null, tabletas: null, rollo: null, rollos: null, packs: null, mallas: null, cuña: null, cuñas: null, cuna: null, cunas: null,
+  vaso: null, vasos: null, cartón: null, tarrito: null, tarritos: null, cabeza: null, cabezas: null, diente: null, dientes: null,
 };
+
+/** Palabras para pedir por envase o trozo, para elegir al poner la cantidad a mano. */
+export const ENVASES = ['paquetes', 'latas', 'botes', 'botellas', 'bolsas', 'lonchas', 'filetes', 'bandejas', 'cajas', 'docenas'];
+
+/** "lonchas", 1 -> "loncha"; "latas", 3 -> "latas". */
+export function envaseSegun(envase, n) {
+  const e = String(envase ?? '').trim();
+  if (n !== 1) return e;
+  if (/(on|or|al|el)es$/i.test(e)) return e.slice(0, -2);   // botellines -> botellín no; cartones -> carton
+  return e.replace(/s$/i, '');
+}
+
+/** Cantidad dicha como texto para la lista: "3 lonchas", "2 paquetes", "1,5 kg", "6". */
+export function textoCantidadDicha(cosa) {
+  if (cosa?.cantidad == null) return null;
+  const num = (n) => String(redondear(n, 3)).replace('.', ',');
+  if (cosa.envase) return `${num(cosa.cantidad)} ${envaseSegun(cosa.envase, cosa.cantidad)}`;
+  if (cosa.unidad === 'g') return cosa.cantidad >= 1000 ? `${num(cosa.cantidad / 1000)} kg` : `${num(cosa.cantidad)} g`;
+  if (cosa.unidad === 'ml') return cosa.cantidad >= 1000 ? `${num(cosa.cantidad / 1000)} l` : `${num(cosa.cantidad)} ml`;
+  return num(cosa.cantidad);
+}
 
 // Palabras que, detrás de un artículo, lo describen ("leche sin lactosa", "aceite de girasol")
 // en vez de empezar otra cosa de la lista.
@@ -153,16 +179,16 @@ export function entenderDictado(texto, articulos, marcas = []) {
       const esUno = w === 'un' || w === 'una' || w === 'uno';
       const n = /^\d+(?:[.,]\d+)?$/.test(w) ? Number(w.replace(',', '.')) : NUMEROS[w];
       if (n != null && (!esUno || (sig != null && sig in UNIDADES_DICHAS))) {
-        let cantidad = n, unidad = null;
+        let cantidad = n, unidad = null, envase = null;
         i++;
         if (t[i] != null && t[i] in UNIDADES_DICHAS) {
           const u = UNIDADES_DICHAS[t[i]];
-          if (u) { cantidad = redondear(n * u[1], 3); unidad = u[0]; }
+          if (u) { cantidad = redondear(n * u[1], 3); unidad = u[0]; } else envase = orig[i];
           i++;
         }
         if (t[i] === 'de' || t[i] === 'del') i++;
         cerrar();
-        pendiente = { cantidad, unidad };
+        pendiente = envase ? { cantidad, unidad, envase } : { cantidad, unidad };
         continue;
       }
       // Nombre conocido más largo que empiece aquí

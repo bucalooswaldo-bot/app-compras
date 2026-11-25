@@ -86,6 +86,12 @@ test('texto de la lista con enlace para ir marcando', () => {
   assert.match(t, /▢ Tomate \(3\)\n\n✅ \*Para ir marcando lo que cogéis:\*\nhttps:\/\/x\/lista.html#abc\n/);
 });
 
+test('la cantidad libre ("3 lonchas") sale en la lista', () => {
+  const d = datos();
+  const [c] = cosasLista([{ articulo_id: 'leche', cantidad: null, cantidad_texto: '2 botellas', marca: 'Puleva', id: 'f', tipo: 'manual' }], d.articulos);
+  assert.equal(c.detalle, 'Puleva, 2 botellas');
+});
+
 test('descontar lo cocinado: escala, usa variantes y marca lo que no está en casa', () => {
   const filas = aDescontar(datos(), 'r', 4);
   assert.deepEqual(filas.map((f) => [f.nombre, f.cantidad, f.enDespensa]), [

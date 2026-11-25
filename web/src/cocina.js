@@ -80,7 +80,7 @@ export function cosasLista(filas, articulos) {
         lista_id: f.tipo === 'auto' ? null : f.id ?? null,
         cantidad: f.cantidad ?? null,
         nombre: a?.nombre ?? '¿?',
-        detalle: [f.marca, cantidadTexto(f.cantidad, a?.unidad)].filter(Boolean).join(', ') || null,
+        detalle: [f.marca, f.cantidad_texto || cantidadTexto(f.cantidad, a?.unidad)].filter(Boolean).join(', ') || null,
         categoria: cat,
       });
     }
