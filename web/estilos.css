@@ -702,3 +702,10 @@ li.tal-cual small.entendido { display: block; color: var(--suave, #777); font-si
 .ing-app input, .ing-app select { margin: 0; min-width: 0; }
 label.casilla { display: flex; align-items: center; gap: 8px; font-weight: 400; }
 label.casilla input { width: auto; margin: 0; }
+
+/* La olla de Menuda: pantalla de carga, recetas vacías y modo cocina */
+.cargando { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--suave); }
+.vacio .olla { display: block; margin: 8px auto 4px; }
+.cocina-olla { flex: none; }
+@keyframes vapor { 0%, 100% { opacity: .35; transform: translateY(3px); } 50% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: no-preference) { .cargando img { animation: vapor 1.6s ease-in-out infinite; } }

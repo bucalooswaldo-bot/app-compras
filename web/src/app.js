@@ -350,6 +350,7 @@ function MisRecetas({ almacen, datos, abrirReceta, editarReceta }) {
       </div>
       ${propias.length === 0 && html`
         <div class="vacio">
+          <img class="olla" src="olla.svg" alt="" width="120" height="100" />
           <p>Todavía no hay recetas tuyas. Crea la primera, sácala de una captura o busca en el 📖 Recetario de la app.</p>
           <button class="boton grande" disabled=${cargando} onClick=${cargar}>
             ${cargando ? 'Cargando…' : `Cargar ${RECETAS.length} recetas propuestas`}</button>
@@ -782,6 +783,7 @@ function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
   return html`
     <div class="cocina" role="dialog" aria-label=${`Modo cocina: ${receta.nombre}`}>
       <div class="cocina-cab">
+        <img class="cocina-olla" src="olla.svg" alt="" width="40" height="34" />
         <div class="cocina-titulo">
           <strong>${receta.nombre}</strong>
           <small>${paso === 0 ? `Ingredientes · ${raciones} rac.` : `Paso ${paso} de ${pasos.length}`}

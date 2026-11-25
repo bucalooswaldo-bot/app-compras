@@ -1,7 +1,7 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
 const VERSION = 'compras-v47';
-const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg',
+const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg', 'olla.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
   'src/comparar.js', 'src/catalogo.js', 'src/tiques.js', 'src/menu.js', 'src/fotos.js', 'src/ingredientes.js', 'src/consumo.js', 'src/foto-producto.js',
