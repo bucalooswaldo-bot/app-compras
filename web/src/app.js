@@ -38,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 50;
+const VERSION_APP = 51;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -1848,10 +1848,18 @@ function PantallaLista({ almacen, datos, sesion }) {
   const motivos = useMemo(() => new Map(faltas({ ...datos, lista: datos.lista.filter((l) => !l.para_hoy) }, hoy, hasta)
     .map((f) => [f.articulo_id, f])), [datos, hoy, hasta]);
 
-  const filasHoy = manual.filter((l) => l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id }));
+  // Lo apuntado sin cantidad que también piden las recetas: se ve (y se manda) con lo que piden.
+  const necesidad = useMemo(() => new Map(faltas({ ...datos,
+    lista: datos.lista.filter((l) => l.comprado || l.cantidad != null || esDescarte(l)) }, hoy, hasta)
+    .map((f) => [f.articulo_id, f.cantidad])), [datos, hoy, hasta]);
+  const conCantidad = (l) => {
+    const n = l.cantidad == null ? necesidad.get(l.articulo_id) : null;
+    return n > 0 ? { ...l, cantidad: n } : l;
+  };
+  const filasHoy = manual.filter((l) => l.para_hoy).map((l) => ({ ...conCantidad(l), tipo: 'manual', clave: l.id }));
   const filasLuego = [
     ...auto.map((f) => ({ ...f, tipo: 'auto', clave: `auto-${f.articulo_id}` })),
-    ...manual.filter((l) => !l.para_hoy).map((l) => ({ ...l, tipo: 'manual', clave: l.id })),
+    ...manual.filter((l) => !l.para_hoy).map((l) => ({ ...conCantidad(l), tipo: 'manual', clave: l.id })),
   ];
   const [vista, setVista] = useState(() => leerVista() ?? (filasHoy.length ? 'hoy' : 'luego'));
   const elegirVista = (v) => { setVista(v); try { localStorage.setItem('vista-lista', v); } catch { /* nada */ } };
