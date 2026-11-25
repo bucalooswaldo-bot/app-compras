@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { tiemposDePaso, reloj, duracion, textoReceta, textoLista, aDescontar, pasosDe } from '../web/src/cocina.js';
+import { tiemposDePaso, reloj, duracion, textoReceta, textoLista, cosasLista, aDescontar, pasosDe } from '../web/src/cocina.js';
 
 const seg = (t) => tiemposDePaso(t).map((x) => x.segundos);
 
@@ -66,6 +66,24 @@ test('texto de la lista por secciones', () => {
   assert.ok(t.indexOf('Frutas y verduras') < t.indexOf('Lácteos'));
   assert.match(t, /▢ Leche \(Hacendado, 2 l\)/);
   assert.match(t, /▢ Tomate \(3\)/);
+});
+
+test('cosas de la lista para el enlace de marcar', () => {
+  const d = datos();
+  const cosas = cosasLista([
+    { articulo_id: 'leche', cantidad: 2000, marca: 'Hacendado', id: 'fila-1', tipo: 'manual' },
+    { articulo_id: 'tom', cantidad: 3, tipo: 'auto' },
+  ], d.articulos);
+  assert.deepEqual(cosas.map((c) => [c.nombre, c.lista_id, c.detalle]), [
+    ['Tomate', null, '3'], ['Leche', 'fila-1', 'Hacendado, 2 l'],
+  ]);
+  assert.equal(cosas[0].categoria, 'Frutas y verduras');
+});
+
+test('texto de la lista con enlace para ir marcando', () => {
+  const d = datos();
+  const t = textoLista('Compra de hoy', [{ articulo_id: 'tom', cantidad: 3 }], d.articulos, 'https://x/lista.html#abc');
+  assert.match(t, /▢ Tomate \(3\)\n\n✅ \*Para ir marcando lo que cogéis:\*\nhttps:\/\/x\/lista.html#abc\n/);
 });
 
 test('descontar lo cocinado: escala, usa variantes y marca lo que no está en casa', () => {

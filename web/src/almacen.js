@@ -218,6 +218,17 @@ export function motorSupabase(cliente, hogarId) {
     async sumarDespensa(articulo_id, delta) {
       comprobar(await cliente.rpc('sumar_despensa', { p_articulo: articulo_id, p_delta: delta }));
     },
+    /** Crea el enlace secreto para marcar la lista desde WhatsApp. Devuelve el token. */
+    async compartirLista(titulo, cosas) {
+      const { data, error } = await cliente.rpc('crear_lista_compartida', { p_hogar: hogarId, p_titulo: titulo, p_cosas: cosas });
+      if (error) throw error;
+      return data;
+    },
+    /** Al terminar la compra, los enlaces enviados dejan de funcionar. */
+    async cerrarListasCompartidas() {
+      comprobar(await cliente.from('listas_compartidas').update({ caduca_en: new Date().toISOString() })
+        .eq('hogar_id', hogarId).gt('caduca_en', new Date().toISOString()));
+    },
     /** Guarda una foto en Supabase Storage (carpeta de la casa) y devuelve su ruta. */
     async subirFoto(blob) {
       const ruta = `${hogarId}/${nuevoId()}.jpg`;

@@ -25,7 +25,7 @@ import { PantallaInicio } from './inicio.js';
 import { PantallaPlan } from './planificador.js';
 import { Apariencia, aplicarApariencia, AjustesAvisos } from './apariencia.js';
 import { entenderConsumo, cantidadGastada } from './consumo.js';
-import { textoReceta, textoLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe, encabezadoPaso } from './cocina.js';
+import { textoReceta, textoLista, cosasLista, tiemposDePaso, reloj, duracion, aDescontar, pasosDe, encabezadoPaso } from './cocina.js';
 import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionDe, nombreDeEtiqueta, fichaDeOpenFoodFacts } from './foto-producto.js';
 import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
@@ -38,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 47;
+const VERSION_APP = 48;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -1877,8 +1877,16 @@ function PantallaLista({ almacen, datos, sesion }) {
     for (const f of filas.filter((x) => x.tipo === 'manual')) await almacen.actualizar('lista', f.id, { para_hoy: true });
   };
   const aLuego = (f) => almacen.actualizar('lista', f.id, { para_hoy: false });
-  const enviarLista = () => compartir({ titulo: enHoy ? 'Compra de hoy' : 'Falta en casa',
-    texto: textoLista(enHoy ? 'Compra de hoy' : 'Falta en casa', pendientes, datos.articulos) });
+  /** Manda la lista y, si se puede, un enlace para ir marcando lo que se coge (sin entrar en la app). */
+  const enviarLista = async () => {
+    const titulo = enHoy ? 'Compra de hoy' : 'Falta en casa';
+    let enlace = null;
+    try {
+      const token = await almacen.motor.compartirLista?.(titulo, cosasLista(pendientes, datos.articulos));
+      if (token) enlace = new URL(`lista.html#${token}`, location.href).href;
+    } catch (e) { console.error(e); }   // sin enlace: se manda solo el texto
+    await compartir({ titulo, texto: textoLista(titulo, pendientes, datos.articulos, enlace) });
+  };
 
   const elegirPlazo = (p) => { setPlazo(p); try { localStorage.setItem('plazo-lista', String(p)); } catch { /* nada */ } };
 
@@ -1961,7 +1969,10 @@ function PantallaLista({ almacen, datos, sesion }) {
     else await almacen.actualizar('lista', l.id, { comprado: false, comprado_en: null });
   };
 
-  const vaciarComprado = () => almacen.borrar('lista', [...comprado.filter((l) => !l.por_pagar), ...descartes].map((l) => l.id));
+  const vaciarComprado = async () => {
+    await almacen.borrar('lista', [...comprado.filter((l) => !l.por_pagar), ...descartes].map((l) => l.id));
+    almacen.motor.cerrarListasCompartidas?.().catch(console.error);   // los enlaces de WhatsApp dejan de valer
+  };
   const precioEn = (f) => (comprando && catalogo ? opcionEn(datos, catalogo, itemsComparar(datos, [f])[0], compra.super) : null);
 
   const motivoDe = (f) => {
