@@ -148,3 +148,13 @@ test('dictado: una frase guardada antes como un solo artículo no se vuelve a us
   const cosas = entenderDictado(arts[0].nombre, arts);
   assert.deepEqual(cosas.map((c) => c.articulo?.id ?? c.nombre), ['a', 's', 't', 'r', 'Azúcar']);
 });
+
+test('dictar con envases o trozos: "3 lonchas de queso", "1 lata de atún"', async () => {
+  const { entenderDictado: dictar, textoCantidadDicha, envaseSegun } = await import('../web/src/comparar.js');
+  const cosas = dictar('3 lonchas de queso, 1 lata de atún, 2 paquetes de arroz, medio kilo de carne picada, 6 huevos', [], []);
+  assert.deepEqual(cosas.map((c) => [c.nombre, textoCantidadDicha(c)]), [
+    ['Queso', '3 lonchas'], ['Atún', '1 lata'], ['Arroz', '2 paquetes'], ['Carne picada', '500 g'], ['Huevos', '6'],
+  ]);
+  assert.equal(envaseSegun('botes', 1), 'bote');
+  assert.equal(envaseSegun('botes', 2), 'botes');
+});

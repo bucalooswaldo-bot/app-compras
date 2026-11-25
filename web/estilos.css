@@ -724,3 +724,12 @@ label.casilla input { width: auto; margin: 0; }
 .compra-terminada .meta { color: var(--suave); font-size: 0.9rem; margin-top: 2px; }
 .compra-terminada .acciones { display: flex; gap: 8px; margin-top: 10px; }
 .compra-terminada .acciones .boton { flex: 1; }
+
+/* Cantidad de cada cosa de la lista: se toca para ponerla o cambiarla */
+.filas button.poner-cantidad { display: inline-block; border: 1px solid var(--linea); background: var(--panel); color: var(--texto); border-radius: 999px;
+  padding: 4px 10px; min-height: 32px; font-size: 0.9rem; white-space: nowrap; cursor: pointer; }
+.filas .poner-cantidad.vacia { color: var(--suave); border-style: dashed; }
+.poner-cant { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; margin: 8px 0; }
+.poner-cant input { text-align: center; font-size: 1.3rem; }
+.poner-cant .boton { font-size: 1.4rem; padding: 0; }
+.unidades-cant { flex-wrap: wrap; margin-bottom: 8px; }
