@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'compras-v46';
+const VERSION = 'compras-v47';
 const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
@@ -37,7 +37,7 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data?.json() ?? {}; } catch { d = { cuerpo: e.data?.text() }; }
-  e.waitUntil(self.registration.showNotification(d.titulo || 'Compras de casa', {
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Menuda', {
     body: d.cuerpo || '', icon: 'icono-192.png', badge: 'icono-192.png', tag: 'aviso-diario', renotify: true,
     data: { pestana: d.pestana || 'inicio' },
   }));

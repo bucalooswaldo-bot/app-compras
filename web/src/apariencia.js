@@ -18,7 +18,7 @@ export function aplicarApariencia() {
   else raiz.dataset.theme = tema === 'oscuro' ? 'dark' : 'light';
   raiz.classList.toggle('letra-grande', leer('letra', 'normal') === 'grande');
   const oscuro = tema === 'oscuro' || (tema === 'auto' && matchMedia?.('(prefers-color-scheme: dark)').matches);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#141715' : '#2f7d4f');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', oscuro ? '#141715' : '#b8492b');
 }
 
 export function Apariencia() {

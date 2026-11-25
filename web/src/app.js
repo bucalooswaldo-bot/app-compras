@@ -37,7 +37,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 46;
+const VERSION_APP = 47;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -3781,7 +3781,7 @@ function Entrar({ cliente }) {
   };
   return html`
     <div class="portada">
-      <h1>🛒 Compras de casa</h1>
+      <div class="marca"><img src="icono.svg" alt="" width="88" height="88" /><h1>Menuda</h1><p>Menú, compra y despensa en un solo sitio</p></div>
       <form onSubmit=${enviar}>
         <label>Correo<input type="email" autocomplete="email" required value=${email} onInput=${(e) => setEmail(e.target.value)} /></label>
         <label>Contraseña<input type="password" autocomplete=${modo === 'entrar' ? 'current-password' : 'new-password'}
