@@ -1,4 +1,4 @@
-# Compras de casa (fase 1)
+# Menuda (antes «Compras de casa»)
 
 App web para el móvil (se instala en la pantalla de inicio desde Chrome) con:
 

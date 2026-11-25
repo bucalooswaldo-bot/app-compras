@@ -30,6 +30,7 @@ import { superProbable, nombreSencillo, elegirArticulo, cantidadASumar, seccionD
 import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
 import { RecetarioApp, useRecetario, delRecetario } from './recetario-vista.js';
+import { Letras } from './marca.js';
 import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './recetario.js';
 
 // ---------------------------------------------------------------------------
@@ -37,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 46;
+const VERSION_APP = 47;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -350,6 +351,7 @@ function MisRecetas({ almacen, datos, abrirReceta, editarReceta }) {
       </div>
       ${propias.length === 0 && html`
         <div class="vacio">
+          <img class="olla" src="olla.svg" alt="" width="120" height="100" />
           <p>Todavía no hay recetas tuyas. Crea la primera, sácala de una captura o busca en el 📖 Recetario de la app.</p>
           <button class="boton grande" disabled=${cargando} onClick=${cargar}>
             ${cargando ? 'Cargando…' : `Cargar ${RECETAS.length} recetas propuestas`}</button>
@@ -782,6 +784,7 @@ function ModoCocina({ datos, receta, raciones, onCerrar, onTerminar }) {
   return html`
     <div class="cocina" role="dialog" aria-label=${`Modo cocina: ${receta.nombre}`}>
       <div class="cocina-cab">
+        <img class="cocina-olla" src="olla.svg" alt="" width="40" height="34" />
         <div class="cocina-titulo">
           <strong>${receta.nombre}</strong>
           <small>${paso === 0 ? `Ingredientes · ${raciones} rac.` : `Paso ${paso} de ${pasos.length}`}
@@ -3733,7 +3736,7 @@ function App({ almacen, sesion }) {
   };
   return html`
     <header class="cabecera">
-      <h1>${PESTANAS.find((p) => p[0] === pestana)[1]}</h1>
+      <h1>${pestana === 'inicio' ? html`<${Letras} />` : PESTANAS.find((p) => p[0] === pestana)[1]}</h1>
       ${!sesion && html`<span class="modo-prueba">Prueba</span>`}
       <button class="icono" aria-label="Ajustes" onClick=${() => setAjustes(true)}>⚙</button>
     </header>
@@ -3781,7 +3784,7 @@ function Entrar({ cliente }) {
   };
   return html`
     <div class="portada">
-      <h1>🛒 Compras de casa</h1>
+      <div class="marca"><img src="icono.svg" alt="" width="88" height="88" /><h1><${Letras} /></h1><p>Menú, compra y despensa en un solo sitio</p></div>
       <form onSubmit=${enviar}>
         <label>Correo<input type="email" autocomplete="email" required value=${email} onInput=${(e) => setEmail(e.target.value)} /></label>
         <label>Contraseña<input type="password" autocomplete=${modo === 'entrar' ? 'current-password' : 'new-password'}
