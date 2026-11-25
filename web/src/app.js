@@ -38,7 +38,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 49;
+const VERSION_APP = 50;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -2360,6 +2360,8 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
         <button class="boton grande" onClick=${alCarro}>${fila.comprado ? 'Guardar' : 'Al carro'}${total != null ? ` · ${euros(total)}` : ''}</button>
       </div>`}
 
+    ${!compra && (fila.tipo === 'manual' || fila.tipo === 'auto') && html`<${CamposLista} almacen=${almacen} datos=${datos} fila=${fila} onCerrar=${onCerrar} />`}
+
     <h3>Precio en cada súper</h3>
     ${!catalogo && html`<p class="meta">En la versión de prueba no hay precios.</p>`}
     ${catalogo && conPrecio.length === 0 && html`<p class="meta">Todavía no hay precios para esto. Llegan solos al guardar los tiques.</p>`}
@@ -2374,7 +2376,6 @@ function FichaLista({ almacen, datos, sesion, catalogo, fila, compra, onCerrar, 
     </ul>`}
 
     ${!compra && fila.tipo === 'auto' && html`<button class="boton grande" onClick=${() => { onHoy(fila); onCerrar(); }}>Pasar a la compra de hoy</button>`}
-    ${!compra && fila.tipo === 'manual' && html`<${CamposLista} almacen=${almacen} datos=${datos} fila=${fila} onCerrar=${onCerrar} />`}
 
     ${cambiar && catalogo && html`<${ElegirProducto} almacen=${almacen} datos=${datos} catalogo=${catalogo} item=${item}
       linea=${{ mejor: cambiar, porSuper: Object.fromEntries(otros.filter((x) => x.o).map((x) => [x.id, x.o])) }}
@@ -2618,14 +2619,19 @@ function CamposLista({ almacen, datos, fila, onCerrar }) {
   const [cantidad, setCantidad] = useState(fila.cantidad);
   const [marca, setMarca] = useState(fila.marca ?? '');
   const guardar = async () => {
-    await almacen.actualizar('lista', fila.id, { cantidad, marca: marca.trim() || null });
+    const cambios = { cantidad, marca: marca.trim() || null };
+    // Lo que sale de las recetas no está guardado: al cambiarlo se apunta (con lo elegido) y deja de calcularse solo.
+    if (fila.tipo === 'auto') await almacen.insertar('lista', { articulo_id: fila.articulo_id, ...cambios, origen: 'manual', comprado: false, para_hoy: false });
+    else await almacen.actualizar('lista', fila.id, cambios);
     onCerrar();
   };
-  return html`<h3>En la lista</h3>
+  return html`<h3>Cantidad y nota</h3>
     <label>Cantidad</label>
     <${CampoCantidad} unidad=${a?.unidad} valor=${cantidad} onCambio=${setCantidad} placeholder="Sin indicar" />
-    <label>Marca o tipo (opcional)
-      <input placeholder="Por ejemplo: Puleva, sin lactosa…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
+    ${fila.tipo === 'auto' && fila.cantidad != null && html`<p class="meta">Las recetas piden ${formatoCantidad(fila.cantidad, a?.unidad)}.</p>`}
+    <label>Marca o nota (opcional)
+      <input placeholder="Por ejemplo: Puleva, sin lactosa, la grande…" value=${marca} onInput=${(e) => setMarca(e.target.value)} /></label>
+    <p class="meta">Sale así en la lista, en WhatsApp y en el enlace.</p>
     <button class="boton grande" onClick=${guardar}>Guardar</button>`;
 }
 
