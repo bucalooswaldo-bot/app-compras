@@ -733,3 +733,43 @@ label.casilla input { width: auto; margin: 0; }
 .poner-cant input { text-align: center; font-size: 1.3rem; }
 .poner-cant .boton { font-size: 1.4rem; padding: 0; }
 .unidades-cant { flex-wrap: wrap; margin-bottom: 8px; }
+
+/* Inicio: receta del día y filas de ideas */
+.foto-idea { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; background: var(--marca-claro); }
+.foto-idea.sin-foto { display: flex; align-items: center; justify-content: center; font-size: 2.6rem; }
+.foto-idea.sin-foto > span { filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.12)); }
+.foto-idea.grande { aspect-ratio: 16 / 11; border-radius: 0; }
+.foto-idea.grande.sin-foto { font-size: 5.5rem; }
+.destacada { background: var(--panel); border-radius: 18px; box-shadow: var(--sombra); overflow: hidden; margin-bottom: 14px; }
+.destacada-foto { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.destacada-foto::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgb(0 0 0 / 0.55)); pointer-events: none; }
+.sello {
+  position: absolute; top: 12px; left: 12px; z-index: 1; padding: 5px 11px; border-radius: 999px;
+  background: rgb(255 255 255 / 0.92); color: var(--marca); font-weight: 700; font-size: 0.85rem; box-shadow: var(--sombra);
+}
+.destacada-nombre { position: absolute; left: 16px; right: 16px; bottom: 14px; z-index: 1; color: #fff; display: flex; flex-direction: column; }
+.destacada-nombre small { font-size: 0.8rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.06em; }
+.destacada-nombre strong { font-size: 1.55rem; line-height: 1.15; text-shadow: 0 1px 6px rgb(0 0 0 / 0.35); }
+.destacada-pie { padding: 12px 16px 16px; }
+.destacada-pie p { margin: 4px 0; }
+.destacada-datos { display: flex; flex-wrap: wrap; gap: 6px; }
+.destacada-datos span { padding: 3px 10px; border-radius: 999px; background: var(--verde-claro); color: var(--verde); font-size: 0.85rem; font-weight: 600; }
+.destacada .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.destacada .acciones .boton:not(.otra) { flex: 1; }
+.cargando-idea .foto-idea { animation: latido 1.6s ease-in-out infinite; }
+.elegir-mias { margin: -4px 4px 14px; color: var(--suave); font-size: 0.9rem; }
+.fila-ideas { margin: 6px 0 16px; }
+.fila-ideas-cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; padding: 0 2px 8px; }
+.fila-ideas-cabeza h2 { font-size: 1.1rem; color: var(--letras); }
+.carrusel {
+  list-style: none; margin: 0 -16px; padding: 0 16px 4px; display: flex; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 16px; scrollbar-width: none;
+}
+.carrusel::-webkit-scrollbar { display: none; }
+.carrusel li { flex: none; width: 42%; max-width: 190px; scroll-snap-align: start; }
+.idea { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.idea .foto-idea { box-shadow: var(--sombra); }
+.idea strong { font-size: 0.92rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.idea small { color: var(--suave); font-size: 0.8rem; }
+.se-acaba { padding: 8px 10px; border-radius: 10px; background: var(--aviso-claro); font-size: 0.92rem; }
+.se-acaba .meta { display: block; }
