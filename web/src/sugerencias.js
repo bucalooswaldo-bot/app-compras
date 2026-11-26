@@ -140,3 +140,12 @@ export function filasDeIdeas(recetas, fecha, tiene, { excluir = [], porFila = 10
   filas.push({ id: 'tema', titulo: tema.titulo, subtitulo: tema.subtitulo, recetas: coger(base.filter(tema.vale)) });
   return filas.filter((f) => f.recetas.length >= 3);
 }
+
+/** Todas las recetas que se pueden hacer con al menos la mitad de lo que hay en casa, las más completas primero. */
+export function conLoDeCasa(recetas, tiene) {
+  return recetas.filter((r) => !r.oculta)
+    .map((r) => ({ r, c: cobertura(r, tiene) }))
+    .filter(({ c }) => c.total >= 2 && c.tengo / c.total >= 0.5)
+    .sort((a, b) => (b.c.tengo / b.c.total) - (a.c.tengo / a.c.total) || b.c.tengo - a.c.tengo || a.r.nombre.localeCompare(b.r.nombre, 'es'))
+    .map(({ r }) => r);
+}

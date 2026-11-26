@@ -773,3 +773,17 @@ label.casilla input { width: auto; margin: 0; }
 .idea small { color: var(--suave); font-size: 0.8rem; }
 .se-acaba { padding: 8px 10px; border-radius: 10px; background: var(--aviso-claro); font-size: 0.92rem; }
 .se-acaba .meta { display: block; }
+
+/* Plan: bandeja con todas las recetas por grupos */
+.bandeja { background: var(--panel); border-radius: 16px; box-shadow: var(--sombra); margin: 0 0 12px; padding: 12px 0 4px; }
+.bandeja > * { padding-left: 12px; padding-right: 12px; }
+.bandeja-cabeza { display: flex; align-items: center; gap: 10px; }
+.bandeja-cabeza strong { font-size: 1.05rem; color: var(--letras); }
+.buscar-bandeja { flex: 1; min-width: 0; min-height: 38px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--linea); background: var(--fondo); }
+.grupos-bandeja { padding-top: 8px; padding-bottom: 4px; }
+.grupos-bandeja .chip small { opacity: 0.7; margin-left: 2px; }
+.bandeja .meta { margin: 4px 0 8px; }
+.bandeja-recetas { padding-top: 2px; padding-bottom: 12px; gap: 10px; scroll-snap-type: x proximity; }
+.bandeja-recetas .receta-arrastrable { width: 124px; scroll-snap-align: start; background: var(--fondo); }
+.receta-arrastrable small { color: var(--suave); font-size: 0.75rem; }
+.bandeja-recetas .foto-idea { border-radius: 9px; font-size: 2.2rem; pointer-events: none; }

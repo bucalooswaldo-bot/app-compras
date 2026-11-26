@@ -1,7 +1,11 @@
 // Plan semanal visual: cada día con sus comidas y fotos; las recetas se arrastran a un día
 // (o una comida ya puesta a otro día) manteniéndolas pulsadas.
-import { html, useState, useRef, useEffect } from '../vendor/preact-htm.js';
-import { fechaISO, sumarDias, nombreDia, nombreMomento } from './logica.js';
+import { html, useState, useRef, useEffect, useMemo } from '../vendor/preact-htm.js';
+import { fechaISO, sumarDias, nombreDia, nombreMomento, normalizar } from './logica.js';
+import { useRecetario } from './recetario-vista.js';
+import { esDeLaCasa, recetaGuardada, guardarDelRecetario, buscarEnRecetario, tiposDe } from './recetario.js';
+import { FotoIdea } from './inicio.js';
+import { recetaDelDia, filasDeIdeas, enCasa, conLoDeCasa } from './sugerencias.js';
 import {
   Miniatura, useFotos, ElegirReceta, ProponerSemana, guardarRaciones, leerRaciones, useCocinar, mostrarAviso,
 } from './app.js';
@@ -88,6 +92,52 @@ function useArrastre(onSoltar) {
   return { vivo, sobre, empezar };
 }
 
+const POR_TANDA = 30;
+const leerGrupo = () => { try { return localStorage.getItem('grupo-bandeja'); } catch { return null; } };
+
+/**
+ * Grupos de la bandeja del plan: todas las recetas, no solo unas pocas.
+ * Las vuestras, ideas del día, con lo que hay en casa y cada tipo del recetario de la app.
+ */
+function useBandeja(datos, sesion, hoy) {
+  const { recetas: recetario } = useRecetario(sesion?.cliente ?? null);
+  const [grupo, setGrupoEstado] = useState(leerGrupo);
+  const [buscar, setBuscar] = useState('');
+  const setGrupo = (g) => { setGrupoEstado(g); try { localStorage.setItem('grupo-bandeja', g); } catch { /* nada */ } };
+  const tiene = useMemo(() => enCasa(datos), [datos.despensa, datos.articulos]);
+  const grupos = useMemo(() => {
+    const usos = new Map();
+    for (const p of datos.plan) usos.set(p.receta_id, (usos.get(p.receta_id) ?? 0) + 1);
+    const conFotoPrimero = (l) => [...l].sort((a, b) => (!!(b.foto || b.foto_path) - !!(a.foto || a.foto_path)) || a.nombre.localeCompare(b.nombre, 'es'));
+    const vuestras = datos.recetas.filter(esDeLaCasa)
+      .sort((a, b) => (b.favorita - a.favorita) || ((usos.get(b.id) ?? 0) - (usos.get(a.id) ?? 0)) || a.nombre.localeCompare(b.nombre, 'es'));
+    const base = (recetario ?? []).filter((r) => !r.oculta);
+    // Del recetario, las que la casa ya usa salen como la copia de la casa (así no se copian dos veces).
+    const deApp = (l) => l.map((r) => recetaGuardada(datos, r.id) ?? r);
+    const l = [];
+    if (vuestras.length) l.push({ id: 'vuestras', nombre: '🏠 Las vuestras', recetas: vuestras });
+    const usadas = datos.recetas.filter((r) => !esDeLaCasa(r) && usos.get(r.id));
+    if (usadas.length) l.push({ id: 'usadas', nombre: '🔁 Ya hechas', recetas: usadas.sort((a, b) => (usos.get(b.id) ?? 0) - (usos.get(a.id) ?? 0)) });
+    if (base.length) {
+      const delDia = recetaDelDia(base, hoy);
+      const ideas = [delDia, ...filasDeIdeas(base, hoy, tiene, { excluir: [delDia?.id] }).flatMap((f) => f.recetas)].filter(Boolean);
+      l.push({ id: 'ideas', nombre: '✨ Ideas de hoy', recetas: deApp(ideas) });
+      const casa = conLoDeCasa(base, tiene);
+      if (casa.length) l.push({ id: 'casa', nombre: '🧺 Con lo de casa', recetas: deApp(casa) });
+      for (const { tipo } of tiposDe(base)) l.push({ id: `tipo:${tipo}`, nombre: tipo, recetas: deApp(conFotoPrimero(base.filter((r) => r.tipo === tipo))) });
+    }
+    return l;
+  }, [datos.recetas, datos.plan, recetario, tiene, hoy]);
+  const actual = grupos.find((g) => g.id === grupo) ?? grupos[0];
+  const enBandeja = useMemo(() => {
+    if (normalizar(buscar).trim().length < 2) return actual?.recetas ?? [];
+    const q = normalizar(buscar).trim();
+    const mias = datos.recetas.filter((r) => esDeLaCasa(r) && normalizar(r.nombre).includes(q));
+    return [...mias, ...buscarEnRecetario(recetario ?? [], buscar).map((r) => recetaGuardada(datos, r.id) ?? r)];
+  }, [buscar, actual, recetario, datos.recetas]);
+  return { recetario, grupos, grupo: actual?.id, setGrupo, buscar, setBuscar, enBandeja };
+}
+
 export function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
   const hoy = fechaISO();
   const [semana, setSemana] = useState(0);
@@ -99,22 +149,29 @@ export function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
   const dias = Array.from({ length: 7 }, (_, i) => sumarDias(inicio, i));
   const delaSemana = datos.plan.filter((p) => p.fecha >= dias[0] && p.fecha <= dias[6]);
 
-  // Recetas a mano: favoritas y las más puestas en el plan.
-  const usos = new Map();
-  for (const p of datos.plan) usos.set(p.receta_id, (usos.get(p.receta_id) ?? 0) + 1);
-  const aMano = [...datos.recetas]
-    .sort((a, b) => (b.favorita - a.favorita) || ((usos.get(b.id) ?? 0) - (usos.get(a.id) ?? 0)) || a.nombre.localeCompare(b.nombre, 'es'))
-    .slice(0, 12);
+  // Bandeja de recetas para arrastrar: por grupos (las vuestras, ideas, con lo de casa y cada tipo del recetario).
+  const { recetario, grupos, grupo, setGrupo, buscar, setBuscar, enBandeja } = useBandeja(datos, sesion, hoy);
+  const [cuantas, setCuantas] = useState(POR_TANDA);
+  useEffect(() => setCuantas(POR_TANDA), [grupo, buscar]);
+  const bandejaRef = useRef(null);
+  useEffect(() => { if (bandejaRef.current) bandejaRef.current.scrollLeft = 0; }, [grupo, buscar]);
+  const aMano = enBandeja.slice(0, cuantas);
+  const masAlDeslizar = (e) => {
+    const el = e.currentTarget;
+    if (cuantas < enBandeja.length && el.scrollLeft + el.clientWidth > el.scrollWidth - 400) setCuantas((n) => n + POR_TANDA);
+  };
   const fotos = useFotos(almacen, [...aMano, ...delaSemana.map((p) => datos.recetas.find((r) => r.id === p.receta_id))]
     .filter(Boolean).map((r) => r.foto_path));
-  const urlDe = (r) => (r?.foto_path ? fotos[r.foto_path] : null);
+  const urlDe = (r) => (r?.foto ?? (r?.foto_path ? fotos[r.foto_path] : null));
 
   const { vivo, sobre, empezar } = useArrastre(async (carga, hueco) => {
     if (!hueco) return;
     const texto = `${nombreDia(hueco.fecha, hoy)}, ${nombreMomento(hueco.momento).toLowerCase()}`;
     if (carga.receta) {
       const raciones = leerRaciones() ?? 2;
-      await almacen.insertar('plan', { fecha: hueco.fecha, momento: hueco.momento, receta_id: carga.receta.id, raciones, cocinado: false });
+      // Una receta del recetario se copia a la casa al ponerla en el plan.
+      const receta = carga.app ? await guardarDelRecetario(almacen, carga.receta) : carga.receta;
+      await almacen.insertar('plan', { fecha: hueco.fecha, momento: hueco.momento, receta_id: receta.id, raciones, cocinado: false });
       mostrarAviso(`${carga.receta.nombre}: ${texto} (${raciones} rac.)`);
     } else if (carga.comida && (carga.comida.fecha !== hueco.fecha || carga.comida.momento !== hueco.momento)) {
       await almacen.actualizar('plan', carga.comida.id, { fecha: hueco.fecha, momento: hueco.momento });
@@ -162,14 +219,29 @@ export function PantallaPlan({ almacen, datos, sesion, abrirReceta }) {
       ${datos.recetas.length === 0 && html`<p class="vacio">Primero carga o crea alguna receta en la pestaña Recetas.</p>`}
       ${datos.recetas.length > 0 && html`
         <div class="bandeja">
-          <p class="meta">Mantén pulsada una receta y arrástrala a un día</p>
-          <div class="bandeja-recetas">
-            ${aMano.map((r) => html`
-              <div class="receta-arrastrable ${vivo?.carga.receta?.id === r.id ? 'levantada' : ''}"
-                onPointerDown=${(e) => empezar(e, { receta: r }, r.nombre, urlDe(r))}>
-                <${Miniatura} receta=${r} url=${urlDe(r)} />
+          <div class="bandeja-cabeza">
+            <strong>Recetas</strong>
+            <input type="search" class="buscar-bandeja" placeholder=${recetario?.length ? `Buscar entre ${datos.recetas.filter(esDeLaCasa).length + recetario.length}…` : 'Buscar…'}
+              value=${buscar} onInput=${(e) => setBuscar(e.currentTarget.value)} />
+          </div>
+          ${!buscar && html`<div class="chips grupos-bandeja">
+            ${grupos.map((g) => html`<button class="chip ${grupo === g.id ? 'activo' : ''}"
+              onClick=${(e) => { setGrupo(g.id); e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); }}>
+              ${g.nombre} <small>${g.recetas.length}</small></button>`)}
+          </div>`}
+          <p class="meta">${enBandeja.length === 0 ? 'No hay recetas con ese nombre.'
+            : `${enBandeja.length} ${enBandeja.length === 1 ? 'receta' : 'recetas'} · desliza para ver más y mantén pulsada una para llevarla a un día`}</p>
+          <div class="bandeja-recetas" ref=${bandejaRef} onScroll=${masAlDeslizar}>
+            ${aMano.map((r) => {
+              const app = Array.isArray(r.ingredientes); // del recetario de la app, aún sin copiar a la casa
+              return html`
+              <div class="receta-arrastrable ${vivo?.carga.receta?.id === r.id ? 'levantada' : ''}" key=${r.id}
+                onPointerDown=${(e) => empezar(e, { receta: r, app }, r.nombre, urlDe(r))}>
+                <${FotoIdea} receta=${r} url=${urlDe(r)} />
                 <span>${r.favorita ? '★ ' : ''}${r.nombre}</span>
-              </div>`)}
+                ${r.tiempo_min && html`<small>${r.tiempo_min} min</small>`}
+              </div>`;
+            })}
           </div>
         </div>
         <button class="boton proponer" onClick=${() => setProponer(true)}>✨ Proponer el menú de estos 7 días</button>`}

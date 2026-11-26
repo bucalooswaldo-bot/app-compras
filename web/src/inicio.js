@@ -60,7 +60,7 @@ function fondoDe(r) {
 }
 
 /** Foto de la receta o, si aún no tiene, un dibujo sobre un fondo de color. */
-function FotoIdea({ receta, url, clase = '' }) {
+export function FotoIdea({ receta, url, clase = '' }) {
   return url
     ? html`<img class="foto-idea ${clase}" src=${url} alt="" loading="lazy" />`
     : html`<span class="foto-idea sin-foto ${clase}" style=${fondoDe(receta)} aria-hidden="true"><span>${dibujoReceta(receta)}</span></span>`;
