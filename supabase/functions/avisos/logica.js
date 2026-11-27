@@ -365,3 +365,58 @@ export function buscarArticulo(articulos, nombre) {
   const n = normalizar(nombre);
   return articulos.find((a) => normalizar(a.nombre) === n) ?? null;
 }
+
+/**
+ * "Hazme la lista de estas recetas": junta los ingredientes de varias recetas, cada una con sus raciones.
+ * Lo repetido se suma. No mira la despensa para decidir: solo propone marcar como "lo tengo" lo básico
+ * (sal, aceite…) y lo que la despensa dice que hay; la persona lo repasa.
+ * @param elegidas [{ recetaId, raciones }]
+ * @returns [{ articulo_id, nombre, unidad, categoria, necesita (null = sin cantidad), recetas: string[], loTengo: bool, motivo }]
+ */
+export function listaDeRecetas(datos, elegidas) {
+  const filas = new Map();
+  for (const { recetaId, raciones } of elegidas) {
+    const receta = datos.recetas.find((r) => r.id === recetaId);
+    if (!receta) continue;
+    for (const ing of datos.ingredientes.filter((i) => i.receta_id === recetaId)) {
+      const a = datos.articulos.find((x) => x.id === ing.articulo_id);
+      if (!a) continue;
+      const cant = escalar(ing.cantidad, receta.raciones, raciones ?? receta.raciones);
+      let f = filas.get(a.id);
+      if (!f) {
+        f = { articulo_id: a.id, nombre: a.nombre, unidad: a.unidad, categoria: a.categoria, necesita: cant, conCantidad: cant != null, recetas: [] };
+        filas.set(a.id, f);
+      } else if (cant != null) {
+        f.necesita = redondear((f.necesita ?? 0) + cant, 3);
+        f.conCantidad = true;
+      }
+      if (!f.recetas.includes(receta.nombre)) f.recetas.push(receta.nombre);
+    }
+  }
+  const cache = new Map();
+  const resultado = [];
+  for (const f of filas.values()) {
+    const { conCantidad, ...fila } = f;
+    if (fila.unidad === 'ud' && fila.necesita != null) fila.necesita = Math.ceil(fila.necesita - 1e-9);
+    const casa = enCasa(datos, f.articulo_id, cache);
+    const basico = esBasico(f.nombre);
+    const hayBastante = casa.hay > 0 && (fila.necesita == null || casa.hay >= fila.necesita);
+    fila.loTengo = basico || hayBastante;
+    fila.motivo = basico ? 'lo tengo' : hayBastante ? 'en casa' : null;
+    resultado.push(fila);
+  }
+  return resultado.sort((x, y) => (x.loTengo - y.loTengo) || x.nombre.localeCompare(y.nombre, 'es'));
+}
+
+/** Cuánto suma o resta cada toque de − / + en la lista, según la unidad y lo que ya hay. */
+export function pasoCantidad(cantidad, unidad) {
+  if (unidad === 'g' || unidad === 'ml') return cantidad >= 1000 ? 500 : cantidad >= 250 ? 250 : 50;
+  return 1;
+}
+
+/** "2 latas" + 1 -> "3 latas". Si no empieza por un número, null. */
+export function cambiarCantidadTexto(texto, delta) {
+  const m = /^\s*(\d+)(.*)$/.exec(texto ?? '');
+  if (!m) return null;
+  return `${Math.max(1, Number(m[1]) + delta)}${m[2]}`;
+}

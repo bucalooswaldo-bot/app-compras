@@ -2,7 +2,7 @@ import { html, render, useState, useEffect, useMemo, useRef } from '../vendor/pr
 import { crearAlmacen, motorPrueba, motorSupabase } from './almacen.js';
 import {
   fechaISO, sumarDias, nombreDia, formatoCantidad, aEntrada, deEntrada, UNIDADES_ENTRADA, pasoDespensa,
-  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, enCasa, sugerirCompra, MOMENTOS, nombreMomento, agruparPorCategoria, iconoPasillo, buscarArticulo, normalizar, redondear,
+  escalar, ingredientesDeComida, faltas, estaBajo, avisoDe, camposAviso, tieneAviso, noHay, esDescarte, descarteVigente, pendienteManual, pendienteHoy, tengoTodo, enCasa, sugerirCompra, pasoCantidad, cambiarCantidadTexto, MOMENTOS, nombreMomento, agruparPorCategoria, iconoPasillo, buscarArticulo, normalizar, redondear,
 } from './logica.js';
 import { CATEGORIAS, ARTICULOS, RECETAS } from './recetas-inicio.js';
 import {
@@ -31,6 +31,7 @@ import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
 import { RecetarioApp, useRecetario, delRecetario } from './recetario-vista.js';
 import { Letras } from './marca.js';
+import { HazmeLista } from './hazme-lista.js';
 import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './recetario.js';
 
 // ---------------------------------------------------------------------------
@@ -38,7 +39,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 54;
+const VERSION_APP = 55;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -1828,6 +1829,7 @@ function PantallaLista({ almacen, datos, sesion }) {
   const [editar, setEditar] = useState(null);
   const [comparar, setComparar] = useState(null); // filas que se comparan
   const [tengo, setTengo] = useState(false);
+  const [hazme, setHazme] = useState(false);
   const [ficha, setFicha] = useState(null);
   const [cantidadDe, setCantidadDe] = useState(null); // fila a la que se pone cantidad
   const [compra, setCompraEstado] = useState(leerCompra);
@@ -1872,7 +1874,8 @@ function PantallaLista({ almacen, datos, sesion }) {
   const tachados = comprado.filter((l) => !!l.para_hoy === enHoy).map((l) => ({ ...l, tipo: 'comprado', clave: l.id }));
 
   const enListaIds = new Set([...filasHoy, ...filasLuego].map((f) => f.articulo_id).concat(descartes.map((l) => l.articulo_id)));
-  const sugeridas = sugerirCompra(datos, enListaIds);
+  // Lo de siempre: no se mira la despensa (nadie la lleva al día; lo comprado no debe esconderlo).
+  const sugeridas = sugerirCompra({ ...datos, despensa: [] }, enListaIds, 10);
   const hoyNo = (f) => almacen.insertar('lista', { articulo_id: f.articulo_id, cantidad: null, origen: 'auto', comprado: false,
     creado_en: new Date().toISOString() });
   const apuntar = (id) => almacen.insertar('lista', { articulo_id: id, cantidad: null, marca: null, origen: 'manual', comprado: false,
@@ -1999,6 +2002,21 @@ function PantallaLista({ almacen, datos, sesion }) {
     return porque || 'a mano';
   };
 
+  /** − / + en la lista: cambia la cantidad sin abrir nada. */
+  const sumar = (f, signo) => {
+    const a = articulo(datos, f.articulo_id);
+    if (f.cantidad_texto) {
+      const t = cambiarCantidadTexto(f.cantidad_texto, signo);
+      if (t) almacen.actualizar('lista', f.id, { cantidad_texto: t });
+      return;
+    }
+    const actual = f.cantidad ?? 0;
+    const paso = pasoCantidad(signo > 0 ? actual : actual - 1, a?.unidad);
+    const nueva = Math.max(paso, redondear(actual + signo * paso, 3));
+    almacen.actualizar('lista', f.id, { cantidad: nueva });
+  };
+  const sePuedeSumar = (f) => f.tipo === 'manual' && (f.cantidad_texto ? /^\s*\d/.test(f.cantidad_texto) : f.cantidad != null);
+
   const fila = (f) => {
     const a = articulo(datos, f.articulo_id);
     if (f.tipo === 'comprado') {
@@ -2019,7 +2037,13 @@ function PantallaLista({ almacen, datos, sesion }) {
       </button>
       ${comprando
         ? html`<span class="cant">${cantidadDeFila(f, a)}${o && html`<b class="precio-fila">${o.aprox ? '≈ ' : ''}${euros(o.total)}</b>`}</span>`
-        : html`<button class="cant poner-cantidad ${cantidadDeFila(f, a) ? '' : 'vacia'}" aria-label=${`Cantidad de ${a?.nombre}`}
+        : sePuedeSumar(f)
+          ? html`<span class="mas-menos">
+              <button aria-label=${`Menos ${a?.nombre}`} onClick=${() => sumar(f, -1)}>−</button>
+              <button class="cant-num" aria-label=${`Cantidad de ${a?.nombre}`} onClick=${() => setCantidadDe(f)}>${cantidadDeFila(f, a)}</button>
+              <button aria-label=${`Más ${a?.nombre}`} onClick=${() => sumar(f, 1)}>+</button>
+            </span>`
+          : html`<button class="cant poner-cantidad ${cantidadDeFila(f, a) ? '' : 'vacia'}" aria-label=${`Cantidad de ${a?.nombre}`}
             onClick=${() => setCantidadDe(f)}>${cantidadDeFila(f, a) || '+ cant.'}</button>`}
       ${comprando ? null : enHoy
         ? html`<button class="mover" aria-label=${`Dejar para otro día: ${a?.nombre}`} onClick=${() => aLuego(f)}>Otro día</button>`
@@ -2049,7 +2073,17 @@ function PantallaLista({ almacen, datos, sesion }) {
         <span>${juntas.length === 1 ? 'Hay una línea con varias cosas juntas.' : `Hay ${juntas.length} líneas con varias cosas juntas.`}</span>
         <button class="boton" onClick=${separar}>Separarlas</button></div>`}
       ${previa.length > 1 && html`<p class="previa">Se añadirán ${previa.length}: ${previa.map((c) => c.detalle ? `${c.nombre} (${c.detalle})` : c.nombre).join(' · ')}</p>`}
-      <button class="boton secundario tengo" onClick=${() => setTengo(true)}>🍳 ¿Tengo todo para…?</button>
+      ${sugeridas.length > 0 && html`
+        <div class="de-siempre">
+          <p class="titulo-pequeno">Lo de siempre</p>
+          <div class="chips">
+            ${sugeridas.map((id) => html`<button class="chip" onClick=${() => apuntar(id)}><b>+</b> ${nombreArticulo(datos, id)}</button>`)}
+          </div>
+        </div>`}
+      <div class="dos-botones">
+        <button class="boton secundario" onClick=${() => setHazme(true)}>🍽️ Desde recetas</button>
+        <button class="boton secundario" onClick=${() => setTengo(true)}>🍳 ¿Tengo todo para…?</button>
+      </div>
 
       ${enHoy ? html`
         ${compra ? html`<div class="en-super">
@@ -2064,7 +2098,7 @@ function PantallaLista({ almacen, datos, sesion }) {
         ${pendientes.length === 0 && tachados.length > 0 && html`<p class="vacio">Todo en el carro. 🎉</p>`}
         ${pendientes.length === 0 && tachados.length === 0 && html`<div class="vacio">
           <p>Aún no hay nada en la compra de hoy.</p>
-          <p><small>En «Falta en casa» toca <b>Hoy</b> en lo que vayáis a comprar ahora, o usa «¿Tengo todo para…?» con una receta.</small></p>
+          <p><small>Escribe arriba lo que necesites, o toca «Desde recetas» y elige una o varias.</small></p>
           ${filasLuego.length > 0 && html`<button class="boton" onClick=${() => elegirVista('luego')}>Ver lo que falta (${filasLuego.length})</button>`}
         </div>`}
       ` : html`
@@ -2093,13 +2127,6 @@ function PantallaLista({ almacen, datos, sesion }) {
             ${descartes.map((l) => html`<button class="chip" onClick=${() => almacen.borrar('lista', l.id)}>↩ ${nombreArticulo(datos, l.articulo_id)}</button>`)}
           </div>
         </div>`}
-      ${sugeridas.length > 0 && html`
-        <div class="quitado">
-          <p class="meta">¿Os hace falta? Lo soléis comprar y no está en la lista:</p>
-          <div class="acciones">
-            ${sugeridas.map((id) => html`<button class="chip" onClick=${() => apuntar(id)}>+ ${nombreArticulo(datos, id)}</button>`)}
-          </div>
-        </div>`}
       ${comprando && html`<div class="barra-pagar">
         ${carro.length > 0
           ? html`<button class="boton grande" onClick=${() => setPagando(true)}>Ya hemos pagado · ${carro.length} ${carro.length === 1 ? 'cosa' : 'cosas'} · ${euros(redondear(carro.reduce((t, l) => t + (l.precio ?? 0), 0)))}</button>`
@@ -2125,6 +2152,8 @@ function PantallaLista({ almacen, datos, sesion }) {
         onListo=${(f) => { setCoger(false); setFicha(f); }} />`}
       ${pagando && html`<${Pagar} almacen=${almacen} datos=${datos} sesion=${sesion} catalogo=${catalogo} compra=${compra} carro=${carro}
         onCerrar=${() => setPagando(false)} onListo=${() => { setPagando(false); setCompra(null); }} />`}
+      ${hazme && html`<${HazmeLista} almacen=${almacen} datos=${datos} paraHoy=${enHoy} onCerrar=${() => setHazme(false)}
+        onListo=${() => setHazme(false)} />`}
       ${tengo && html`<${TengoTodo} almacen=${almacen} datos=${datos} onCerrar=${() => setTengo(false)}
         onListo=${() => { setTengo(false); elegirVista('hoy'); }} />`}
     </section>`;

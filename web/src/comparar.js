@@ -187,6 +187,11 @@ export function entenderDictado(texto, articulos, marcas = []) {
           i++;
         }
         if (t[i] === 'de' || t[i] === 'del') i++;
+        // Cantidad detrás del nombre y al final ("leche 6", "tomates 1 kg"): es de lo anterior.
+        if (actual && actual.cantidad == null && i >= t.length) {
+          Object.assign(actual, envase ? { cantidad, unidad, envase } : { cantidad, unidad });
+          continue;
+        }
         cerrar();
         pendiente = envase ? { cantidad, unidad, envase } : { cantidad, unidad };
         continue;
