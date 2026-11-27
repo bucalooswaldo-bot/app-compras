@@ -158,3 +158,11 @@ test('dictar con envases o trozos: "3 lonchas de queso", "1 lata de atún"', asy
   assert.equal(envaseSegun('botes', 1), 'bote');
   assert.equal(envaseSegun('botes', 2), 'botes');
 });
+
+test('la cantidad también se entiende detrás del nombre ("leche 6, tomates 1 kg")', () => {
+  const r = entenderDictado('leche 6, tomates 1 kg, huevos 12, 2 latas de atún', []);
+  assert.deepEqual(r.map((c) => [c.nombre, c.cantidad, c.unidad]), [
+    ['Leche', 6, null], ['Tomates', 1000, 'g'], ['Huevos', 12, null], ['Atún', 2, null],
+  ]);
+  assert.equal(r[3].envase, 'latas');
+});
