@@ -18,6 +18,8 @@ export const TABLAS = {
   tique_lineas: 'tique_lineas',
   supers: 'supermercados_casa',
   compartidas: 'listas_compartidas',   // enlaces de la lista mandados por WhatsApp
+  garantias: 'garantias',             // garantías de lo comprado en otras tiendas
+  ajustes: 'ajustes_casa',            // interruptores de la casa (otros gastos)
 };
 
 export const nuevoId = () =>

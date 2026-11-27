@@ -814,3 +814,22 @@ label.casilla input { width: auto; margin: 0; }
 .hl-fila { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; background: none; text-align: left; color: var(--texto); }
 .etiqueta-v { flex: none; font-size: 0.75rem; background: var(--verde-claro); color: var(--verde); border-radius: 999px; padding: 2px 9px; font-weight: 600; }
 .hl-repaso .tachar { text-decoration: line-through; color: var(--suave); }
+/* Otros gastos de casa y garantías */
+.otros-gastos { display: flex; flex-direction: column; gap: 8px; background: var(--panel); border-radius: 14px; box-shadow: var(--sombra); padding: 10px 14px 6px; }
+.otros-gastos .fila-gasto:last-child { border-bottom: 0; }
+.otros-gastos .boton { margin-top: 0; }
+.fila-garantias { font-weight: 600; }
+.fila-garantias b { color: var(--marca); }
+.aviso-garantia { display: block; width: 100%; text-align: left; background: var(--aviso-claro); color: var(--aviso); border: 0; border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 0.92rem; cursor: pointer; }
+.aviso-garantia.quieto { cursor: default; }
+.ok-garantia { background: var(--verde-claro); color: var(--verde); border-radius: 12px; padding: 10px 12px; }
+.etiqueta-g { font-size: 0.75rem; font-weight: 600; border-radius: 999px; padding: 2px 9px; white-space: nowrap; align-self: center; }
+.etiqueta-g.verde { background: var(--verde-claro); color: var(--verde); }
+.etiqueta-g.pronto { background: var(--aviso-claro); color: var(--aviso); }
+.etiqueta-g.gris { background: var(--linea); color: var(--suave); }
+.foto-tique { display: block; width: 100%; max-height: 60vh; object-fit: contain; border-radius: 12px; border: 1px solid var(--linea); background: var(--panel); margin: 10px 0; }
+.otros-gastos .boton { min-width: 0; white-space: normal; }
+.otros-gastos .filas { box-shadow: none; background: transparent; border-radius: 0; padding: 0; margin: 0; }
+.otros-gastos .fila-gasto { padding-left: 0; padding-right: 0; }
+.otro-detalle { display: block; }
+.chips.chips-envuelve { flex-wrap: wrap; overflow: visible; }

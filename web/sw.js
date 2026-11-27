@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que abra rápido y sin conexión.
 // Los datos (Supabase) nunca se guardan aquí: siempre van a la red.
-const VERSION = 'compras-v55';
+const VERSION = 'compras-v56';
 const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webmanifest', 'icono.svg', 'olla.svg',
   'icono-192.png', 'icono-512.png', 'vendor/preact-htm.js', 'vendor/supabase.js',
   'src/app.js', 'src/almacen.js', 'src/logica.js', 'src/recetas-inicio.js',
@@ -8,7 +8,7 @@ const ARCHIVOS = ['./', 'index.html', 'estilos.css', 'config.js', 'manifest.webm
   'src/receta-texto.js', 'src/video.js', 'src/cocina.js', 'src/ofertas.js', 'src/inicio.js', 'src/planificador.js',
   'src/avisos.js', 'src/apariencia.js', 'src/notificaciones.js', 'src/atras.js',
   'src/recetario.js', 'src/marca.js', 'src/recetario-vista.js', 'recetario.json',
-  'lista.html', 'src/lista-compartida.js', 'src/sugerencias.js', 'src/hazme-lista.js'];
+  'lista.html', 'src/lista-compartida.js', 'src/sugerencias.js', 'src/garantias.js', 'src/otros-gastos.js', 'src/hazme-lista.js'];
 // El lector de tiques (vendor/ocr, unos 10 MB) y el compresor de vídeo (vendor/mediabunny) no se guardan al
 // instalar: se guardan la primera vez que se usan.
 

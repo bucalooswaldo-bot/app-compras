@@ -1,6 +1,7 @@
 // Avisos de la casa: lo que se acaba y lo que falta para el menú de los próximos días.
+// También las garantías que se acaban (si la casa las guarda).
 // Lo usan la pantalla de Inicio y el aviso diario en el móvil (la función "avisos" de Supabase usa una copia).
-import { estaBajo, tengoTodo, sumarDias, MOMENTOS } from './logica.js';
+import { estaBajo, tengoTodo, sumarDias, diasHasta, MOMENTOS } from './logica.js';
 
 const ORDEN_MOMENTO = Object.fromEntries(MOMENTOS.map(([m], i) => [m, i]));
 
@@ -28,8 +29,16 @@ export function avisosDeCasa(datos, hoy, dias = 3) {
       return { comida: c, receta, fecha: c.fecha, momento: c.momento, faltan };
     })
     .filter((x) => x.receta);
-  return { seAcaba, menu };
+  // Garantías: se avisa un mes y una semana antes de que acaben
+  const garantias = (datos.garantias ?? [])
+    .map((g) => ({ ...g, dias: diasHasta(g.hasta, hoy) }))
+    .filter((g) => DIAS_AVISO_GARANTIA.includes(g.dias))
+    .sort((a, b) => a.dias - b.dias);
+  return { seAcaba, menu, garantias };
 }
+
+/** Días antes del final de una garantía en que se avisa en el móvil. */
+export const DIAS_AVISO_GARANTIA = [30, 7];
 
 /** "a", "a y b", "a, b y c" (y "y 2 más" si son muchas). */
 export function enumerar(nombres, max = 3) {
@@ -56,8 +65,12 @@ export function textoAviso(avisos, hoy) {
     const nombres = avisos.seAcaba.map((s) => s.nombre);
     lineas.push(`Se ${nombres.length > 1 ? 'acaban' : 'acaba'}: ${enumerar(nombres, 4)}.`);
   }
+  for (const g of avisos.garantias ?? []) {
+    lineas.push(`La garantía de ${g.que.toLowerCase()} acaba ${g.dias === 7 ? 'en una semana' : 'en un mes'}. Si falla algo, aún entra en garantía.`);
+  }
   if (!lineas.length) return null;
   const porMenu = avisos.menu.some((m) => m.faltan.length && m.fecha <= manana);
-  const titulo = porMenu ? 'Falta algo para el menú' : 'Se acaba algo en casa';
+  const titulo = porMenu ? 'Falta algo para el menú'
+    : avisos.seAcaba.length ? 'Se acaba algo en casa' : 'Una garantía se acaba';
   return { titulo, cuerpo: lineas.join('\n') };
 }
