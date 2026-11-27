@@ -45,7 +45,7 @@ function ahoraEnCanarias() {
 
 const TABLAS = {
   articulos: 'articulos', despensa: 'despensa', recetas: 'recetas', ingredientes: 'receta_ingredientes',
-  plan: 'plan_comidas', lista: 'lista_compra',
+  plan: 'plan_comidas', lista: 'lista_compra', garantias: 'garantias',
 };
 
 /** Los datos de una casa, con la misma forma que en la app. */

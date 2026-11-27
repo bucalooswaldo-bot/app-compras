@@ -15,6 +15,13 @@ export function sumarDias(iso, n) {
   return fechaISO(new Date(a, m - 1, d + n));
 }
 
+/** Días que faltan de `desde` a `hasta` (negativo si ya pasó). */
+export function diasHasta(hasta, desde = fechaISO()) {
+  const [a1, m1, d1] = desde.slice(0, 10).split('-').map(Number);
+  const [a2, m2, d2] = hasta.slice(0, 10).split('-').map(Number);
+  return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86400000);
+}
+
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 

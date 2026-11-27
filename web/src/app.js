@@ -31,6 +31,8 @@ import * as config from '../config.js';
 import { iniciarAtras, useAtras } from './atras.js';
 import { RecetarioApp, useRecetario, delRecetario } from './recetario-vista.js';
 import { Letras } from './marca.js';
+import { OtrosGastos, AvisoGarantia, AjusteOtrosGastos, VerGarantiaSuelta, otrosGastosEncendido } from './otros-gastos.js';
+import { esOtroGasto, nombreTipo } from './garantias.js';
 import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './recetario.js';
 
 // ---------------------------------------------------------------------------
@@ -38,7 +40,7 @@ import { esDeLaCasa, guardarDelRecetario, ponerClienteRecetario } from './receta
 // ---------------------------------------------------------------------------
 export let mostrarAviso = () => {};
 // Súbelo a la vez que VERSION en sw.js: así se ve en Ajustes qué versión tiene cada móvil.
-const VERSION_APP = 54;
+const VERSION_APP = 55;
 
 function Aviso() {
   const [texto, setTexto] = useState(null);
@@ -133,7 +135,7 @@ const textoAviso = (d, unidad) => {
  * Botón para borrar o quitar algo: antes pregunta en una ventana ("¿Quieres borrar la receta?")
  * con "Cancelar" y "Sí, borrar", para que no se borre nada por un toque sin querer.
  */
-function BotonSeguro({ texto, pregunta, si = 'Sí, borrar', onClick, clase = 'enlace peligro' }) {
+export function BotonSeguro({ texto, pregunta, si = 'Sí, borrar', onClick, clase = 'enlace peligro' }) {
   const [abierta, setAbierta] = useState(false);
   const [haciendo, setHaciendo] = useState(false);
   useAtras(() => (haciendo ? false : setAbierta(false)), abierta);
@@ -3102,6 +3104,7 @@ function PantallaAjustes({ almacen, datos, sesion, onCerrar }) {
         <${BotonSeguro} texto="Borrar datos de prueba" pregunta="¿Quieres borrar todos los datos de prueba de este móvil?" onClick=${borrarPrueba} />
       `}
       <${MisSupers} almacen=${almacen} datos=${datos} />
+      <${AjusteOtrosGastos} almacen=${almacen} datos=${datos} />
       <${Apariencia} />
       <${AjustesAvisos} datos=${datos} sesion=${sesion} />
       <h3>Instalar en el móvil</h3>
@@ -3336,7 +3339,7 @@ function lienzoParaLeer(bmp, escala = 1) {
 }
 
 /** Lee el texto de una foto en el propio móvil (sin mandar la foto a nadie). */
-async function leerTextoDeImagen(fichero, onProgreso) {
+export async function leerTextoDeImagen(fichero, onProgreso) {
   const lector = await lectorDeTexto(onProgreso);
   const bmp = await createImageBitmap(fichero);
   const { data } = await lector.recognize(lienzoParaLeer(bmp));
@@ -3435,6 +3438,8 @@ function PantallaGastos({ almacen, datos, sesion }) {
   const [revisar, setRevisar] = useState(null);
   const [ver, setVer] = useState(null);
   const [preciosListos, setPreciosListos] = useState(false);
+  const [garantiaAbierta, setGarantiaAbierta] = useState(null);
+  const conOtros = otrosGastosEncendido(datos);
   // Tiques leídos antes de saber quitar las líneas del pago ("ENTREGA", "IMP.:"): se limpian solos.
   useEffect(() => {
     const sobran = lineasQueSobran(datos.tiques, datos.tique_lineas);
@@ -3452,7 +3457,8 @@ function PantallaGastos({ almacen, datos, sesion }) {
       .then(() => setPreciosListos(true)).catch((e) => console.error(e));
   }, [datos.equivalencias.length, datos.tiques.length]);
 
-  const tiques = [...datos.tiques].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  // Lo de arriba es solo lo del súper; los tiques de otras tiendas van en su apartado, más abajo.
+  const tiques = datos.tiques.filter((t) => !esOtroGasto(t)).sort((a, b) => b.fecha.localeCompare(a.fecha));
   const grupos = gastosPorPeriodo(tiques, periodo);
   // Arriba, siempre el periodo de hoy (aunque vaya a 0 €), no el último con tiques: así no se confunde
   // «esta semana» con una semana pasada.
@@ -3514,6 +3520,7 @@ function PantallaGastos({ almacen, datos, sesion }) {
           <button class="chip ${periodo === p ? 'activo' : ''}" onClick=${() => setPeriodo(p)}>${n}</button>`)}
       </div>
 
+      ${conOtros && html`<${AvisoGarantia} datos=${datos} onVer=${setGarantiaAbierta} />`}
       ${!grupos.length && html`<p class="vacio">Aún no hay tiques. Añade el primero y aquí verás lo que gastáis por semana, mes y año.</p>`}
       ${actual && html`
         <div class="tarjeta-gasto">
@@ -3549,8 +3556,12 @@ function PantallaGastos({ almacen, datos, sesion }) {
             <div class="fila-gasto"><span>${tituloPeriodo(g.inicio, periodo)}</span><b>${euros(g.total)}</b></div>`)}
         </div>`}`}
 
+      ${conOtros && html`<${OtrosGastos} almacen=${almacen} datos=${datos} sesion=${sesion} periodo=${periodo}
+        inicio=${inicioPeriodo(fechaISO(), periodo)} tituloPeriodo=${tituloPeriodo(inicioPeriodo(fechaISO(), periodo), periodo)} />`}
+      ${garantiaAbierta && html`<${VerGarantiaSuelta} almacen=${almacen} datos=${datos} id=${garantiaAbierta} onCerrar=${() => setGarantiaAbierta(null)} />`}
+
       ${tiques.length > 0 && html`
-        <h3 class="categoria">Tiques</h3>
+        <h3 class="categoria">Tiques del súper</h3>
         <p><button class="enlace" onClick=${() => descargarGastos(datos)}>⬇ Descargar todos los gastos (para Excel)</button></p>
         <div class="filas">
           ${tiques.slice(0, 40).map((t) => html`
@@ -3573,7 +3584,11 @@ function descargarGastos(datos) {
     const a = datos.articulos.find((x) => x.id === l.articulo_id);
     return [t.fecha.slice(0, 10), nombreDe(t.supermercado_id), l.texto, a?.nombre ?? '', a?.categoria ?? '',
       l.cantidad ?? '', l.kg ? 'kg' : '', l.importe, l.descuento ?? 0, pagado(l)];
-  }).sort((a, b) => b[0].localeCompare(a[0]));
+  });
+  for (const t of datos.tiques.filter(esOtroGasto)) {
+    filas.push([t.fecha.slice(0, 10), t.tienda ?? '', '', '', nombreTipo(t.tipo), '', '', t.total ?? 0, 0, t.total ?? 0]);
+  }
+  filas.sort((a, b) => b[0].localeCompare(a[0]));
   const csv = textoCSV([['Fecha', 'Supermercado', 'En el tique', 'Artículo', 'Sección', 'Cantidad', 'Unidad', 'Importe', 'Descuento', 'Pagado'], ...filas]);
   const enlace = document.createElement('a');
   enlace.href = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }));
